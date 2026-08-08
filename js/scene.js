@@ -339,6 +339,125 @@ export function createScene(canvas) {
     }
   });
 
+  /* ------------------------------------------------------ remote players -- */
+  // Each remote player is a floating glowing orb + name tag hovering where
+  // their camera looks, plus a small dot on the floor under their cursor.
+  // Positions lerp toward the last received presence, so a 12 Hz stream
+  // still reads as smooth motion.
+  const playerMarkers = new Map(); // playerId -> marker
+
+  function makeNameTag(name, color) {
+    const TW = 256, TH = 64;
+    const tex = new BABYLON.DynamicTexture('ptag', { width: TW, height: TH }, scene, true);
+    tex.hasAlpha = true;
+    const g = tex.getContext();
+    g.clearRect(0, 0, TW, TH);
+    g.font = '600 26px "Avenir Next", "Helvetica Neue", Arial, sans-serif';
+    const label = String(name).slice(0, 16);
+    const w = Math.min(TW - 12, g.measureText(label).width + 54);
+    const x0 = (TW - w) / 2;
+    g.fillStyle = 'rgba(24, 24, 30, 0.82)';
+    g.beginPath();
+    g.roundRect(x0, 8, w, 48, 24);
+    g.fill();
+    g.fillStyle = color;
+    g.beginPath();
+    g.arc(x0 + 26, 32, 9, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = '#ffffff';
+    g.textBaseline = 'middle';
+    g.fillText(label, x0 + 42, 34);
+    tex.update();
+    const mat = new BABYLON.StandardMaterial('ptagMat', scene);
+    mat.diffuseTexture = tex;
+    mat.emissiveTexture = tex;
+    mat.opacityTexture = tex;
+    mat.disableLighting = true;
+    mat.backFaceCulling = false;
+    const plane = BABYLON.MeshBuilder.CreatePlane('ptagPlane',
+      { width: 1.7, height: 0.425 }, scene);
+    plane.material = mat;
+    plane.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
+    plane.isPickable = false;
+    glow.addExcludedMesh(plane);
+    return { plane, mat, tex };
+  }
+
+  function setPlayerMarker(id, { name, color }) {
+    removePlayerMarker(id);
+    const c3 = BABYLON.Color3.FromHexString(color);
+    const root = new BABYLON.TransformNode('player_' + id, scene);
+    const orbMat = new BABYLON.StandardMaterial('porb_' + id, scene);
+    orbMat.emissiveColor = c3;
+    orbMat.diffuseColor = c3.scale(0.4);
+    const orb = BABYLON.MeshBuilder.CreateSphere('porb', { diameter: 0.22 }, scene);
+    orb.parent = root;
+    orb.material = orbMat;
+    orb.isPickable = false;
+    const tag = makeNameTag(name, color);
+    tag.plane.parent = root;
+    tag.plane.position.y = 0.42;
+    const curMat = new BABYLON.StandardMaterial('pcur_' + id, scene);
+    curMat.emissiveColor = c3;
+    curMat.disableLighting = true;
+    curMat.alpha = 0.75;
+    const cursor = BABYLON.MeshBuilder.CreateDisc('pcursor',
+      { radius: 0.14, tessellation: 24 }, scene);
+    cursor.rotation.x = Math.PI / 2;
+    cursor.position.y = 0.02;
+    cursor.material = curMat;
+    cursor.isPickable = false;
+    glow.addExcludedMesh(cursor);
+    const marker = {
+      root, orb, tag, cursor, mats: [orbMat, curMat],
+      phase: Math.random() * 7,
+      target: { x: 0, z: 0, cx: 0, cz: 0 },
+      cur: { x: 0, z: 0, cx: 0, cz: 0 },
+      fresh: true,
+    };
+    playerMarkers.set(id, marker);
+    return marker;
+  }
+
+  function movePlayerMarker(id, x, z, cx, cz) {
+    const m = playerMarkers.get(id);
+    if (!m) return;
+    if (typeof x === 'number') { m.target.x = x; m.target.z = z; }
+    if (typeof cx === 'number') { m.target.cx = cx; m.target.cz = cz; }
+    if (m.fresh) { Object.assign(m.cur, m.target); m.fresh = false; }
+  }
+
+  function removePlayerMarker(id) {
+    const m = playerMarkers.get(id);
+    if (!m) return;
+    m.root.dispose(false, false);
+    m.cursor.dispose();
+    m.tag.tex.dispose();
+    m.tag.mat.dispose();
+    for (const mat of m.mats) mat.dispose();
+    playerMarkers.delete(id);
+  }
+
+  function clearPlayerMarkers() {
+    for (const id of [...playerMarkers.keys()]) removePlayerMarker(id);
+  }
+
+  scene.onBeforeRenderObservable.add(() => {
+    if (!playerMarkers.size) return;
+    const dt = engine.getDeltaTime() / 1000;
+    const k = 1 - Math.pow(0.0005, dt); // fast catch-up, no snapping
+    const t = performance.now() / 1000;
+    for (const m of playerMarkers.values()) {
+      m.cur.x += (m.target.x - m.cur.x) * k;
+      m.cur.z += (m.target.z - m.cur.z) * k;
+      m.cur.cx += (m.target.cx - m.cur.cx) * k;
+      m.cur.cz += (m.target.cz - m.cur.cz) * k;
+      m.root.position.set(m.cur.x, 1.55 + Math.sin(t * 1.7 + m.phase) * 0.06, m.cur.z);
+      m.cursor.position.x = m.cur.cx;
+      m.cursor.position.z = m.cur.cz;
+    }
+  });
+
   engine.runRenderLoop(() => scene.render());
   window.addEventListener('resize', () => engine.resize());
   console.log('[scene] world ready');
@@ -634,5 +753,6 @@ export function createScene(canvas) {
     buildPedal, buildAmp, buildSourcePost,
     groundPoint, groundPointFromClient, snapshotPedal,
     setCable, removeCable,
+    setPlayerMarker, movePlayerMarker, removePlayerMarker, clearPlayerMarkers,
   };
 }

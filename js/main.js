@@ -117,7 +117,8 @@ function spawnSource(at) {
   const id = `s${++counter}`;
   const pos = at ?? { x: 7.6, z: [0, 3.5, -3.5, 7, -7][n % 5] };
   const state = { mode: 'chord', chord: 'major', root: 0, strumStyle: 'ring',
-    arpPattern: 'up', volume: 5, channel: n }; // post N maps to interface input N+1
+    arpPattern: 'up', volume: 5, channel: n, // post N maps to interface input N+1
+    bpm: 100, sync: true }; // synced inputs share the transport clock
   posts.set(id, { id, type: 'source', state, view: view.buildSourcePost(id, pos) });
   audio.createSource(id, state);
   refreshBoard();
@@ -567,6 +568,20 @@ function renderSourceMenu() {
     }
     sourceMenu.appendChild(grid);
   }
+  if (st.mode === 'chord' || st.mode === 'arp') {
+    section('TEMPO');
+    const syncRow = document.createElement('button');
+    syncRow.className = 'menu-row' + (st.sync ? ' active' : '');
+    syncRow.innerHTML = `<span class="check">${st.sync ? '✓' : ''}</span><span></span>`;
+    syncRow.lastChild.textContent = st.sync
+      ? `Sync — shared clock, ${audio.transportBpm ? audio.transportBpm() : st.bpm} BPM`
+      : 'Sync to the other inputs';
+    syncRow.addEventListener('click', () => chooseSync(!st.sync));
+    sourceMenu.appendChild(syncRow);
+    const bpmNow = st.sync ? audio.transportBpm() : (st.bpm || 100);
+    chipGrid([70, 85, 100, 115, 130, 150, 170, 190].map((b) => [b, `${b}`]),
+      bpmNow, (b) => chooseBpm(b), 4);
+  }
   if (st.mode === 'chord') {
     section('STRUM STYLE');
     chipGrid(Object.entries(STRUM_STYLES).map(([k, v]) => [k, v.label]),
@@ -585,6 +600,38 @@ function renderSourceMenu() {
     (c) => chooseChord(c), 5);
 }
 
+function chooseBpm(bpm) {
+  const post = posts.get(menuTarget);
+  if (!post) return;
+  const st = post.state;
+  st.bpm = bpm;
+  if (st.sync) {
+    // synced inputs share one clock: retune the transport and rebuild them all
+    audio.setTransportBpm(bpm);
+    for (const p of posts.values()) {
+      if (p.type === 'source' && p.state.sync) {
+        p.state.bpm = bpm;
+        audio.refreshTone(p.id, p.state);
+      }
+    }
+    showHud(`TRANSPORT ${bpm} BPM — synced inputs locked`);
+  } else {
+    audio.refreshTone(menuTarget, st);
+    showHud(`${bpm} BPM (free)`);
+  }
+  renderSourceMenu();
+}
+
+function chooseSync(on) {
+  const post = posts.get(menuTarget);
+  if (!post) return;
+  post.state.sync = on;
+  if (on) post.state.bpm = audio.transportBpm();
+  audio.refreshTone(menuTarget, post.state); // restarts on the shared beat grid
+  showHud(on ? `SYNCED — ${audio.transportBpm()} BPM, locked to the beat` : 'FREE RUN');
+  renderSourceMenu();
+}
+
 function chooseToneOption(field, value) {
   const post = posts.get(menuTarget);
   if (!post) return;
@@ -601,9 +648,10 @@ function openSourceMenu(x, y) {
   sourceMenu.style.display = 'flex';
   const zx = x / UI_ZOOM, zy = y / UI_ZOOM;
   const vw = window.innerWidth / UI_ZOOM, vh = window.innerHeight / UI_ZOOM;
+  sourceMenu.style.maxHeight = `${Math.floor(vh - 20)}px`; // vh units misbehave under zoom
   sourceMenu.style.left = `${Math.min(zx, vw - 356)}px`;
   const h = sourceMenu.offsetHeight;
-  sourceMenu.style.top = `${Math.max(12, Math.min(zy - 40, vh - h - 12))}px`;
+  sourceMenu.style.top = `${Math.max(10, Math.min(zy - 40, vh - h - 10))}px`;
 }
 function hideSourceMenu() { sourceMenu.style.display = 'none'; }
 document.addEventListener('pointerdown', (e) => {

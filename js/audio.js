@@ -16,6 +16,17 @@ import { MODULES } from './modules.js';
 export function createAudio() {
   let ctx = null;     // created on the first user gesture, then permanent
   let master = null;
+  const transport = { origin: 0, bpm: 100 }; // the shared clock for synced inputs
+
+  function beatSeconds(state) {
+    return 60 / (state.sync ? transport.bpm : (state.bpm || 100));
+  }
+  // next beat boundary of the shared clock, a hair in the future
+  function nextBeatTime() {
+    const spb = 60 / transport.bpm;
+    const now = ctx.currentTime + 0.06;
+    return transport.origin + Math.ceil((now - transport.origin) / spb) * spb;
+  }
   const rigs = new Map();     // pedal instanceId -> rig
   const sources = new Map();  // source post id -> { bus, loop, guitar }
   const ampGains = new Map(); // amp post id -> gain (its volume knob)
@@ -29,6 +40,7 @@ export function createAudio() {
     master = ctx.createGain();
     master.gain.value = 0.9;
     master.connect(ctx.destination);
+    transport.origin = ctx.currentTime;
     console.log('[audio] started');
   }
 
@@ -95,10 +107,11 @@ export function createAudio() {
   function startLoop(s, kind, state) {
     const root = state.root || 0;
     const semis = (CHORDS[state.chord] || CHORDS.major).map((x) => x + root);
+    const spb = beatSeconds(state);
     const src = ctx.createBufferSource();
     src.buffer = kind === 'arp'
-      ? makeArpBuffer(ctx, semis, state.arpPattern)
-      : makeStrumBuffer(ctx, semis, state.strumStyle);
+      ? makeArpBuffer(ctx, semis, state.arpPattern, spb)
+      : makeStrumBuffer(ctx, semis, state.strumStyle, spb);
     src.loop = true;
     const g = ctx.createGain();
     g.gain.value = kind === 'arp' ? 0.8 : 0.9;
@@ -110,7 +123,9 @@ export function createAudio() {
     const spark = ctx.createBiquadFilter();
     spark.type = 'peaking'; spark.frequency.value = 3300; spark.Q.value = 1.0; spark.gain.value = 3.0;
     src.connect(g).connect(hp).connect(scoop).connect(spark).connect(s.bus);
-    src.start();
+    // synced inputs enter exactly on the shared clock's next beat — loops of
+    // integer beat lengths then stay locked (or politely polymetric) forever
+    src.start(state.sync ? nextBeatTime() : undefined);
     s.loop = { src, g, kind, voicing: [hp, scoop, spark] };
   }
 
@@ -261,9 +276,14 @@ export function createAudio() {
       : 'none (silence)');
   }
 
+  function setTransportBpm(bpm) {
+    transport.bpm = Math.max(40, Math.min(220, bpm));
+  }
+
   return {
     start, createSource, disposeSource, createAmp, disposeAmp,
-    setSourceMode, refreshTone, setPostVolume,
+    setSourceMode, refreshTone, setPostVolume, setTransportBpm,
+    transportBpm: () => transport.bpm,
     createRig, applyRig, disposeRig, setChain,
     started: () => !!ctx,
     contextState: () => (ctx ? ctx.state : 'uninitialized'),
@@ -272,56 +292,56 @@ export function createAudio() {
 
 /* ------------------------------------------------------ tone generators -- */
 
-// Strumming styles: when and how the chord gets hit inside one loop.
+// Strumming styles — all times in BEATS so BPM and sync work everywhere.
 // dir 1 = downstroke (low strings first), -1 = upstroke (top strings, softer).
 // strings: 'low'/'high' restricts an event to part of the chord (boom-chick).
 // sweep = seconds between strings in one stroke (rasgueado wants it tight).
 export const STRUM_STYLES = {
-  ring: { label: 'Ring out', dur: 9.0, ring: 9.0, damp: 0.999,
+  ring: { label: 'Ring out', beats: 16, ring: 9.0, damp: 0.999,
     events: [{ t: 0, dir: 1, g: 1 }] },
-  steady: { label: 'Steady', dur: 8.0, ring: 4.0, damp: 0.9985,
+  steady: { label: 'Steady', beats: 8, ring: 4.0, damp: 0.9985,
     events: [{ t: 0, dir: 1, g: 1 }, { t: 2, dir: 1, g: 0.85 },
              { t: 4, dir: 1, g: 0.95 }, { t: 6, dir: 1, g: 0.85 }] },
-  ballad: { label: 'Ballad', dur: 8.0, ring: 7.0, damp: 0.999,
+  ballad: { label: 'Ballad', beats: 8, ring: 7.0, damp: 0.999,
     events: [{ t: 0, dir: 1, g: 0.95 }, { t: 4, dir: 1, g: 0.7 }] },
-  folk: { label: 'Folk', dur: 4.8, ring: 2.6, damp: 0.998,
-    events: [{ t: 0, dir: 1, g: 1 }, { t: 1.2, dir: 1, g: 0.8 },
-             { t: 1.8, dir: -1, g: 0.6 }, { t: 3.0, dir: -1, g: 0.6 },
-             { t: 3.6, dir: 1, g: 0.85 }, { t: 4.2, dir: -1, g: 0.6 }] },
-  waltz: { label: 'Waltz', dur: 2.4, ring: 1.6, damp: 0.998,
-    events: [{ t: 0, dir: 1, g: 1 }, { t: 0.8, dir: -1, g: 0.55 },
-             { t: 1.6, dir: -1, g: 0.55 }] },
-  chop: { label: 'Chop', dur: 3.2, ring: 0.34, damp: 0.988,
+  folk: { label: 'Folk', beats: 4, ring: 2.6, damp: 0.998, // D D U _ U D U
+    events: [{ t: 0, dir: 1, g: 1 }, { t: 1, dir: 1, g: 0.8 },
+             { t: 1.5, dir: -1, g: 0.6 }, { t: 2.5, dir: -1, g: 0.6 },
+             { t: 3, dir: 1, g: 0.85 }, { t: 3.5, dir: -1, g: 0.6 }] },
+  waltz: { label: 'Waltz', beats: 3, ring: 1.6, damp: 0.998,
+    events: [{ t: 0, dir: 1, g: 1 }, { t: 1, dir: -1, g: 0.55 },
+             { t: 2, dir: -1, g: 0.55 }] },
+  chop: { label: 'Chop', beats: 4, ring: 0.34, damp: 0.988,
     events: Array.from({ length: 8 }, (_, i) =>
-      ({ t: i * 0.4, dir: i % 2 ? -1 : 1, g: i % 2 ? 0.7 : 1 })) },
-  reggae: { label: 'Reggae', dur: 3.2, ring: 0.3, damp: 0.986,
-    events: [0.4, 1.2, 2.0, 2.8].map((t) => ({ t, dir: -1, g: 0.85, strings: 'high' })) },
-  punk: { label: 'Punk', dur: 2.4, ring: 0.5, damp: 0.99, sweep: 0.02,
+      ({ t: i * 0.5, dir: i % 2 ? -1 : 1, g: i % 2 ? 0.7 : 1 })) },
+  reggae: { label: 'Reggae', beats: 4, ring: 0.3, damp: 0.986,
+    events: [0.5, 1.5, 2.5, 3.5].map((t) => ({ t, dir: -1, g: 0.85, strings: 'high' })) },
+  punk: { label: 'Punk', beats: 4, ring: 0.5, damp: 0.99, sweep: 0.02,
     events: Array.from({ length: 8 }, (_, i) =>
-      ({ t: i * 0.3, dir: 1, g: i % 2 ? 0.85 : 1 })) },
-  flamenco: { label: 'Flamenco', dur: 4.0, ring: 2.2, damp: 0.9975, sweep: 0.018,
-    events: [{ t: 0, dir: 1, g: 0.7 }, { t: 0.07, dir: -1, g: 0.7 },
-             { t: 0.14, dir: 1, g: 0.8 }, { t: 0.22, dir: 1, g: 1 },
-             { t: 2.0, dir: -1, g: 0.6 }, { t: 2.07, dir: 1, g: 0.9 }] },
-  train: { label: 'Train', dur: 2.4, ring: 0.9, damp: 0.993,
+      ({ t: i * 0.5, dir: 1, g: i % 2 ? 0.85 : 1 })) },
+  flamenco: { label: 'Flamenco', beats: 4, ring: 2.2, damp: 0.9975, sweep: 0.018,
+    events: [{ t: 0, dir: 1, g: 0.7 }, { t: 0.125, dir: -1, g: 0.7 },
+             { t: 0.25, dir: 1, g: 0.8 }, { t: 0.375, dir: 1, g: 1 },
+             { t: 2, dir: -1, g: 0.6 }, { t: 2.125, dir: 1, g: 0.9 }] },
+  train: { label: 'Train', beats: 2, ring: 0.9, damp: 0.993,
     events: [{ t: 0, dir: 1, g: 1, strings: 'low' },
-             { t: 0.6, dir: -1, g: 0.6, strings: 'high' },
-             { t: 1.2, dir: 1, g: 0.9, strings: 'low' },
-             { t: 1.8, dir: -1, g: 0.6, strings: 'high' }] },
+             { t: 0.5, dir: -1, g: 0.6, strings: 'high' },
+             { t: 1, dir: 1, g: 0.9, strings: 'low' },
+             { t: 1.5, dir: -1, g: 0.6, strings: 'high' }] },
 };
 
-// Arpeggio patterns: string order inside the loop. Optional step (seconds
-// per note) and ring (seconds each note sustains).
+// Arpeggio patterns: string order inside the loop. step is BEATS per note
+// (default an eighth = 0.5); ring is seconds each note sustains.
 export const ARP_PATTERNS = {
   up:      { label: 'Up', order: [0, 1, 2, 3, 4, 5] },
   down:    { label: 'Down', order: [5, 4, 3, 2, 1, 0] },
   updown:  { label: 'Up-down', order: [0, 1, 2, 3, 4, 5, 4, 3, 2, 1] },
   picked:  { label: 'Picked', order: [0, 3, 2, 4, 1, 4, 2, 3] },
   outside: { label: 'Outside', order: [0, 5, 1, 4, 2, 3] },
-  cascade: { label: 'Cascade', order: [0, 1, 2, 0, 2, 3, 2, 3, 4, 3, 4, 5], step: 0.21 },
+  cascade: { label: 'Cascade', order: [0, 1, 2, 0, 2, 3, 2, 3, 4, 3, 4, 5], step: 0.25 },
   pedal:   { label: 'Pedal', order: [0, 5, 0, 4, 0, 3, 0, 2] },
-  gallop:  { label: 'Gallop', order: [0, 2, 4, 0, 2, 5, 0, 2, 4, 0, 2, 3], step: 0.14, ring: 0.9 },
-  harp:    { label: 'Harp', order: [0, 1, 2, 3, 4, 5, 4, 3, 2, 1], step: 0.16, ring: 2.4 },
+  gallop:  { label: 'Gallop', order: [0, 2, 4, 0, 2, 5, 0, 2, 4, 0, 2, 3], step: 0.25, ring: 0.9 },
+  harp:    { label: 'Harp', order: [0, 1, 2, 3, 4, 5, 4, 3, 2, 1], step: 0.25, ring: 2.4 },
 };
 
 // One Karplus-Strong pluck rendered into a wrap-around loop buffer.
@@ -359,10 +379,10 @@ function normalize(out, target) {
 // A strummed electric guitar chord in the chosen style — every hit sweeps
 // across the strings (down or up), rings naturally, and the tails wrap so
 // the loop never goes silent.
-function makeStrumBuffer(ctx, semis, styleKey) {
+function makeStrumBuffer(ctx, semis, styleKey, spb) {
   const style = STRUM_STYLES[styleKey] || STRUM_STYLES.ring;
   const sr = ctx.sampleRate;
-  const len = Math.floor(sr * style.dur);
+  const len = Math.floor(sr * style.beats * spb);
   const buf = ctx.createBuffer(1, len, sr);
   const out = buf.getChannelData(0);
   const sweep = style.sweep ?? 0.045;
@@ -374,7 +394,7 @@ function makeStrumBuffer(ctx, semis, styleKey) {
     if (ev.dir < 0) order = [...order].reverse();
     order.forEach((stringIdx, k) => {
       const f = E2 * Math.pow(2, semis[stringIdx] / 12);
-      pluckInto(out, sr, len, f, ev.t + k * sweep, style.ring, style.damp,
+      pluckInto(out, sr, len, f, ev.t * spb + k * sweep, style.ring, style.damp,
         (CHORD_GAINS[stringIdx] ?? 0.15) * 2.2 * ev.g);
     });
   }
@@ -385,10 +405,10 @@ function makeStrumBuffer(ctx, semis, styleKey) {
 // Plucked Karplus-Strong arpeggio over the chord shape in the chosen
 // pattern, looping seamlessly — the transient-rich source that makes
 // drives, delays and comps audible.
-function makeArpBuffer(ctx, semis, patternKey) {
+function makeArpBuffer(ctx, semis, patternKey, spb) {
   const pattern = ARP_PATTERNS[patternKey] || ARP_PATTERNS.up;
   const sr = ctx.sampleRate;
-  const step = pattern.step ?? 0.28;
+  const step = (pattern.step ?? 0.5) * spb; // beats -> seconds
   const ring = pattern.ring ?? 1.7;
   const len = Math.floor(sr * step * pattern.order.length);
   const buf = ctx.createBuffer(1, len, sr);
