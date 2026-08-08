@@ -58,7 +58,20 @@ function showHud(text, sticky) {
 /* ------------------------------------------------------------- the wire -- */
 
 const net = createNet({
-  onWelcome(msg) { enterRoom(msg); },
+  onWelcome(msg) {
+    try {
+      enterRoom(msg);
+    } catch (err) {
+      // a broken snapshot must not strand the player on a dead lobby
+      console.error('[net] failed to enter room', err);
+      if (document.body.contains(overlay)) {
+        setLobbyBusy(false);
+        lobbyError.textContent = 'failed to load the bakery — try again';
+      } else {
+        showHud('bakery load hit an error — some gear may be missing', true);
+      }
+    }
+  },
   onOp(op) { applyOp(op); },
   onPos(msg) { view.movePlayerMarker(msg.player, msg.x, msg.z, msg.cx, msg.cz); },
   onJoin(player) {
@@ -76,8 +89,9 @@ const net = createNet({
     if (p) showHud(`${p.name.toUpperCase()} LEFT`);
   },
   onShelf() { loadShelf(); },
-  onStatus(status) {
+  onStatus(status, detail) {
     if (status === 'reconnecting') showHud('connection lost — rejoining the bakery…', true);
+    if (status === 'refused') showHud(`disconnected: ${detail || 'refused'} — reload to rejoin`, true);
   },
 });
 
@@ -85,6 +99,7 @@ const net = createNet({
 
 function endpointOf(node, kind) {
   const j = posts.get(node)?.view.jack ?? instances.get(node)?.view.jack(kind);
+  if (!j) return null; // node vanished (remote remove racing a connect)
   return () => ({ pos: j.pos(), dir: j.dir });
 }
 
@@ -101,8 +116,10 @@ const liveCables = new Set();
 function refreshBoard() {
   const wanted = new Set();
   for (const c of board.connections()) {
+    const a = endpointOf(c.from, 'out'), b = endpointOf(c.to, 'in');
+    if (!a || !b) { board.disconnectJack(c.from, 'out'); continue; } // ghost cable
     wanted.add(c.id);
-    view.setCable(c.id, endpointOf(c.from, 'out'), endpointOf(c.to, 'in'));
+    view.setCable(c.id, a, b);
   }
   for (const id of [...liveCables]) {
     if (!wanted.has(id)) { view.removeCable(id); liveCables.delete(id); }
@@ -124,7 +141,13 @@ function applyOp(op) {
     case 'spawnPost': applySpawnPost(op); break;
     case 'remove': applyRemove(op.id); break;
     case 'move': applyMove(op); break;
-    case 'connect': board.connect(op.from, op.to); refreshBoard(); break;
+    case 'connect': // both ends must still exist (remove can race the relay)
+      if ((instances.has(op.from) || posts.has(op.from))
+          && (instances.has(op.to) || posts.has(op.to))) {
+        board.connect(op.from, op.to);
+        refreshBoard();
+      }
+      break;
     case 'disconnect': board.disconnectJack(op.node, op.kind); refreshBoard(); break;
     case 'knob': applyKnob(op); break;
     case 'toggle': applyToggle(op); break;
@@ -169,6 +192,13 @@ function applySpawnPost(op) {
 
 function applyRemove(id) {
   if (patching?.from === id) cancelPatch();
+  // a remote remove can land mid-drag; the pointer handlers must never
+  // wake up holding a reference to a disposed node
+  if (dragPedal?.id === id) dragPedal = null;
+  if (dragEndpoint?.id === id) dragEndpoint = null;
+  if (dragKnob?.pedal === id) dragKnob = null;
+  if (dragPostKnob?.id === id) dragPostKnob = null;
+  freeCamera();
   const inst = instances.get(id);
   if (inst) {
     if (selected === id) selected = null;
@@ -1176,6 +1206,7 @@ function resetWorld() {
 
 // Every welcome — first join AND reconnect — rebuilds from the server
 // snapshot. The snapshot is the truth; whatever we had is gone.
+let seedOnWelcome = false; // set only by createBakery: the creator seeds once
 function enterRoom(msg) {
   resetWorld();
   others.clear();
@@ -1185,6 +1216,8 @@ function enterRoom(msg) {
     view.setPlayerMarker(p.id, p);
   }
   const st = msg.state;
+  // transport first: synced sources must bake to the room clock, not the default
+  if (st.bpm) audio.setTransportBpm(st.bpm);
   for (const [id, post] of Object.entries(st.posts)) {
     applySpawnPost({ type: 'spawnPost', id, ptype: post.ptype, st: post.st, pos: post.pos });
   }
@@ -1192,12 +1225,14 @@ function enterRoom(msg) {
     applySpawn({ type: 'spawn', id, spec: pedal.spec, st: pedal.st, pos: pedal.pos });
   }
   for (const [from, to] of st.cables) board.connect(from, to);
-  if (st.bpm) audio.setTransportBpm(st.bpm);
   refreshBoard();
-  if (!posts.size && !instances.size) { // a brand-new bakery gets the basics
+  // Only the creator seeds the starter board — a joiner finding an empty
+  // room leaves it empty (deliberately cleared, or a seeding race).
+  if (seedOnWelcome && !posts.size && !instances.size) {
     spawnSource();
     spawnAmp();
   }
+  seedOnWelcome = false;
   overlay.remove();
   badge.hidden = false;
   updateBadge();
@@ -1233,7 +1268,13 @@ function setLobbyBusy(busy) {
   for (const b of overlay.querySelectorAll('button')) b.disabled = busy;
 }
 
+// One connect attempt at a time: buttons disable, but Enter/double-click and
+// session rows must hit the same wall.
+let entering = false;
+
 async function enterBakery(code, role) {
+  if (entering) return;
+  entering = true;
   const name = nameInput.value.trim() || 'baker';
   localStorage.setItem('playerName', name);
   lobbyError.textContent = '';
@@ -1243,17 +1284,23 @@ async function enterBakery(code, role) {
     await net.connect(code, name);
     rememberBakery(code, role); // enterRoom() has already run via onWelcome
   } catch (err) {
+    seedOnWelcome = false; // a failed host connect must not seed a later join
     lobbyError.textContent = err.message;
     setLobbyBusy(false);
+  } finally {
+    entering = false;
   }
 }
 
 async function createBakery() {
+  if (entering) return;
   lobbyError.textContent = '';
+  setLobbyBusy(true);
   try {
     const res = await fetch('/room', { method: 'POST' });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    seedOnWelcome = true; // we made this room; we lay out the starter board
     await enterBakery(data.code, 'host');
   } catch (err) {
     lobbyError.textContent = /fetch/i.test(err.message)

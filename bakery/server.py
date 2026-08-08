@@ -41,6 +41,7 @@ MODULES = {
     "reverb":  ["size", "mix"],
     "ring":    ["freq", "mix"],
     "comp":    ["sustain", "attack"],
+    "eq":      ["bass", "mid", "treble", "freq"],
     "level":   ["gain"],
 }
 
@@ -80,6 +81,7 @@ Available modules and their params (each param 0-10, module owns the real-unit c
 - reverb: size, mix
 - ring: freq (30Hz->2kHz ring modulator: bells, robots, aliens), mix
 - comp: sustain (squeeze + makeup gain), attack
+- eq: bass, mid, treble (each 0-10 = -12..+12 dB, 5 flat), freq (mid center 300Hz->3kHz)
 - level: gain (0 silent, 5 unity, 10 hot)
 
 Rules:
@@ -320,7 +322,21 @@ def find_cached(description):
 
 
 def save_spec(spec):
-    """Baked pedals join the shelf permanently as specs/baked-*.json."""
+    """Baked pedals join the shelf permanently as specs/baked-*.json. Display
+    names must be unique too — the shelf keys thumbnails and ordering on them —
+    so a repeat name gets a mark-II suffix, like a reissued amp."""
+    taken = set()
+    for f in (ROOT / "specs").glob("*.json"):
+        try:
+            taken.add(json.loads(f.read_text()).get("name", ""))
+        except Exception:
+            pass
+    if spec["name"] in taken:
+        romans = ("II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X")
+        for r in romans:
+            if f"{spec['name']} {r}"[:28] not in taken:
+                spec["name"] = f"{spec['name']} {r}"[:28]
+                break
     base = "baked-" + (re.sub(r"[^a-z0-9]+", "-", spec["name"].lower()).strip("-") or "pedal")
     path, n = ROOT / "specs" / f"{base}.json", 2
     while path.exists():
@@ -368,6 +384,11 @@ def apply_op(state, op):
         state["cables"] = [c for c in cables if op["id"] not in c]
     elif t == "connect":
         f, to = op["from"], op["to"]
+        # a connect racing a remove must not leave a dangling cable in the
+        # canonical state (a snapshot with one would poison late joiners) —
+        # raising also stops the relay, so peers never see the dead op
+        if (f not in pedals and f not in posts) or (to not in pedals and to not in posts):
+            raise ValueError(f"connect to missing node: {f} -> {to}")
         state["cables"] = [c for c in cables if c[0] != f and c[1] != to] + [[f, to]]
     elif t == "disconnect":
         idx = 0 if op["kind"] == "out" else 1
@@ -424,14 +445,25 @@ class Room:
         self.state = state or empty_state()
         self.created = created or time.time()
         self.lock = threading.Lock()
+        self.save_lock = threading.Lock()
         self.clients = []
         self.dirty = False
 
-    def broadcast(self, obj, exclude=None):
-        with self.lock:
-            targets = [c for c in self.clients if c is not exclude]
-        for c in targets:
-            c.send(obj)
+    # Relay order must match canonical apply order, so sends happen under
+    # room.lock (lock order is always room.lock -> send_lock, never reversed).
+    # Callers that already hold the lock pass locked=True.
+    def broadcast(self, obj, exclude=None, locked=False):
+        if locked:
+            self._bcast(obj, exclude)
+        else:
+            with self.lock:
+                self._bcast(obj, exclude)
+
+    def _bcast(self, obj, exclude):
+        dead = [c for c in self.clients if c is not exclude and not c.send(obj)]
+        for c in dead:  # failed sends leave the room immediately
+            self.clients.remove(c)
+            c.dead = True
 
     def drop(self, client):
         with self.lock:
@@ -449,10 +481,11 @@ class Room:
             doc = {"code": self.code, "created": self.created, "state": self.state}
             data = json.dumps(doc, indent=1)
             self.dirty = False
-        ROOMS_DIR.mkdir(exist_ok=True)
-        tmp = self.path().with_suffix(".tmp")
-        tmp.write_text(data)
-        tmp.replace(self.path())
+        with self.save_lock:  # concurrent saves share one .tmp path
+            ROOMS_DIR.mkdir(exist_ok=True)
+            tmp = self.path().with_suffix(".tmp")
+            tmp.write_text(data)
+            tmp.replace(self.path())
 
 
 ROOMS = {}
@@ -637,11 +670,19 @@ class Handler(SimpleHTTPRequestHandler):
             return
 
         with room.lock:
-            # a reconnecting player replaces their stale connection
+            # a reconnecting player replaces their stale connection; tell the
+            # old socket why it died so a duplicated tab can mint a fresh id
+            # instead of the two tabs evicting each other forever
             stale = [c for c in room.clients if c.player_id == player_id]
             for c in stale:
                 room.clients.remove(c)
                 c.dead = True
+                try:
+                    ws_send(c.conn, c.send_lock, json.dumps(
+                        {"t": "error", "error": "taken over — player id connected elsewhere"}).encode())
+                    c.conn.shutdown(socket.SHUT_RDWR)
+                except OSError:
+                    pass
             used = {c.color for c in room.clients}
             color = next((c for c in PLAYER_COLORS if c not in used), PLAYER_COLORS[0])
             client = Client(player_id, name, color, self.connection)
@@ -653,14 +694,18 @@ class Handler(SimpleHTTPRequestHandler):
                 "you": {"id": player_id, "name": name, "color": color},
                 "players": others, "state": room.state,
             })
-        try:
-            ws_send(self.connection, client.send_lock, snapshot.encode())
-        except OSError:
-            room.drop(client)
-            return
-        room.broadcast({"t": "join", "player":
-                        {"id": player_id, "name": name, "color": color}},
-                       exclude=client)
+            # welcome + join go out under the same lock hold that registered
+            # us, so no relayed op can ever reach this socket before its
+            # snapshot, and join ordering matches op ordering for everyone
+            try:
+                ws_send(self.connection, client.send_lock, snapshot.encode())
+            except OSError:
+                room.clients.remove(client)
+                client.dead = True
+                return
+            room.broadcast({"t": "join", "player":
+                            {"id": player_id, "name": name, "color": color}},
+                           exclude=client, locked=True)
         print(f"[room {room.code}] {name} ({player_id}) joined "
               f"({len(room.clients)} online)")
 
@@ -675,6 +720,12 @@ class Handler(SimpleHTTPRequestHandler):
                         break
                     ws_send(self.connection, client.send_lock, b"", opcode=0x9)
                     pinged = True
+                    # a timeout latches SocketIO._timeout_occurred; clear it
+                    # or every later rfile read raises OSError instantly and
+                    # the browser's answering pong can never rescue the peer
+                    raw = getattr(self.rfile, "raw", None)
+                    if raw is not None:
+                        raw._timeout_occurred = False
                     continue
                 pinged = False
                 if opcode == 0x8:
@@ -688,6 +739,8 @@ class Handler(SimpleHTTPRequestHandler):
                     msg = json.loads(data)
                 except ValueError:
                     continue
+                if not isinstance(msg, dict):
+                    continue  # "5" and [1] are valid JSON but not messages
                 self.handle_ws_message(room, client, msg)
         except (ConnectionError, OSError):
             pass
@@ -709,11 +762,12 @@ class Handler(SimpleHTTPRequestHandler):
                 with room.lock:
                     apply_op(room.state, op)
                     room.dirty = True
+                    # relayed inside the same lock hold as the apply: every
+                    # client receives ops in exactly canonical order
+                    room.broadcast({"t": "op", "op": op, "from": client.player_id},
+                                   exclude=client, locked=True)
             except Exception as exc:
                 print(f"[room {room.code}] bad op from {client.name}: {exc}")
-                return
-            room.broadcast({"t": "op", "op": op, "from": client.player_id},
-                           exclude=client)
         elif t == "pos":
             room.broadcast({"t": "pos", "player": client.player_id,
                             "x": msg.get("x"), "z": msg.get("z"),

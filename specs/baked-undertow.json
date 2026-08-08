@@ -1,0 +1,82 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Undertow",
+  "tagline": "the floor moves with you",
+  "enclosure": {
+    "width": 2.4,
+    "depth": 3.0,
+    "height": 0.6,
+    "color": "#12233b"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#12233b",
+      "#1f4e6e",
+      "#3fa7a0"
+    ],
+    "textColor": "#f2e9d8"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 6.5,
+        "attack": 2.5
+      }
+    },
+    {
+      "id": "drv",
+      "type": "drive",
+      "params": {
+        "amount": 2.0,
+        "tone": 2.5,
+        "level": 6.0
+      }
+    },
+    {
+      "id": "flt",
+      "type": "filter",
+      "params": {
+        "cutoff": 4.5,
+        "resonance": 1.5
+      }
+    },
+    {
+      "id": "out",
+      "type": "level",
+      "params": {
+        "gain": 5.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "SQUEEZE",
+      "target": "cmp.sustain"
+    },
+    {
+      "id": "k2",
+      "label": "TONE",
+      "target": "flt.cutoff"
+    },
+    {
+      "id": "k3",
+      "label": "LEVEL",
+      "target": "out.gain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "sw1",
+      "label": "GROWL",
+      "target": "drv.amount",
+      "off": 2.0,
+      "on": 6.5
+    }
+  ],
+  "bakedFrom": "bass guitar"
+}

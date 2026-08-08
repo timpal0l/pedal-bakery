@@ -218,7 +218,10 @@ export function createScene(canvas) {
       setKnobValue: knob.setValue,
       position: () => root.position,
       setPosition: (x, z) => root.position.set(x, 0, z),
-      dispose: () => { root.dispose(false, false); if (extraDispose) extraDispose(); },
+      dispose: () => {
+        root.dispose(false, false);
+        if (typeof extraDispose === 'function') extraDispose();
+      },
     };
   }
 
@@ -397,7 +400,7 @@ export function createScene(canvas) {
     shadows.addShadowCaster(post);
     const knob = buildVolumeKnob(root, id, 0, 0.55, 0, 0.26);
     return endpointHandles(id, root,
-      buildEndpointJack(root, id, 'out', -0.27, 0.3, -1), knob, 1.5, 1.5);
+      buildEndpointJack(root, id, 'out', -0.27, 0.3, -1), knob);
   }
 
   /* --------------------------------------------------------------- cables -- */
@@ -496,7 +499,13 @@ export function createScene(canvas) {
     const x0 = (TW - w) / 2;
     g.fillStyle = 'rgba(24, 24, 30, 0.82)';
     g.beginPath();
-    g.roundRect(x0, 8, w, 48, 24);
+    if (g.roundRect) {
+      g.roundRect(x0, 8, w, 48, 24);
+    } else { // Safari < 16 / Firefox < 112: pill from two arcs + a rect
+      g.arc(x0 + 24, 32, 24, Math.PI / 2, -Math.PI / 2);
+      g.arc(x0 + w - 24, 32, 24, -Math.PI / 2, Math.PI / 2);
+      g.closePath();
+    }
     g.fill();
     g.fillStyle = color;
     g.beginPath();

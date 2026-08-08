@@ -1,0 +1,91 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Vinterhjerte",
+  "tagline": "frostbitten hymns from an empty forest",
+  "enclosure": {
+    "width": 3.2,
+    "depth": 2.8,
+    "height": 0.75,
+    "color": "#0e1014"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#0b0d12",
+      "#233447",
+      "#8fa9bc"
+    ],
+    "textColor": "#d7e6f0"
+  },
+  "chain": [
+    {
+      "id": "dr",
+      "type": "drive",
+      "params": {
+        "amount": 8.7,
+        "tone": 7.6,
+        "level": 5.5
+      }
+    },
+    {
+      "id": "dl",
+      "type": "delay",
+      "params": {
+        "time": 6.0,
+        "feedback": 5.8,
+        "mix": 3.8
+      }
+    },
+    {
+      "id": "rv",
+      "type": "reverb",
+      "params": {
+        "size": 9.2,
+        "mix": 6.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "c1",
+      "label": "MISERY",
+      "target": "dr.amount"
+    },
+    {
+      "id": "c2",
+      "label": "FROST",
+      "target": "dr.tone"
+    },
+    {
+      "id": "c3",
+      "label": "WAIL",
+      "target": "dr.level"
+    },
+    {
+      "id": "c4",
+      "label": "ECHO",
+      "target": "dl.mix"
+    },
+    {
+      "id": "c5",
+      "label": "ABYSS",
+      "target": "rv.size"
+    },
+    {
+      "id": "c6",
+      "label": "SHROUD",
+      "target": "rv.mix"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "TOMB",
+      "target": "dl.time",
+      "off": 2.5,
+      "on": 7.5
+    }
+  ],
+  "bakedFrom": "black metal sadness"
+}

@@ -10,6 +10,11 @@ jack (Reason-style), and chain them into an amp. Break the chain and the sound
 dies, exactly like a real pedalboard. Feed it the built-in E chord, or plug in
 a real guitar through an audio interface.
 
+And bring a friend: every bakery is a **multiplayer room** with an invite
+code. Two people on the same board see each other as floating name tags,
+watch each other's cursors, and every knob turn, cable pull, and freshly
+baked pedal lands on both screens in realtime.
+
 Built with [Babylon.js](https://www.babylonjs.com/) (from CDN) and the Web
 Audio API. Plain static files plus one small Python server, no build step.
 
@@ -19,11 +24,33 @@ Audio API. Plain static files plus one small Python server, no build step.
 python3 bakery/server.py
 ```
 
-Open <http://localhost:8123> and click to plug in (browsers require a user
-gesture before they allow sound). The shelf of saved pedals works with no
-further setup. The **BAKE** button additionally needs the
-[Claude Code](https://claude.com/claude-code) CLI installed and logged in —
-the server runs `claude -p` headlessly on your subscription to design pedals.
+Open <http://localhost:8123>, type a name, and **CREATE BAKERY** (the click
+doubles as the user gesture browsers require before they allow sound). The
+shelf of saved pedals works with no further setup. The **BAKE** button
+additionally needs the [Claude Code](https://claude.com/claude-code) CLI
+installed and logged in — the server runs `claude -p` headlessly on your
+subscription to design pedals. `PORT=8200 python3 bakery/server.py` picks
+another port; `?solo=1` on the URL skips the lobby for a quick offline board.
+
+## Bake together
+
+Every session is a room. **CREATE BAKERY** mints a 5-letter invite code
+(top-right badge, COPY button); a friend picks **JOIN BAKERY** and types it —
+or you send them `http://<your-host>:8123/?room=CODE`. Rooms you have visited
+are listed under **YOUR BAKERIES** so you can walk back in later: boards are
+saved server-side in `rooms/<code>.json` and survive restarts.
+
+In a shared bakery everything is live for everyone: spawning, dragging,
+patching cables, turning knobs, stomping footswitches, changing the tone
+post's chord — whoever moves last wins. Each other player appears as a
+colored orb with a name tag floating where they're looking, plus a small
+dot where their mouse is. Baked pedals land on every floor and every shelf.
+
+Two honest limitations: a **live guitar** plays only on the computer it is
+plugged into (other players see the source set to guitar but hear silence —
+there is no audio streaming), and the server trusts anyone who knows the
+room code. To play across the internet, share the server over Tailscale,
+a LAN, or any tunnel that can carry a WebSocket.
 
 ## Playing with it
 

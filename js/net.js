@@ -5,21 +5,25 @@
 //
 // Reconnects transparently: on every (re)welcome the server snapshot is the
 // truth and main.js rebuilds the world from it, so a dropped connection can
-// never leave two players seeing different boards.
+// never leave two players seeing different boards. Every socket carries a
+// generation number; events from a superseded socket are ignored, so switching
+// rooms or double-connecting can never leak a live connection or start a
+// reconnect loop against the wrong room.
 // ---------------------------------------------------------------------------
 
 const OP_THROTTLE_MS = 40;   // continuous ops (knob drags, pedal moves)
 const POS_THROTTLE_MS = 80;  // camera/cursor presence stream
 const HEARTBEAT_MS = 20000;
 
+function mintIdentity() {
+  const id = 'u' + Math.random().toString(36).slice(2, 10);
+  sessionStorage.setItem('playerId', id);
+  return id;
+}
+
 export function playerIdentity() {
   // per-tab, so two tabs on one machine are two players in the room
-  let id = sessionStorage.getItem('playerId');
-  if (!id) {
-    id = 'u' + Math.random().toString(36).slice(2, 10);
-    sessionStorage.setItem('playerId', id);
-  }
-  return id;
+  return sessionStorage.getItem('playerId') || mintIdentity();
 }
 
 export function createNet(handlers) {
@@ -31,6 +35,7 @@ export function createNet(handlers) {
   let welcomed = false;
   let retryMs = 1000;
   let heartbeat = null;
+  let gen = 0; // socket generation — events from superseded sockets are ignored
 
   const pendingOps = new Map();   // throttle key -> op (trailing edge)
   const opTimers = new Map();     // throttle key -> timeout id
@@ -47,20 +52,54 @@ export function createNet(handlers) {
     if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
   }
 
+  // Drop the current socket and everything scheduled around it. Bumping gen
+  // orphans the old socket's onclose/onmessage and any pending reconnect
+  // timer, so nothing fires on behalf of a connection we abandoned.
+  function teardown() {
+    gen += 1;
+    clearInterval(heartbeat);
+    heartbeat = null;
+    for (const t of opTimers.values()) clearTimeout(t);
+    opTimers.clear();
+    pendingOps.clear();
+    if (posTimer) { clearTimeout(posTimer); posTimer = null; }
+    pendingPos = null;
+    welcomed = false;
+    if (ws) { try { ws.close(); } catch { /* already dead */ } ws = null; }
+  }
+
   function connect(roomCode, playerName) {
+    teardown(); // switching rooms / double-connect must never leak a socket
     code = roomCode;
     name = playerName || name;
     closing = false;
+    const myGen = gen;
     return new Promise((resolve, reject) => {
       let settled = false;
-      ws = new WebSocket(wsUrl());
-      ws.onmessage = (e) => {
+      const sock = new WebSocket(wsUrl());
+      ws = sock;
+      sock.onopen = () => {
+        if (gen !== myGen) return;
+        heartbeat = setInterval(() => push({ t: 'hb' }), HEARTBEAT_MS);
+      };
+      sock.onmessage = (e) => {
+        if (gen !== myGen) return;
         let msg;
         try { msg = JSON.parse(e.data); } catch { return; }
-        if (msg.t === 'error' && !settled) {
-          settled = true;
-          closing = true;
-          reject(new Error(msg.error || 'connection refused'));
+        if (msg.t === 'error') {
+          if (!settled) {
+            settled = true;
+            closing = true;
+            reject(new Error(msg.error || 'connection refused'));
+          } else if (/taken over/i.test(msg.error || '')) {
+            // a duplicated tab inherited our sessionStorage id and evicted
+            // us — become a fresh player instead of evicting them back
+            mintIdentity();
+            connect(code, name).catch(() => {});
+          } else {
+            closing = true;
+            handlers.onStatus?.('refused', msg.error || 'kicked');
+          }
           return;
         }
         if (msg.t === 'welcome') {
@@ -69,11 +108,14 @@ export function createNet(handlers) {
           retryMs = 1000;
           if (!settled) { settled = true; resolve(msg); }
         }
+        if (!welcomed && msg.t === 'op') return; // never mutate a pre-snapshot world
         dispatch(msg);
       };
-      ws.onclose = () => {
+      sock.onclose = () => {
+        if (gen !== myGen) return; // superseded socket — not our problem
         clearInterval(heartbeat);
         heartbeat = null;
+        welcomed = false;
         if (closing) return;
         if (!settled) {
           settled = true;
@@ -82,12 +124,9 @@ export function createNet(handlers) {
         }
         handlers.onStatus?.('reconnecting');
         setTimeout(() => {
-          if (!closing) connect(code, name).catch(() => {});
+          if (gen === myGen && !closing) connect(code, name).catch(() => {});
         }, retryMs);
         retryMs = Math.min(retryMs * 2, 10000);
-      };
-      ws.onopen = () => {
-        heartbeat = setInterval(() => push({ t: 'hb' }), HEARTBEAT_MS);
       };
     });
   }
@@ -105,10 +144,7 @@ export function createNet(handlers) {
 
   function leave() {
     closing = true;
-    clearInterval(heartbeat);
-    ws?.close();
-    ws = null;
-    welcomed = false;
+    teardown();
   }
 
   /* ops: discrete ones go straight out; continuous ones (knob, move) are

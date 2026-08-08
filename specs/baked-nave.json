@@ -1,0 +1,45 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Nave",
+  "tagline": "an empty church after hours",
+  "enclosure": {
+    "width": 1.7,
+    "depth": 2.3,
+    "height": 0.55,
+    "color": "#aebfd4"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#aebfd4",
+      "#6f8bb3",
+      "#e8eef7"
+    ],
+    "textColor": "#2c3a52"
+  },
+  "chain": [
+    {
+      "id": "rv",
+      "type": "reverb",
+      "params": {
+        "size": 6.5,
+        "mix": 4.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "SIZE",
+      "target": "rv.size"
+    },
+    {
+      "id": "k2",
+      "label": "MIX",
+      "target": "rv.mix"
+    }
+  ],
+  "switches": [],
+  "bakedFrom": "reverb"
+}

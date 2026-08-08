@@ -1,0 +1,105 @@
+{
+  "kind": "amp",
+  "shape": "box",
+  "name": "Valencia II",
+  "tagline": "a citrus wall of thunder",
+  "enclosure": {
+    "width": 3.7,
+    "depth": 2.2,
+    "height": 4.3,
+    "color": "#F26A00"
+  },
+  "artwork": {
+    "style": "burst",
+    "palette": [
+      "#F26A00",
+      "#FFC24B",
+      "#3A1D0E"
+    ],
+    "textColor": "#FFF3DC"
+  },
+  "chain": [
+    {
+      "id": "dr",
+      "type": "drive",
+      "params": {
+        "amount": 7.5,
+        "tone": 6.0,
+        "level": 6.5
+      }
+    },
+    {
+      "id": "fl",
+      "type": "filter",
+      "params": {
+        "cutoff": 6.5,
+        "resonance": 1.5
+      }
+    },
+    {
+      "id": "rv",
+      "type": "reverb",
+      "params": {
+        "size": 4.0,
+        "mix": 2.0
+      }
+    },
+    {
+      "id": "lv",
+      "type": "level",
+      "params": {
+        "gain": 6.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "gain",
+      "label": "GAIN",
+      "target": "dr.amount"
+    },
+    {
+      "id": "tone",
+      "label": "TONE",
+      "target": "dr.tone"
+    },
+    {
+      "id": "shape",
+      "label": "SHAPE",
+      "target": "fl.cutoff"
+    },
+    {
+      "id": "room",
+      "label": "ROOM",
+      "target": "rv.mix"
+    },
+    {
+      "id": "master",
+      "label": "MASTER",
+      "target": "lv.gain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "tight",
+      "label": "TIGHT",
+      "target": "fl.resonance",
+      "off": 1.0,
+      "on": 4.5
+    }
+  ],
+  "cabinet": {
+    "format": "stack",
+    "speakers": 4,
+    "grille": {
+      "style": "weave",
+      "color": "#E8DCC0",
+      "accent": "#C79A3B"
+    },
+    "tolex": "levant",
+    "trim": "#F5EFE0",
+    "panel": "#F2E8CE",
+    "logo": "badge"
+  },
+  "bakedFrom": "BIG ORANGE AMP"
+}

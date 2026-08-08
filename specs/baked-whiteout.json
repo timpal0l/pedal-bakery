@@ -1,0 +1,105 @@
+{
+  "kind": "amp",
+  "shape": "box",
+  "name": "Whiteout",
+  "tagline": "a glittering wall of thunder",
+  "enclosure": {
+    "width": 3.8,
+    "depth": 2.3,
+    "height": 4.4,
+    "color": "#f5f4ef"
+  },
+  "artwork": {
+    "style": "flake",
+    "palette": [
+      "#f8f8f6",
+      "#dfe4ea",
+      "#b8c4d4"
+    ],
+    "textColor": "#23262c"
+  },
+  "chain": [
+    {
+      "id": "drv",
+      "type": "drive",
+      "params": {
+        "amount": 6.0,
+        "tone": 7.5,
+        "level": 7.0
+      }
+    },
+    {
+      "id": "flt",
+      "type": "filter",
+      "params": {
+        "cutoff": 8.0,
+        "resonance": 1.5
+      }
+    },
+    {
+      "id": "rev",
+      "type": "reverb",
+      "params": {
+        "size": 5.5,
+        "mix": 2.0
+      }
+    },
+    {
+      "id": "out",
+      "type": "level",
+      "params": {
+        "gain": 7.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "gain",
+      "label": "GAIN",
+      "target": "drv.amount"
+    },
+    {
+      "id": "tone",
+      "label": "TONE",
+      "target": "drv.tone"
+    },
+    {
+      "id": "cut",
+      "label": "CUT",
+      "target": "flt.cutoff"
+    },
+    {
+      "id": "verb",
+      "label": "VERB",
+      "target": "rev.mix"
+    },
+    {
+      "id": "mstr",
+      "label": "MASTER",
+      "target": "out.gain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "bst",
+      "label": "BOOST",
+      "target": "drv.level",
+      "off": 7.0,
+      "on": 9.5
+    }
+  ],
+  "cabinet": {
+    "format": "stack",
+    "speakers": 4,
+    "grille": {
+      "style": "weave",
+      "color": "#dde1e7",
+      "accent": "#aab4c2"
+    },
+    "tolex": "sparkle",
+    "trim": "#c9d1da",
+    "panel": "#1b1d21",
+    "logo": "script"
+  },
+  "bakedFrom": "huge white sparkle stack"
+}

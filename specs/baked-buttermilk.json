@@ -1,0 +1,95 @@
+{
+  "kind": "amp",
+  "shape": "box",
+  "name": "Buttermilk",
+  "tagline": "small watts, soft mornings",
+  "enclosure": {
+    "width": 2.4,
+    "depth": 0.95,
+    "height": 1.0,
+    "color": "#F2E8D5"
+  },
+  "artwork": {
+    "style": "gradient",
+    "palette": [
+      "#F2E8D5",
+      "#E4D3B4",
+      "#5A2E2A"
+    ],
+    "textColor": "#3B2B26"
+  },
+  "chain": [
+    {
+      "id": "drv",
+      "type": "drive",
+      "params": {
+        "amount": 2.5,
+        "tone": 6.0,
+        "level": 5.0
+      }
+    },
+    {
+      "id": "flt",
+      "type": "filter",
+      "params": {
+        "cutoff": 6.5,
+        "resonance": 1.0
+      }
+    },
+    {
+      "id": "rev",
+      "type": "reverb",
+      "params": {
+        "size": 2.0,
+        "mix": 1.5
+      }
+    },
+    {
+      "id": "out",
+      "type": "level",
+      "params": {
+        "gain": 4.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "vol",
+      "label": "VOLUME",
+      "target": "out.gain"
+    },
+    {
+      "id": "tone",
+      "label": "TONE",
+      "target": "flt.cutoff"
+    },
+    {
+      "id": "grit",
+      "label": "GRIT",
+      "target": "drv.amount"
+    }
+  ],
+  "switches": [
+    {
+      "id": "brt",
+      "label": "BRIGHT",
+      "target": "drv.tone",
+      "off": 6.0,
+      "on": 8.5
+    }
+  ],
+  "cabinet": {
+    "format": "practice",
+    "speakers": 1,
+    "grille": {
+      "style": "oxblood",
+      "color": "#5A2E2A",
+      "accent": "#C9A227"
+    },
+    "tolex": "levant",
+    "trim": "#B89B6A",
+    "panel": "#3B2B26",
+    "logo": "script"
+  },
+  "bakedFrom": "a tiny cream bedroom practice amp"
+}

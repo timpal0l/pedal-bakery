@@ -262,6 +262,23 @@ function createCompressor(ctx) {
   return shell(ctx, comp, makeup, setters);
 }
 
+/* eq — 3-band tone shaper: low shelf, sweepable mid peak, high shelf */
+function createEQ(ctx) {
+  const lo = ctx.createBiquadFilter(); lo.type = 'lowshelf'; lo.frequency.value = 180;
+  const mid = ctx.createBiquadFilter(); mid.type = 'peaking'; mid.frequency.value = 800; mid.Q.value = 0.9;
+  const hi = ctx.createBiquadFilter(); hi.type = 'highshelf'; hi.frequency.value = 3200;
+  lo.connect(mid).connect(hi);
+  const db = (v) => (v - 5) * 2.4; // 0..10 -> ±12 dB, 5 = flat
+  const setters = {
+    _nodes: { mid, hi },
+    bass: (v, t) => lo.gain.setTargetAtTime(db(v), t, 0.05),
+    mid: (v, t) => mid.gain.setTargetAtTime(db(v), t, 0.05),
+    treble: (v, t) => hi.gain.setTargetAtTime(db(v), t, 0.05),
+    freq: (v, t) => mid.frequency.setTargetAtTime(300 * Math.pow(10, v / 10), t, 0.05),
+  };
+  return shell(ctx, lo, hi, setters);
+}
+
 /* level — output gain (0 silent, 5 unity, 10 hot) */
 function createLevel(ctx) {
   const g = ctx.createGain();
@@ -282,5 +299,6 @@ export const MODULES = {
   reverb:  { create: createReverb,  params: ['size', 'mix'] },
   ring:    { create: createRing,    params: ['freq', 'mix'] },
   comp:    { create: createCompressor, params: ['sustain', 'attack'] },
+  eq:      { create: createEQ,      params: ['bass', 'mid', 'treble', 'freq'] },
   level:   { create: createLevel,   params: ['gain'] },
 };
