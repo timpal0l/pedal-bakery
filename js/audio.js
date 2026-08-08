@@ -110,7 +110,13 @@ export function createAudio() {
     // detune is cents — a fractional semitone that rides the whole pitch
     // pipeline, so any input can sit e.g. a quarter tone off standard
     const root = (state.root || 0) + (state.detune || 0) / 100;
-    const semis = (CHORDS[state.chord] || CHORDS.major).map((x) => x + root);
+    // 'dyad' voices the microtonal interval across three octaves, so strums
+    // and arpeggios can play it like any chord (fractional semitones are fine)
+    const ic = (state.interval ?? 350) / 100;
+    const shape = state.chord === 'dyad'
+      ? [0, ic, 12, 12 + ic, 24, 24 + ic]
+      : (CHORDS[state.chord] || CHORDS.major);
+    const semis = shape.map((x) => x + root);
     const spb = beatSeconds(state);
     const src = ctx.createBufferSource();
     src.buffer = kind === 'arp' ? makeArpBuffer(ctx, semis, state.arpPattern, spb)

@@ -559,7 +559,20 @@ function jackClicked(jack) {
   }
 }
 
+function dyadName(st) {
+  const cents = st.interval ?? 350;
+  return INTERVALS.find(([, c]) => c === cents)?.[0] ?? `${cents}¢`;
+}
+
 function toneLabel(st) {
+  if (['chord', 'arp'].includes(st.mode) && st.chord === 'dyad') {
+    const key = KEYS.find((k) => k[1] === (st.root || 0))?.[0] ?? 'E';
+    return `${key} ${dyadName(st).toUpperCase()}${st.mode === 'arp' ? ' ARP' : ''}`;
+  }
+  return toneLabelChord(st);
+}
+
+function toneLabelChord(st) {
   const key = KEYS.find((k) => k[1] === (st.root || 0))?.[0] ?? 'E';
   const fine = st.detune ? ` ${st.detune > 0 ? '+' : ''}${st.detune}¢` : '';
   if (st.mode === 'interval') {
@@ -926,7 +939,9 @@ function renderSourceMenu() {
     chipGrid(Object.entries(ARP_PATTERNS).map(([k, v]) => [k, v.label]),
       st.arpPattern || 'up', (k) => chooseToneOption('arpPattern', k), 4);
   }
-  if (st.mode === 'interval') {
+  const dyadActive = st.mode === 'interval'
+    || (['chord', 'arp'].includes(st.mode) && st.chord === 'dyad');
+  if (dyadActive) {
     section('INTERVAL — CENTS ABOVE ROOT');
     chipGrid(INTERVALS.map(([name, cents, sub]) => [cents, name, sub ?? `${cents}¢`]),
       st.interval ?? 350, (cents) => chooseToneOption('interval', cents), 3);
@@ -939,10 +954,10 @@ function renderSourceMenu() {
     chipGrid(DETUNES.map((c) => [c, c > 0 ? `+${c}¢` : `${c}¢`.replace('0¢', '0')]),
       st.detune || 0, (c) => chooseToneOption('detune', c), 7);
   }
-  if (st.mode !== 'interval') { // a dyad has no chord shape; KEY is its root
+  if (st.mode !== 'interval') { // the dyad chip voices the interval in strums/arps
     section('CHORD');
-    chipGrid(Object.keys(CHORDS).map((c) => [c, c.toUpperCase()]), st.chord,
-      (c) => chooseChord(c), 5);
+    chipGrid([...Object.keys(CHORDS).map((c) => [c, c.toUpperCase()]), ['dyad', 'DYAD']],
+      st.chord, (c) => chooseChord(c), 5);
   }
 }
 
