@@ -8,6 +8,8 @@
   html, body { margin: 0; height: 100%; overflow: hidden; background: #f4f4f6;
     font-family: "Avenir Next", "Helvetica Neue", Arial, sans-serif; }
   #view { width: 100%; height: 100%; display: block; outline: none; touch-action: none; }
+  /* the whole 2D UI runs at 120% — it reads better at GarageBand scale */
+  #shelf, #bakery, #hud, #source-menu { zoom: 1.2; }
   #overlay {
     position: fixed; inset: 0; z-index: 10; cursor: pointer;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;

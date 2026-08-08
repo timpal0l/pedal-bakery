@@ -594,12 +594,16 @@ function chooseToneOption(field, value) {
   renderSourceMenu();
 }
 
+const UI_ZOOM = 1.2; // keep in sync with the CSS zoom on #source-menu
+
 function openSourceMenu(x, y) {
   renderSourceMenu();
   sourceMenu.style.display = 'flex';
-  sourceMenu.style.left = `${Math.min(x, window.innerWidth - 356)}px`;
+  const zx = x / UI_ZOOM, zy = y / UI_ZOOM;
+  const vw = window.innerWidth / UI_ZOOM, vh = window.innerHeight / UI_ZOOM;
+  sourceMenu.style.left = `${Math.min(zx, vw - 356)}px`;
   const h = sourceMenu.offsetHeight;
-  sourceMenu.style.top = `${Math.max(12, Math.min(y - 40, window.innerHeight - h - 12))}px`;
+  sourceMenu.style.top = `${Math.max(12, Math.min(zy - 40, vh - h - 12))}px`;
 }
 function hideSourceMenu() { sourceMenu.style.display = 'none'; }
 document.addEventListener('pointerdown', (e) => {
@@ -610,13 +614,14 @@ document.addEventListener('pointerdown', (e) => {
 let menuDrag = null;
 sourceMenu.addEventListener('pointerdown', (e) => {
   if (e.target.id !== 'menu-handle') return;
-  menuDrag = { dx: e.clientX - sourceMenu.offsetLeft, dy: e.clientY - sourceMenu.offsetTop };
+  menuDrag = { dx: e.clientX / UI_ZOOM - sourceMenu.offsetLeft,
+               dy: e.clientY / UI_ZOOM - sourceMenu.offsetTop };
   e.preventDefault();
 });
 document.addEventListener('pointermove', (e) => {
   if (!menuDrag) return;
-  sourceMenu.style.left = `${e.clientX - menuDrag.dx}px`;
-  sourceMenu.style.top = `${e.clientY - menuDrag.dy}px`;
+  sourceMenu.style.left = `${e.clientX / UI_ZOOM - menuDrag.dx}px`;
+  sourceMenu.style.top = `${e.clientY / UI_ZOOM - menuDrag.dy}px`;
 });
 document.addEventListener('pointerup', () => { menuDrag = null; });
 

@@ -11,12 +11,20 @@ Run:  python3 bakery/server.py        (then open http://localhost:8123)
 Needs the `claude` CLI installed and logged in.
 """
 
+import base64
 import difflib
+import hashlib
 import json
 import re
+import secrets
+import socket
+import struct
 import subprocess
+import threading
+import time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
 ROOT = Path(__file__).resolve().parent.parent
 PORT = 8123

@@ -1,0 +1,92 @@
+{
+  "kind": "amp",
+  "shape": "box",
+  "name": "Valencia",
+  "tagline": "british citrus crunch, loud as marmalade",
+  "enclosure": {
+    "width": 3.0,
+    "depth": 2.6,
+    "height": 1.8,
+    "color": "#E8641B"
+  },
+  "artwork": {
+    "style": "diagonal",
+    "palette": [
+      "#F97B22",
+      "#FFD8A8",
+      "#1C1917"
+    ],
+    "textColor": "#FFF4E0"
+  },
+  "chain": [
+    {
+      "id": "grit",
+      "type": "drive",
+      "params": {
+        "amount": 6.5,
+        "tone": 6.0,
+        "level": 6.0
+      }
+    },
+    {
+      "id": "stack",
+      "type": "filter",
+      "params": {
+        "cutoff": 6.5,
+        "resonance": 2.0
+      }
+    },
+    {
+      "id": "spring",
+      "type": "reverb",
+      "params": {
+        "size": 3.0,
+        "mix": 2.0
+      }
+    },
+    {
+      "id": "master",
+      "type": "level",
+      "params": {
+        "gain": 6.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "GAIN",
+      "target": "grit.amount"
+    },
+    {
+      "id": "k2",
+      "label": "TONE",
+      "target": "grit.tone"
+    },
+    {
+      "id": "k3",
+      "label": "CUT",
+      "target": "stack.cutoff"
+    },
+    {
+      "id": "k4",
+      "label": "SPRING",
+      "target": "spring.mix"
+    },
+    {
+      "id": "k5",
+      "label": "MASTER",
+      "target": "master.gain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "FILTH",
+      "target": "grit.level",
+      "off": 6.0,
+      "on": 8.5
+    }
+  ],
+  "bakedFrom": "generate a orange amp"
+}
