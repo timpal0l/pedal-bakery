@@ -480,11 +480,13 @@ let selected = null;     // pedal id highlighted for the Delete key
 let menuTarget = null;   // which source post the chord menu applies to
 let cursorGround = new BABYLON.Vector3(0, 0, 0);
 
-function selectPedal(id) {
+function selectPedal(id) { // pedals, amps and tone posts all select the same way
   if (selected === id) return;
-  instances.get(selected)?.view.setSelected(false);
+  (instances.get(selected) ?? posts.get(selected))?.view.setSelected?.(false);
   selected = id;
-  instances.get(selected)?.view.setSelected(true);
+  (instances.get(selected) ?? posts.get(selected))?.view.setSelected?.(true);
+  if (id) openPanel(id);
+  else hidePanel(); // clicking empty floor closes whatever panel is open
 }
 
 // The camera is held while dragging an object or pulling a cable — a
@@ -641,6 +643,11 @@ view.scene.onPointerObservable.add((pi) => {
         audio.applyRig(dragKnob.pedal, inst.spec, inst.state);
         net.sendOpThrottled(`knob:${dragKnob.pedal}:${dragKnob.id}`,
           { type: 'knob', id: dragKnob.pedal, control: dragKnob.id, value: v });
+        if (menuTarget === dragKnob.pedal && panelRefs.has(dragKnob.id)) {
+          const ref = panelRefs.get(dragKnob.id);
+          ref.slider.value = v;
+          ref.val.textContent = v.toFixed(1);
+        }
         showHud(`${knobLabel(inst, dragKnob.id)} ${v.toFixed(1)}`, true);
       } else if (dragPostKnob) {
         const post = posts.get(dragPostKnob.id);
@@ -690,9 +697,6 @@ view.scene.onPointerObservable.add((pi) => {
         const p = post.view.position();
         if (Math.abs(p.x) > GRID_HALF || Math.abs(p.z) > GRID_HALF) {
           removeEndpoint(dragEndpoint.id);
-        } else if (post.type === 'source' && dragEndpoint.moved < 6) {
-          menuTarget = dragEndpoint.id;
-          openSourceMenu(pi.event.clientX, pi.event.clientY);
         }
         dragEndpoint = null;
       }
@@ -721,15 +725,142 @@ const SOUND_MODES = [
   { label: 'Off', kind: 'off' },
 ];
 
+const panelRefs = new Map(); // control id -> { slider, val } while a panel shows
+
+function panelHead(title, sub) {
+  const head = document.createElement('div');
+  head.className = 'panel-head';
+  const left = document.createElement('div');
+  const t = document.createElement('div');
+  t.className = 'panel-title';
+  t.textContent = title;
+  left.appendChild(t);
+  if (sub) {
+    const sb = document.createElement('div');
+    sb.className = 'panel-sub';
+    sb.textContent = sub;
+    left.appendChild(sb);
+  }
+  const x = document.createElement('button');
+  x.className = 'panel-x';
+  x.textContent = '✕';
+  x.addEventListener('click', hidePanel);
+  head.append(left, x);
+  sourceMenu.appendChild(head);
+}
+
+function volumeRow(post) {
+  const row = document.createElement('div');
+  row.className = 'ctl-row';
+  const label = document.createElement('label');
+  label.textContent = 'VOLUME';
+  const slider = document.createElement('input');
+  slider.type = 'range';
+  slider.min = 0; slider.max = 10; slider.step = 0.1;
+  slider.value = post.state.volume ?? 5;
+  const val = document.createElement('span');
+  val.className = 'val';
+  val.textContent = Number(post.state.volume ?? 5).toFixed(1);
+  slider.addEventListener('input', () => {
+    const v = Number(slider.value);
+    post.state.volume = v;
+    post.view.setKnobValue(v);
+    audio.setPostVolume(post.id, v);
+    net.sendOpThrottled(`vol:${post.id}`, { type: 'volume', id: post.id, value: v });
+    val.textContent = v.toFixed(1);
+  });
+  row.append(label, slider, val);
+  sourceMenu.appendChild(row);
+  panelRefs.set('__vol', { slider, val });
+}
+
+function removeRow(id) {
+  const rm = document.createElement('button');
+  rm.className = 'panel-btn danger';
+  rm.textContent = 'REMOVE';
+  rm.addEventListener('click', () => {
+    hidePanel();
+    if (instances.has(id)) removePedal(id);
+    else removeEndpoint(id);
+  });
+  sourceMenu.appendChild(rm);
+}
+
+function renderPedalPanel(inst) {
+  sourceMenu.innerHTML = '';
+  panelHead(inst.spec.name, inst.spec.tagline
+    || inst.spec.chain.map((m) => m.type).join(' → '));
+  for (const c of inst.spec.controls) {
+    const row = document.createElement('div');
+    row.className = 'ctl-row';
+    const label = document.createElement('label');
+    label.textContent = c.label;
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.min = 0; slider.max = 10; slider.step = 0.1;
+    slider.value = inst.state.values[c.id];
+    const val = document.createElement('span');
+    val.className = 'val';
+    val.textContent = Number(inst.state.values[c.id]).toFixed(1);
+    slider.addEventListener('input', () => {
+      const v = Number(slider.value);
+      inst.state.values[c.id] = v;
+      inst.view.setKnobValue(c.id, v);
+      audio.applyRig(inst.id, inst.spec, inst.state);
+      net.sendOpThrottled(`knob:${inst.id}:${c.id}`,
+        { type: 'knob', id: inst.id, control: c.id, value: v });
+      val.textContent = v.toFixed(1);
+    });
+    row.append(label, slider, val);
+    sourceMenu.appendChild(row);
+    panelRefs.set(c.id, { slider, val });
+  }
+  for (const sw of inst.spec.switches || []) {
+    const b = document.createElement('button');
+    const on = () => inst.state.switches[sw.id];
+    b.className = 'menu-row' + (on() ? ' active' : '');
+    b.innerHTML = `<span class="check">${on() ? '✓' : ''}</span><span></span>`;
+    b.lastChild.textContent = sw.label;
+    b.addEventListener('click', () => {
+      const next = !on();
+      applyToggle({ id: inst.id, sw: sw.id, on: next });
+      net.sendOp({ type: 'toggle', id: inst.id, sw: sw.id, on: next });
+      renderSourceMenu();
+    });
+    sourceMenu.appendChild(b);
+  }
+  const byp = document.createElement('button');
+  byp.className = 'panel-btn';
+  byp.textContent = inst.state.on
+    ? (inst.spec.kind === 'amp' ? 'STANDBY' : 'BYPASS')
+    : 'ENGAGE';
+  byp.addEventListener('click', () => {
+    const on = !inst.state.on;
+    applyBypass({ id: inst.id, on });
+    net.sendOp({ type: 'bypass', id: inst.id, on });
+    renderSourceMenu();
+  });
+  sourceMenu.appendChild(byp);
+  removeRow(inst.id);
+}
+
 function renderSourceMenu() {
+  panelRefs.clear();
+  const inst = instances.get(menuTarget);
+  if (inst) { renderPedalPanel(inst); return; }
   const post = posts.get(menuTarget);
-  if (!post || post.type !== 'source') return;
+  if (!post) return;
+  if (post.type === 'amp') {
+    sourceMenu.innerHTML = '';
+    panelHead('Amp', 'output');
+    volumeRow(post);
+    removeRow(post.id);
+    return;
+  }
   const st = post.state;
   sourceMenu.innerHTML = '';
-  const handle = document.createElement('div');
-  handle.id = 'menu-handle';
-  handle.textContent = 'TONE';
-  sourceMenu.appendChild(handle);
+  panelHead('Tone', 'input settings');
+  volumeRow(post);
   const section = (label) => {
     const d = document.createElement('div');
     d.className = 'menu-section';
@@ -854,31 +985,14 @@ function chooseBpm(bpm) {
   renderSourceMenu();
 }
 
-function openSourceMenu(x, y) {
+// the settings panel docks to the right edge — it never floats
+function openPanel(id) {
+  menuTarget = id;
   renderSourceMenu();
   sourceMenu.style.display = 'flex';
-  sourceMenu.style.left = `${Math.min(x, window.innerWidth - 356)}px`;
-  const h = sourceMenu.offsetHeight;
-  sourceMenu.style.top = `${Math.max(12, Math.min(y - 40, window.innerHeight - h - 12))}px`;
 }
-function hideSourceMenu() { sourceMenu.style.display = 'none'; }
-document.addEventListener('pointerdown', (e) => {
-  if (!sourceMenu.contains(e.target)) hideSourceMenu();
-});
-
-// the menu is draggable by its TONE handle
-let menuDrag = null;
-sourceMenu.addEventListener('pointerdown', (e) => {
-  if (e.target.id !== 'menu-handle') return;
-  menuDrag = { dx: e.clientX - sourceMenu.offsetLeft, dy: e.clientY - sourceMenu.offsetTop };
-  e.preventDefault();
-});
-document.addEventListener('pointermove', (e) => {
-  if (!menuDrag) return;
-  sourceMenu.style.left = `${e.clientX - menuDrag.dx}px`;
-  sourceMenu.style.top = `${e.clientY - menuDrag.dy}px`;
-});
-document.addEventListener('pointerup', () => { menuDrag = null; });
+function hidePanel() { sourceMenu.style.display = 'none'; }
+const hideSourceMenu = hidePanel; // older name still used elsewhere
 
 async function chooseMode(m) {
   const post = posts.get(menuTarget);
@@ -1239,7 +1353,7 @@ window.__pedal = {
     if (chord) audio.refreshTone(id, posts.get(id).state);
   },
   tone: (id, field, value) => { menuTarget = id; chooseToneOption(field, value); },
-  openMenu: (id) => { menuTarget = id; openSourceMenu(320, 160); },
+  openMenu: (id) => openPanel(id),
   volume: (id, v) => {
     applyVolume({ id, value: v });
     net.sendOp({ type: 'volume', id, value: v });
@@ -1257,10 +1371,12 @@ window.__pedal = {
     radius: view.camera.radius, target: view.camera.target.asArray(),
   }),
   setCamera: (alpha, beta, radius, target) => {
+    // target first: assigning .target rebuilds alpha/beta/radius from the
+    // current position, which would clobber values assigned before it
+    if (target) view.camera.target = new BABYLON.Vector3(target[0], target[1], target[2]);
     view.camera.alpha = alpha;
     view.camera.beta = beta;
     view.camera.radius = radius;
-    if (target) view.camera.target = new BABYLON.Vector3(target[0], target[1], target[2]);
   },
   net: () => ({ code: net.code(), connected: net.connected(),
     you: net.you(), players: [...others.values()] }),
