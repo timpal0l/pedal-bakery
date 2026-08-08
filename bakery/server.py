@@ -15,6 +15,7 @@ import base64
 import difflib
 import hashlib
 import json
+import os
 import re
 import secrets
 import socket
@@ -27,7 +28,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 ROOT = Path(__file__).resolve().parent.parent
-PORT = 8123
+PORT = int(os.environ.get("PORT", "8123"))
 
 # keep in sync with js/modules.js
 MODULES = {
@@ -45,6 +46,14 @@ MODULES = {
 
 ART_STYLES = ("gradient", "burst", "stripes", "dots", "waves", "checker", "diagonal", "rings", "flake", "plaid")
 
+# amp cabinet vocabulary — keep in sync with js/artwork.js + js/scene.js
+GRILLE_STYLES = ("weave", "diagonal", "tweed", "salt", "oxblood", "metal", "stripes")
+TOLEX_STYLES = ("levant", "smooth", "tweed", "western", "sparkle")
+AMP_FORMATS = ("practice", "combo", "stack")
+LOGO_STYLES = ("script", "block", "badge", "none")
+AMP_KNOB_CAP = {"practice": 3, "combo": 5, "stack": 6}
+AMP_MAX_W = {"practice": 2.4, "combo": 3.6, "stack": 4.6}
+
 PROMPT = """You are the Pedal Bakery: you turn a description of a guitar sound into a JSON spec for a virtual effect pedal. Reply with ONLY one JSON object — no markdown fences, no commentary.
 
 Schema (all numeric params are knob-space 0-10):
@@ -53,7 +62,8 @@ Schema (all numeric params are knob-space 0-10):
   "shape": "box" | "round",
   "name": "1-3 words, wildly varied",
   "tagline": "short vibe line, lowercase",
-  "enclosure": {{ "width": 1.1-4.2, "depth": 1.6-3.2, "height": 0.35-0.9, "color": "#hex" }},
+  "enclosure": {{ "width": number, "depth": number, "height": number, "color": "#hex" }},  (ranges differ for pedals vs amps — see rules)
+  "cabinet": {{ "format": "practice"|"combo"|"stack", "speakers": 1|2|4, "grille": {{ "style": "weave"|"diagonal"|"tweed"|"salt"|"oxblood"|"metal"|"stripes", "color": "#hex", "accent": "#hex" }}, "tolex": "levant"|"smooth"|"tweed"|"western"|"sparkle", "trim": "#hex", "panel": "#hex", "logo": "script"|"block"|"badge"|"none" }},  (AMPS ONLY — omit for pedals)
   "artwork": {{ "style": "gradient"|"burst"|"stripes"|"dots"|"waves"|"checker"|"diagonal"|"rings"|"flake"|"plaid", "palette": ["#hex","#hex","#hex"], "textColor": "#hex" }},
   "chain": [ {{ "id": "shortId", "type": "<module>", "params": {{ "<param>": 0-10 }} }} ],
   "controls": [ {{ "id": "shortId", "label": "UPPERCASE, max 7 chars", "target": "moduleId.param" }} ],
@@ -73,12 +83,19 @@ Available modules and their params (each param 0-10, module owns the real-unit c
 - level: gain (0 silent, 5 unity, 10 hot)
 
 Rules:
-- kind: decide from the description. An AMP is a chain terminator — its chain is the amp's tone stack (drive/filter/comp/reverb/level fit well) and its controls are front-panel knobs; give it a tall cabinet (height 1.2-2.2). Anything said to be an amp/combo/stack/cab is an amp; otherwise it's a pedal.
+- kind: decide from the description. Anything said to be an amp/combo/stack/cab (or that only makes sense as one) is an AMP; otherwise it's a pedal. An amp is a chain terminator — its chain is the amp's tone stack (drive/filter/comp/reverb/level fit well) and its controls are its panel knobs.
+- PEDAL enclosure ranges: width 1.1-4.2, depth 1.6-3.2, height 0.35-0.9.
+- AMP enclosure is the CABINET: width = across the front, depth = front-to-back (0.9-2.4), height = how tall it stands. Pick a format and size it honestly:
+  * "practice": cute bedroom cube — width 1.4-2.0, height 0.9-1.3, 1 speaker, 1-3 knobs
+  * "combo": classic gigging box — width 2.4-3.4, height 1.6-2.4, 1-2 speakers, 3-5 knobs
+  * "stack": amp head on a big straight cab — width 2.6-3.8, height 3.0-4.5, 4 speakers, 4-6 knobs
+  SIZE WORDS ARE LAW: "big/huge/massive/wall of sound" means a stack near the top of its ranges; "tiny/small/little/bedroom" means practice near the bottom; unstated usually means combo.
+- AMP LOOKS (the 3D matters as much as the sound): enclosure.color is the tolex vinyl color — COLOR WORDS ARE LAW ("BIG ORANGE AMP" = a stack wrapped in loud orange tolex). Fill the cabinet block boldly and make every amp look like it came from a different builder: cream tolex + oxblood grille, surf-blue sparkle + silver weave, tweed + brown diagonal, black levant + basketweave + gold trim, industrial grey + metal grille + chrome trim... "trim" is the piping color, "panel" the control-plate color, "logo" the lettering style used on the grille and panel.
 - chain: 1-6 modules in signal order that genuinely produce the described sound.
 - params are the default knob positions: choose musical values that already sound like the description.
-- controls: 1-8 knobs targeting the most expressive params, each target must be an existing "moduleId.param". Do not give a knob and a switch the same target.
+- controls: 1-8 knobs (amps: cap at the format's knob count above) targeting the most expressive params, each target must be an existing "moduleId.param". Do not give a knob and a switch the same target.
 - switches: 0-2, for character flips (boost, bright, wobble-double...).
-- VARY THE HARDWARE with the sound. A one-trick fuzz is a mini box (width ~1.2, 1-2 knobs). A classic stomp is ~2.2 wide with 3-4 knobs. A complex multi-effect monster is a wide console (width 3-4.2, depth up to 3.2, 5-8 knobs, taller box). Pick the format the described sound deserves — do not default to medium.
+- VARY THE HARDWARE with the sound. For pedals: a one-trick fuzz is a mini box (width ~1.2, 1-2 knobs); a classic stomp is ~2.2 wide with 3-4 knobs; a complex multi-effect monster is a wide console (width 3-4.2, depth up to 3.2, 5-8 knobs, taller box). Pick the format the described sound deserves — do not default to medium.
 - shape: "round" (fuzz-face style circular pedal, max 4 knobs, suits simple vintage circuits) or "box". Use round sometimes — variety matters. Amps are always boxes.
 - name, palette, art style, enclosure color: match the vibe. Be bold and varied; different sounds should look like they came from different builders.
 - NAMES MUST VARY in structure: mix single evocative words ("Vermilion", "Motorik"), compounds ("Rustbucket"), place/person names ("Saint Fuzz", "Osaka Drift"), and puns — never the same Adjective-Noun formula twice in a row.
@@ -134,9 +151,12 @@ def validate(raw: dict) -> dict:
         "name": str(raw.get("name") or "Mystery Loaf")[:28],
         "tagline": str(raw.get("tagline") or "")[:48],
         "enclosure": {
-            "width": clamp(enc.get("width"), 1.1, 4.2, 2.2),
-            "depth": clamp(enc.get("depth"), 1.6, 3.2, 2.2),
-            "height": (clamp(enc.get("height"), 1.1, 2.2, 1.5) if kind == "amp"
+            # for amps width is across the front, depth is front-to-back
+            "width": (clamp(enc.get("width"), 1.4, 4.6, 2.8) if kind == "amp"
+                      else clamp(enc.get("width"), 1.1, 4.2, 2.2)),
+            "depth": (clamp(enc.get("depth"), 0.9, 2.4, 1.4) if kind == "amp"
+                      else clamp(enc.get("depth"), 1.6, 3.2, 2.2)),
+            "height": (clamp(enc.get("height"), 0.8, 4.6, 2.0) if kind == "amp"
                        else clamp(enc.get("height"), 0.35, 0.9, 0.5)),
             "color": hex_or(enc.get("color"), "#4a4f5a"),
         },
@@ -206,15 +226,63 @@ def validate(raw: dict) -> dict:
     # physical coherence: many knobs need a big box; minis get one toggle max
     n = len(spec["controls"])
     e = spec["enclosure"]
-    if n >= 5:
-        e["width"] = max(e["width"], 2.4)
-        e["depth"] = max(e["depth"], 2.2)
-    if n >= 7:
-        e["width"] = max(e["width"], 3.0)
-        e["depth"] = max(e["depth"], 2.4)
+    if kind == "amp":
+        validate_cabinet(raw, spec)
+    else:
+        if n >= 5:
+            e["width"] = max(e["width"], 2.4)
+            e["depth"] = max(e["depth"], 2.2)
+        if n >= 7:
+            e["width"] = max(e["width"], 3.0)
+            e["depth"] = max(e["depth"], 2.4)
     if e["width"] < 1.6:
         spec["switches"] = spec["switches"][:1]
     return spec
+
+
+def validate_cabinet(raw: dict, spec: dict):
+    """Amps only: clamp the looks block and keep cabinet, format, speakers and
+    knob count physically coherent. Every missing field falls back to a classic."""
+    cab = raw.get("cabinet") or {}
+    grille = cab.get("grille") or {}
+    e = spec["enclosure"]
+
+    fmt = cab.get("format")
+    if fmt not in AMP_FORMATS:  # infer from the box the LLM asked for
+        fmt = "stack" if e["height"] >= 2.8 else "practice" if e["height"] <= 1.3 else "combo"
+    speakers = cab.get("speakers")
+    if speakers not in (1, 2, 4):
+        speakers = {"practice": 1, "combo": 2, "stack": 4}[fmt]
+
+    if fmt == "practice":
+        e["height"] = clamp(e["height"], 0.8, 1.4, 1.1)
+        if speakers == 4:
+            speakers = 1
+    elif fmt == "combo":
+        e["height"] = clamp(e["height"], 1.4, 2.6, 1.9)
+    else:  # stack
+        e["height"] = clamp(e["height"], 2.8, 4.6, 3.6)
+        e["width"] = max(e["width"], 2.4)
+    if speakers == 4:
+        e["width"] = max(e["width"], 2.6)
+
+    # the control strip runs along the face — knobs need room there
+    spec["controls"] = spec["controls"][:AMP_KNOB_CAP[fmt]]
+    e["width"] = min(max(e["width"], 0.5 * len(spec["controls"]) + 1.0), AMP_MAX_W[fmt])
+
+    spec["cabinet"] = {
+        "format": fmt,
+        "speakers": speakers,
+        "grille": {
+            "style": grille.get("style") if grille.get("style") in GRILLE_STYLES else "weave",
+            "color": hex_or(grille.get("color"), "#3a332b"),
+            "accent": hex_or(grille.get("accent"), "#59503e"),
+        },
+        "tolex": cab.get("tolex") if cab.get("tolex") in TOLEX_STYLES else "levant",
+        "trim": hex_or(cab.get("trim"), "#d6c58f"),
+        "panel": hex_or(cab.get("panel"), "#141416"),
+        "logo": cab.get("logo") if cab.get("logo") in LOGO_STYLES else "block",
+    }
 
 
 # --- bake cache: same or similar description -> reuse the saved pedal -------

@@ -1,0 +1,107 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Roswell Sludge",
+  "tagline": "low-end transmissions from the mothership",
+  "enclosure": {
+    "width": 3.2,
+    "depth": 2.9,
+    "height": 0.75,
+    "color": "#2b1a4d"
+  },
+  "artwork": {
+    "style": "rings",
+    "palette": [
+      "#39ff14",
+      "#7b2fbf",
+      "#101418"
+    ],
+    "textColor": "#c8ff5e"
+  },
+  "chain": [
+    {
+      "id": "dr",
+      "type": "drive",
+      "params": {
+        "amount": 9.0,
+        "tone": 2.5,
+        "level": 6.5
+      }
+    },
+    {
+      "id": "rm",
+      "type": "ring",
+      "params": {
+        "freq": 2.0,
+        "mix": 4.5
+      }
+    },
+    {
+      "id": "fl",
+      "type": "filter",
+      "params": {
+        "cutoff": 3.5,
+        "resonance": 6.5
+      }
+    },
+    {
+      "id": "ph",
+      "type": "phaser",
+      "params": {
+        "rate": 1.5,
+        "depth": 7.0,
+        "feedback": 5.0
+      }
+    },
+    {
+      "id": "rv",
+      "type": "reverb",
+      "params": {
+        "size": 7.5,
+        "mix": 4.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "FUZZ",
+      "target": "dr.amount"
+    },
+    {
+      "id": "k2",
+      "label": "DOOM",
+      "target": "fl.cutoff"
+    },
+    {
+      "id": "k3",
+      "label": "ALIEN",
+      "target": "rm.mix"
+    },
+    {
+      "id": "k4",
+      "label": "FREQ",
+      "target": "rm.freq"
+    },
+    {
+      "id": "k5",
+      "label": "SWIRL",
+      "target": "ph.depth"
+    },
+    {
+      "id": "k6",
+      "label": "CAVE",
+      "target": "rv.mix"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "ABDUCT",
+      "target": "ph.feedback",
+      "off": 2.0,
+      "on": 8.5
+    }
+  ],
+  "bakedFrom": "stoner alien"
+}

@@ -2,14 +2,18 @@
 // The wiring — start reading here.
 // Owns the board state (pedals + source posts + amps + cables) and connects
 // shelf UI -> spawns, mouse -> knobs / dragging / Reason-style patching,
-// board -> parallel audio chains.
+// board -> parallel audio chains, and (multiplayer) every mutation -> the
+// room. The rule that keeps sync honest: each mutation is an OP — applied
+// through the same applyOp() path whether it came from this mouse or from
+// another player, and broadcast only when it was ours.
 // ---------------------------------------------------------------------------
 
 import { createAudio } from './audio.js';
 import { createScene, GRID_HALF, SNAP } from './scene.js';
 import { createBoard } from './board.js';
-import { CHORDS, KEYS } from './config.js';
+import { CHORDS, KEYS, INTERVALS, DETUNES } from './config.js';
 import { STRUM_STYLES, ARP_PATTERNS } from './audio.js';
+import { createNet, playerIdentity, savedBakeries, rememberBakery, forgetBakery } from './net.js';
 
 const canvas = document.getElementById('view');
 const hud = document.getElementById('hud');
@@ -28,7 +32,19 @@ const board = createBoard();
 
 const instances = new Map(); // pedal id -> { id, spec, state, view }
 const posts = new Map();     // endpoint id -> { id, type: 'source'|'amp', state?, view }
+const others = new Map();    // remote player id -> { id, name, color }
+const armedGuitar = new Set(); // source ids where THIS client granted the mic
+const myId = playerIdentity();
 let counter = 0;
+
+function nextId(kind) { return `${myId}-${kind}${++counter}`; }
+
+// ids carry their creator's prefix; after a reload the same player id comes
+// back, so the counter must clear anything of ours already in the room
+function bumpCounter(id) {
+  const m = /^(.+)-[psa](\d+)$/.exec(id);
+  if (m && m[1] === myId) counter = Math.max(counter, Number(m[2]));
+}
 
 /* HUD — transient messages only; hides itself when idle */
 let hudTimer = null;
@@ -38,6 +54,31 @@ function showHud(text, sticky) {
   if (hudTimer) clearTimeout(hudTimer);
   if (!sticky) hudTimer = setTimeout(() => { hud.style.display = 'none'; }, 2600);
 }
+
+/* ------------------------------------------------------------- the wire -- */
+
+const net = createNet({
+  onWelcome(msg) { enterRoom(msg); },
+  onOp(op) { applyOp(op); },
+  onPos(msg) { view.movePlayerMarker(msg.player, msg.x, msg.z, msg.cx, msg.cz); },
+  onJoin(player) {
+    others.set(player.id, player);
+    view.setPlayerMarker(player.id, player);
+    updateBadge();
+    showHud(`${player.name.toUpperCase()} IS IN THE BAKERY`);
+  },
+  onLeave(playerId) {
+    const p = others.get(playerId);
+    others.delete(playerId);
+    view.removePlayerMarker(playerId);
+    updateBadge();
+    if (p) showHud(`${p.name.toUpperCase()} LEFT`);
+  },
+  onShelf() { loadShelf(); },
+  onStatus(status) {
+    if (status === 'reconnecting') showHud('connection lost — rejoining the bakery…', true);
+  },
+});
 
 /* ------------------------------------------------------- board plumbing -- */
 
@@ -67,6 +108,154 @@ function refreshBoard() {
   }
   for (const id of wanted) liveCables.add(id);
   audio.setChain(boardChains());
+}
+
+/* -------------------------------------------------- ops: the one true path
+   applyOp() performs a mutation without broadcasting — remote ops and
+   snapshot entries come through here. Local interactions call the same
+   apply functions and then hand the op to the wire. Every apply tolerates
+   missing nodes: a ghost op racing a concurrent remove is a no-op, never a
+   crash. ------------------------------------------------------------------ */
+
+function applyOp(op) {
+  switch (op.type) {
+    case 'spawn': applySpawn(op); break;
+    case 'spawnPost': applySpawnPost(op); break;
+    case 'remove': applyRemove(op.id); break;
+    case 'move': applyMove(op); break;
+    case 'connect': board.connect(op.from, op.to); refreshBoard(); break;
+    case 'disconnect': board.disconnectJack(op.node, op.kind); refreshBoard(); break;
+    case 'knob': applyKnob(op); break;
+    case 'toggle': applyToggle(op); break;
+    case 'bypass': applyBypass(op); break;
+    case 'volume': applyVolume(op); break;
+    case 'tone': applyTone(op); break;
+    case 'bpm': applyBpm(op); break;
+    default: console.warn('[net] unknown op', op);
+  }
+}
+
+function applySpawn(op) {
+  if (instances.has(op.id)) return;
+  bumpCounter(op.id);
+  const state = op.st;
+  const pedalView = view.buildPedal(op.id, op.spec, state, op.pos);
+  instances.set(op.id, { id: op.id, spec: op.spec, state, view: pedalView });
+  audio.createRig(op.id, op.spec, state);
+  refreshBoard();
+}
+
+function applySpawnPost(op) {
+  if (posts.has(op.id)) return;
+  bumpCounter(op.id);
+  const state = op.st;
+  if (op.ptype === 'source') {
+    posts.set(op.id, { id: op.id, type: 'source', state, view: view.buildSourcePost(op.id, op.pos) });
+    // a guitar can only come through the interface of whoever armed it;
+    // everyone else keeps the state (for the menu) but hears silence
+    if (state.mode === 'guitar' && !armedGuitar.has(op.id)) {
+      audio.createSource(op.id, { ...state, mode: 'off' });
+    } else {
+      audio.createSource(op.id, state);
+    }
+  } else {
+    posts.set(op.id, { id: op.id, type: 'amp', state, view: view.buildAmp(op.id, op.pos) });
+    audio.createAmp(op.id, state);
+  }
+  posts.get(op.id).view.setKnobValue(state.volume ?? 5);
+  refreshBoard();
+}
+
+function applyRemove(id) {
+  if (patching?.from === id) cancelPatch();
+  const inst = instances.get(id);
+  if (inst) {
+    if (selected === id) selected = null;
+    board.removeNode(id);
+    audio.disposeRig(id);
+    inst.view.dispose();
+    instances.delete(id);
+    refreshBoard();
+    return inst;
+  }
+  const post = posts.get(id);
+  if (post) {
+    if (menuTarget === id) hideSourceMenu();
+    board.removeNode(id);
+    if (post.type === 'source') { audio.disposeSource(id); armedGuitar.delete(id); }
+    else audio.disposeAmp(id);
+    post.view.dispose();
+    posts.delete(id);
+    refreshBoard();
+  }
+  return post;
+}
+
+function applyMove(op) {
+  const node = instances.get(op.id) ?? posts.get(op.id);
+  node?.view.setPosition(op.x, op.z);
+}
+
+function applyKnob(op) {
+  const inst = instances.get(op.id);
+  if (!inst || !(op.control in inst.state.values)) return;
+  inst.state.values[op.control] = op.value;
+  inst.view.setKnobValue(op.control, op.value);
+  audio.applyRig(op.id, inst.spec, inst.state);
+}
+
+function applyToggle(op) {
+  const inst = instances.get(op.id);
+  if (!inst || !(op.sw in inst.state.switches)) return;
+  inst.state.switches[op.sw] = op.on;
+  inst.view.setToggle(op.sw, op.on);
+  audio.applyRig(op.id, inst.spec, inst.state);
+}
+
+function applyBypass(op) {
+  const inst = instances.get(op.id);
+  if (!inst) return;
+  inst.state.on = op.on;
+  inst.view.setLed(op.on);
+  inst.view.pressFootswitch();
+  audio.applyRig(op.id, inst.spec, inst.state);
+}
+
+function applyVolume(op) {
+  const post = posts.get(op.id);
+  if (!post) return;
+  post.state.volume = op.value;
+  post.view.setKnobValue(op.value);
+  audio.setPostVolume(op.id, op.value);
+}
+
+function applyTone(op) {
+  const post = posts.get(op.id);
+  if (!post || post.type !== 'source') return;
+  const st = post.state;
+  Object.assign(st, op.patch);
+  if ('mode' in op.patch) {
+    if (st.mode === 'guitar' && !armedGuitar.has(op.id)) {
+      audio.setSourceMode(op.id, 'off', { ...st }).catch(() => {});
+      st.mode = 'guitar'; // truthful menu, silent speaker — it's their guitar
+    } else {
+      armedGuitar.delete(op.id);
+      audio.setSourceMode(op.id, st.mode, st).catch(() => {});
+    }
+  } else if (st.mode === 'chord' || st.mode === 'arp' || st.mode === 'interval') {
+    audio.refreshTone(op.id, st);
+  }
+  if (menuTarget === op.id && sourceMenu.style.display === 'flex') renderSourceMenu();
+}
+
+function applyBpm(op) {
+  audio.setTransportBpm(op.value);
+  for (const post of posts.values()) { // synced loops re-bake to the new clock
+    if (post.type === 'source' && post.state.sync
+        && ['chord', 'arp', 'interval'].includes(post.state.mode)) {
+      audio.refreshTone(post.id, post.state);
+    }
+  }
 }
 
 /* ------------------------------------------------------------- spawning -- */
@@ -100,65 +289,50 @@ function findFreeSlot(spec) {
 }
 
 function spawnPedal(spec, at) {
-  const id = `p${++counter}`;
-  const state = makeState(spec);
-  const pos = at ?? findFreeSlot(spec);
-  const pedalView = view.buildPedal(id, spec, state, pos);
-  instances.set(id, { id, spec, state, view: pedalView });
-  audio.createRig(id, spec, state);
-  refreshBoard();
+  const op = { type: 'spawn', id: nextId('p'), spec,
+    st: makeState(spec), pos: at ?? findFreeSlot(spec) };
+  applySpawn(op);
+  net.sendOp(op);
   showHud(`${spec.name.toUpperCase()} on the floor — patch it in`);
-  return id;
+  return op.id;
 }
 
 function spawnSource(at) {
   const n = [...posts.values()].filter((p) => p.type === 'source').length;
   if (n >= 2) { showHud('two inputs max for now'); return null; }
-  const id = `s${++counter}`;
-  const pos = at ?? { x: 7.6, z: [0, 3.5, -3.5, 7, -7][n % 5] };
-  const state = { mode: 'chord', chord: 'major', root: 0, strumStyle: 'ring',
-    arpPattern: 'up', volume: 5, channel: n, // post N maps to interface input N+1
-    bpm: 100, sync: true }; // synced inputs share the transport clock
-  posts.set(id, { id, type: 'source', state, view: view.buildSourcePost(id, pos) });
-  audio.createSource(id, state);
-  refreshBoard();
+  const op = { type: 'spawnPost', id: nextId('s'), ptype: 'source',
+    pos: at ?? { x: 7.6, z: [0, 3.5, -3.5, 7, -7][n % 5] },
+    st: { mode: 'chord', chord: 'major', root: 0, strumStyle: 'ring',
+      arpPattern: 'up', interval: 350, detune: 0, volume: 5,
+      channel: n } }; // post N maps to interface input N+1
+  applySpawnPost(op);
+  net.sendOp(op);
   showHud('TONE IN added — click it to pick a chord');
-  return id;
+  return op.id;
 }
 
 function spawnAmp(at) {
-  const id = `a${++counter}`;
   const n = [...posts.values()].filter((p) => p.type === 'amp').length;
-  const pos = at ?? { x: -7.4, z: [0, 3.5, -3.5, 7, -7][n % 5] };
-  const state = { volume: 5 };
-  posts.set(id, { id, type: 'amp', state, view: view.buildAmp(id, pos) });
-  audio.createAmp(id, state);
-  refreshBoard();
+  const op = { type: 'spawnPost', id: nextId('a'), ptype: 'amp',
+    pos: at ?? { x: -7.4, z: [0, 3.5, -3.5, 7, -7][n % 5] },
+    st: { volume: 5 } };
+  applySpawnPost(op);
+  net.sendOp(op);
   showHud('AMP added');
-  return id;
+  return op.id;
 }
 
 function removePedal(id) {
-  const inst = instances.get(id);
+  const inst = applyRemove(id);
   if (!inst) return;
-  if (selected === id) selected = null;
-  board.removeNode(id);
-  audio.disposeRig(id);
-  inst.view.dispose();
-  instances.delete(id);
-  refreshBoard();
+  net.sendOp({ type: 'remove', id });
   showHud(`${inst.spec.name.toUpperCase()} removed`);
 }
 
 function removeEndpoint(id) {
-  const post = posts.get(id);
+  const post = applyRemove(id);
   if (!post) return;
-  board.removeNode(id);
-  if (post.type === 'source') audio.disposeSource(id);
-  else audio.disposeAmp(id);
-  post.view.dispose();
-  posts.delete(id);
-  refreshBoard();
+  net.sendOp({ type: 'remove', id });
   showHud(post.type === 'source' ? 'tone removed' : 'amp removed');
 }
 
@@ -309,8 +483,6 @@ function selectPedal(id) {
   instances.get(selected)?.view.setSelected(false);
   selected = id;
   instances.get(selected)?.view.setSelected(true);
-  if (id) openPanel(id);
-  else if (instances.has(menuTarget)) hidePanel(); // empty click closes a pedal panel
 }
 
 // The camera is held while dragging an object or pulling a cable — a
@@ -330,6 +502,7 @@ window.addEventListener('pointerup', () => {
   dragPostKnob = null;
   dragPedal = null;
   dragEndpoint = null;
+  net.flushOps();
   freeCamera();
 });
 
@@ -353,11 +526,13 @@ function cancelPatch() {
 }
 
 function completePatch(toNode) {
-  board.connect(patching.from, toNode);
+  const from = patching.from;
+  board.connect(from, toNode);
   patching = null;
   view.removeCable('__pending');
   freeCamera();
   refreshBoard();
+  net.sendOp({ type: 'connect', from, to: toNode });
   showHud(boardChains().length ? 'connected — signal flows' : 'connected — no complete chain yet');
 }
 
@@ -371,6 +546,7 @@ function jackClicked(jack) {
   if (board.jackUsed(node, kind)) {
     board.disconnectJack(node, kind);
     refreshBoard();
+    net.sendOp({ type: 'disconnect', node, kind });
     showHud('cable pulled');
   } else if (kind === 'out') {
     startPatch(node);
@@ -381,7 +557,13 @@ function jackClicked(jack) {
 
 function toneLabel(st) {
   const key = KEYS.find((k) => k[1] === (st.root || 0))?.[0] ?? 'E';
-  return `${key} ${st.chord.toUpperCase()}${st.mode === 'arp' ? ' ARP' : ''}`;
+  const fine = st.detune ? ` ${st.detune > 0 ? '+' : ''}${st.detune}¢` : '';
+  if (st.mode === 'interval') {
+    const cents = st.interval ?? 350;
+    const name = INTERVALS.find(([, c]) => c === cents)?.[0] ?? `${cents}¢`;
+    return `${key}${fine} + ${name.toUpperCase()} (${cents}¢)`;
+  }
+  return `${key}${fine} ${st.chord.toUpperCase()}${st.mode === 'arp' ? ' ARP' : ''}`;
 }
 
 function knobLabel(inst, cid) {
@@ -410,6 +592,7 @@ view.scene.onPointerObservable.add((pi) => {
           startVal: post.state.volume ?? 5 };
         showHud(`VOLUME ${(post.state.volume ?? 5).toFixed(1)}`, true);
       } else if (meta.endpoint) {
+        selectPedal(meta.endpoint);
         holdCamera();
         const g = view.groundPoint();
         dragEndpoint = { id: meta.endpoint,
@@ -423,16 +606,15 @@ view.scene.onPointerObservable.add((pi) => {
         showHud(`${knobLabel(inst, meta.knob)} ${inst.state.values[meta.knob].toFixed(1)}`, true);
       } else if (meta.toggle) {
         const inst = instances.get(meta.pedal);
-        inst.state.switches[meta.toggle] = !inst.state.switches[meta.toggle];
-        inst.view.setToggle(meta.toggle, inst.state.switches[meta.toggle]);
-        audio.applyRig(meta.pedal, inst.spec, inst.state);
+        const on = !inst.state.switches[meta.toggle];
+        applyToggle({ id: meta.pedal, sw: meta.toggle, on });
+        net.sendOp({ type: 'toggle', id: meta.pedal, sw: meta.toggle, on });
       } else if (meta.switch) {
         const inst = instances.get(meta.pedal);
-        inst.state.on = !inst.state.on;
-        inst.view.setLed(inst.state.on);
-        inst.view.pressFootswitch();
-        audio.applyRig(meta.pedal, inst.spec, inst.state);
-        showHud(inst.state.on
+        const on = !inst.state.on;
+        applyBypass({ id: meta.pedal, on });
+        net.sendOp({ type: 'bypass', id: meta.pedal, on });
+        showHud(on
           ? `${inst.spec.name.toUpperCase()} ENGAGED`
           : `${inst.spec.name.toUpperCase()} BYPASSED`);
       } else if (meta.body) {
@@ -455,11 +637,8 @@ view.scene.onPointerObservable.add((pi) => {
         inst.state.values[dragKnob.id] = v;
         inst.view.setKnobValue(dragKnob.id, v);
         audio.applyRig(dragKnob.pedal, inst.spec, inst.state);
-        if (menuTarget === dragKnob.pedal && panelRefs.has(dragKnob.id)) {
-          const ref = panelRefs.get(dragKnob.id);
-          ref.slider.value = v;
-          ref.val.textContent = v.toFixed(1);
-        }
+        net.sendOpThrottled(`knob:${dragKnob.pedal}:${dragKnob.id}`,
+          { type: 'knob', id: dragKnob.pedal, control: dragKnob.id, value: v });
         showHud(`${knobLabel(inst, dragKnob.id)} ${v.toFixed(1)}`, true);
       } else if (dragPostKnob) {
         const post = posts.get(dragPostKnob.id);
@@ -468,15 +647,23 @@ view.scene.onPointerObservable.add((pi) => {
         post.state.volume = v;
         post.view.setKnobValue(v);
         audio.setPostVolume(dragPostKnob.id, v);
+        net.sendOpThrottled(`vol:${dragPostKnob.id}`,
+          { type: 'volume', id: dragPostKnob.id, value: v });
         showHud(`VOLUME ${v.toFixed(1)}`, true);
       } else if (dragPedal) {
         const inst = instances.get(dragPedal.id);
         const p = cursorGround.add(dragPedal.grab);
-        inst.view.setPosition(Math.round(p.x / SNAP) * SNAP, Math.round(p.z / SNAP) * SNAP);
+        const x = Math.round(p.x / SNAP) * SNAP, z = Math.round(p.z / SNAP) * SNAP;
+        inst.view.setPosition(x, z);
+        net.sendOpThrottled(`move:${dragPedal.id}`,
+          { type: 'move', id: dragPedal.id, x, z });
       } else if (dragEndpoint) {
         const post = posts.get(dragEndpoint.id);
         const p = cursorGround.add(dragEndpoint.grab);
-        post.view.setPosition(Math.round(p.x / SNAP) * SNAP, Math.round(p.z / SNAP) * SNAP);
+        const x = Math.round(p.x / SNAP) * SNAP, z = Math.round(p.z / SNAP) * SNAP;
+        post.view.setPosition(x, z);
+        net.sendOpThrottled(`move:${dragEndpoint.id}`,
+          { type: 'move', id: dragEndpoint.id, x, z });
         dragEndpoint.moved += Math.abs(pi.event.movementX || 0) + Math.abs(pi.event.movementY || 0);
       } else {
         const pick = scene.pick(scene.pointerX, scene.pointerY);
@@ -485,6 +672,7 @@ view.scene.onPointerObservable.add((pi) => {
       break;
     }
     case BABYLON.PointerEventTypes.POINTERUP: {
+      net.flushOps(); // trailing knob/move values land before any remove
       if (dragKnob || dragPostKnob) {
         dragKnob = null;
         dragPostKnob = null;
@@ -501,7 +689,8 @@ view.scene.onPointerObservable.add((pi) => {
         if (Math.abs(p.x) > GRID_HALF || Math.abs(p.z) > GRID_HALF) {
           removeEndpoint(dragEndpoint.id);
         } else if (post.type === 'source' && dragEndpoint.moved < 6) {
-          openPanel(dragEndpoint.id);
+          menuTarget = dragEndpoint.id;
+          openSourceMenu(pi.event.clientX, pi.event.clientY);
         }
         dragEndpoint = null;
       }
@@ -524,44 +713,21 @@ const sourceMenu = document.getElementById('source-menu');
 const SOUND_MODES = [
   { label: 'Strum', kind: 'chord' },
   { label: 'Arpeggio', kind: 'arp' },
+  { label: 'Interval', kind: 'interval' },
   { label: 'Guitar 1', kind: 'guitar', channel: 0 },
   { label: 'Guitar 2', kind: 'guitar', channel: 1 },
   { label: 'Off', kind: 'off' },
 ];
 
-const panelRefs = new Map(); // control id -> { slider, val } while a pedal shows
-
-function panelHead(title, sub) {
-  const head = document.createElement('div');
-  head.className = 'panel-head';
-  const left = document.createElement('div');
-  const t = document.createElement('div');
-  t.className = 'panel-title';
-  t.textContent = title;
-  left.appendChild(t);
-  if (sub) {
-    const sb = document.createElement('div');
-    sb.className = 'panel-sub';
-    sb.textContent = sub;
-    left.appendChild(sb);
-  }
-  const x = document.createElement('button');
-  x.className = 'panel-x';
-  x.textContent = '✕';
-  x.addEventListener('click', hidePanel);
-  head.append(left, x);
-  sourceMenu.appendChild(head);
-}
-
 function renderSourceMenu() {
-  panelRefs.clear();
-  const inst = instances.get(menuTarget);
-  if (inst) { renderPedalPanel(inst); return; }
   const post = posts.get(menuTarget);
   if (!post || post.type !== 'source') return;
   const st = post.state;
   sourceMenu.innerHTML = '';
-  panelHead('Tone', 'input settings');
+  const handle = document.createElement('div');
+  handle.id = 'menu-handle';
+  handle.textContent = 'TONE';
+  sourceMenu.appendChild(handle);
   const section = (label) => {
     const d = document.createElement('div');
     d.className = 'menu-section';
@@ -572,10 +738,15 @@ function renderSourceMenu() {
     const grid = document.createElement('div');
     grid.className = 'chord-grid';
     grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-    for (const [key, label] of entries) {
+    for (const [key, label, sub] of entries) {
       const b = document.createElement('button');
       b.className = 'chip-sm' + (activeKey === key ? ' active' : '');
       b.textContent = label;
+      if (sub) {
+        const s = document.createElement('small');
+        s.textContent = sub;
+        b.appendChild(s);
+      }
       b.addEventListener('click', () => onPick(key));
       grid.appendChild(b);
     }
@@ -598,20 +769,6 @@ function renderSourceMenu() {
     }
     sourceMenu.appendChild(grid);
   }
-  if (st.mode === 'chord' || st.mode === 'arp') {
-    section('TEMPO');
-    const syncRow = document.createElement('button');
-    syncRow.className = 'menu-row' + (st.sync ? ' active' : '');
-    syncRow.innerHTML = `<span class="check">${st.sync ? '✓' : ''}</span><span></span>`;
-    syncRow.lastChild.textContent = st.sync
-      ? `Sync — shared clock, ${audio.transportBpm ? audio.transportBpm() : st.bpm} BPM`
-      : 'Sync to the other inputs';
-    syncRow.addEventListener('click', () => chooseSync(!st.sync));
-    sourceMenu.appendChild(syncRow);
-    const bpmNow = st.sync ? audio.transportBpm() : (st.bpm || 100);
-    chipGrid([70, 85, 100, 115, 130, 150, 170, 190].map((b) => [b, `${b}`]),
-      bpmNow, (b) => chooseBpm(b), 4);
-  }
   if (st.mode === 'chord') {
     section('STRUM STYLE');
     chipGrid(Object.entries(STRUM_STYLES).map(([k, v]) => [k, v.label]),
@@ -622,105 +779,24 @@ function renderSourceMenu() {
     chipGrid(Object.entries(ARP_PATTERNS).map(([k, v]) => [k, v.label]),
       st.arpPattern || 'up', (k) => chooseToneOption('arpPattern', k), 4);
   }
+  if (st.mode === 'interval') {
+    section('INTERVAL — CENTS ABOVE ROOT');
+    chipGrid(INTERVALS.map(([name, cents, sub]) => [cents, name, sub ?? `${cents}¢`]),
+      st.interval ?? 350, (cents) => chooseToneOption('interval', cents), 3);
+  }
   section('KEY');
   chipGrid(KEYS.map(([name, semi]) => [semi, name]), st.root || 0,
     (semi) => chooseToneOption('root', semi), 6);
-  section('CHORD');
-  chipGrid(Object.keys(CHORDS).map((c) => [c, c.toUpperCase()]), st.chord,
-    (c) => chooseChord(c), 5);
-}
-
-function renderPedalPanel(inst) {
-  sourceMenu.innerHTML = '';
-  panelHead(inst.spec.name, inst.spec.tagline
-    || inst.spec.chain.map((m) => m.type).join(' → '));
-  for (const c of inst.spec.controls) {
-    const row = document.createElement('div');
-    row.className = 'ctl-row';
-    const label = document.createElement('label');
-    label.textContent = c.label;
-    const slider = document.createElement('input');
-    slider.type = 'range';
-    slider.min = 0; slider.max = 10; slider.step = 0.1;
-    slider.value = inst.state.values[c.id];
-    const val = document.createElement('span');
-    val.className = 'val';
-    val.textContent = Number(inst.state.values[c.id]).toFixed(1);
-    slider.addEventListener('input', () => {
-      const v = Number(slider.value);
-      inst.state.values[c.id] = v;
-      inst.view.setKnobValue(c.id, v);
-      audio.applyRig(inst.id, inst.spec, inst.state);
-      val.textContent = v.toFixed(1);
-    });
-    row.append(label, slider, val);
-    sourceMenu.appendChild(row);
-    panelRefs.set(c.id, { slider, val });
+  if (st.mode === 'chord' || st.mode === 'arp' || st.mode === 'interval') {
+    section('FINE TUNE');
+    chipGrid(DETUNES.map((c) => [c, c > 0 ? `+${c}¢` : `${c}¢`.replace('0¢', '0')]),
+      st.detune || 0, (c) => chooseToneOption('detune', c), 7);
   }
-  for (const sw of inst.spec.switches || []) {
-    const b = document.createElement('button');
-    const on = () => inst.state.switches[sw.id];
-    b.className = 'menu-row' + (on() ? ' active' : '');
-    b.innerHTML = `<span class="check">${on() ? '✓' : ''}</span><span></span>`;
-    b.lastChild.textContent = sw.label;
-    b.addEventListener('click', () => {
-      inst.state.switches[sw.id] = !on();
-      inst.view.setToggle(sw.id, inst.state.switches[sw.id]);
-      audio.applyRig(inst.id, inst.spec, inst.state);
-      renderSourceMenu();
-    });
-    sourceMenu.appendChild(b);
+  if (st.mode !== 'interval') { // a dyad has no chord shape; KEY is its root
+    section('CHORD');
+    chipGrid(Object.keys(CHORDS).map((c) => [c, c.toUpperCase()]), st.chord,
+      (c) => chooseChord(c), 5);
   }
-  const byp = document.createElement('button');
-  byp.className = 'panel-btn';
-  byp.textContent = inst.state.on
-    ? (inst.spec.kind === 'amp' ? 'STANDBY' : 'BYPASS')
-    : 'ENGAGE';
-  byp.addEventListener('click', () => {
-    inst.state.on = !inst.state.on;
-    inst.view.setLed(inst.state.on);
-    inst.view.pressFootswitch();
-    audio.applyRig(inst.id, inst.spec, inst.state);
-    renderSourceMenu();
-  });
-  sourceMenu.appendChild(byp);
-  const rm = document.createElement('button');
-  rm.className = 'panel-btn danger';
-  rm.textContent = 'REMOVE';
-  rm.addEventListener('click', () => { hidePanel(); removePedal(inst.id); });
-  sourceMenu.appendChild(rm);
-}
-
-function chooseBpm(bpm) {
-  const post = posts.get(menuTarget);
-  if (!post) return;
-  const st = post.state;
-  st.bpm = bpm;
-  if (st.sync) {
-    // synced inputs share one clock: retune the transport and rebuild them all
-    audio.setTransportBpm(bpm);
-    for (const p of posts.values()) {
-      if (p.type === 'source' && p.state.sync) {
-        p.state.bpm = bpm;
-        audio.refreshTone(p.id, p.state);
-      }
-    }
-    showHud(`TRANSPORT ${bpm} BPM — synced inputs locked`);
-  } else {
-    audio.refreshTone(menuTarget, st);
-    showHud(`${bpm} BPM (free)`);
-  }
-  renderSourceMenu();
-}
-
-function chooseSync(on) {
-  const post = posts.get(menuTarget);
-  if (!post) return;
-  post.state.sync = on;
-  if (on) post.state.bpm = audio.transportBpm();
-  audio.refreshTone(menuTarget, post.state); // restarts on the shared beat grid
-  showHud(on ? `SYNCED — ${audio.transportBpm()} BPM, locked to the beat` : 'FREE RUN');
-  renderSourceMenu();
 }
 
 function chooseToneOption(field, value) {
@@ -728,18 +804,36 @@ function chooseToneOption(field, value) {
   if (!post) return;
   post.state[field] = value;
   audio.refreshTone(menuTarget, post.state);
+  net.sendOp({ type: 'tone', id: menuTarget, patch: { [field]: value } });
   showHud(toneLabel(post.state));
   renderSourceMenu();
 }
 
-// the settings panel docks to the right edge — it never floats
-function openPanel(id) {
-  menuTarget = id;
+function openSourceMenu(x, y) {
   renderSourceMenu();
   sourceMenu.style.display = 'flex';
+  sourceMenu.style.left = `${Math.min(x, window.innerWidth - 356)}px`;
+  const h = sourceMenu.offsetHeight;
+  sourceMenu.style.top = `${Math.max(12, Math.min(y - 40, window.innerHeight - h - 12))}px`;
 }
-function hidePanel() { sourceMenu.style.display = 'none'; }
-const hideSourceMenu = hidePanel; // old name, still used by Escape
+function hideSourceMenu() { sourceMenu.style.display = 'none'; }
+document.addEventListener('pointerdown', (e) => {
+  if (!sourceMenu.contains(e.target)) hideSourceMenu();
+});
+
+// the menu is draggable by its TONE handle
+let menuDrag = null;
+sourceMenu.addEventListener('pointerdown', (e) => {
+  if (e.target.id !== 'menu-handle') return;
+  menuDrag = { dx: e.clientX - sourceMenu.offsetLeft, dy: e.clientY - sourceMenu.offsetTop };
+  e.preventDefault();
+});
+document.addEventListener('pointermove', (e) => {
+  if (!menuDrag) return;
+  sourceMenu.style.left = `${e.clientX - menuDrag.dx}px`;
+  sourceMenu.style.top = `${e.clientY - menuDrag.dy}px`;
+});
+document.addEventListener('pointerup', () => { menuDrag = null; });
 
 async function chooseMode(m) {
   const post = posts.get(menuTarget);
@@ -748,11 +842,16 @@ async function chooseMode(m) {
   try {
     if (m.kind === 'guitar') st.channel = m.channel;
     const label = await audio.setSourceMode(menuTarget, m.kind, st);
+    if (m.kind === 'guitar') armedGuitar.add(menuTarget);
+    else armedGuitar.delete(menuTarget);
+    net.sendOp({ type: 'tone', id: menuTarget,
+      patch: { mode: st.mode, channel: st.channel || 0 } });
     if (label) showHud(label);
   } catch (err) {
     console.error('[audio] source change failed', err);
     showHud(`no guitar (${err.name}) — back to the chord`);
     await audio.setSourceMode(menuTarget, 'chord', st).catch(() => {});
+    net.sendOp({ type: 'tone', id: menuTarget, patch: { mode: st.mode } });
   }
   renderSourceMenu();
 }
@@ -764,8 +863,10 @@ async function chooseChord(c) {
   st.chord = c;
   if (st.mode !== 'chord' && st.mode !== 'arp') {
     await audio.setSourceMode(menuTarget, 'chord', st).catch(() => {});
+    armedGuitar.delete(menuTarget);
   }
   audio.refreshTone(menuTarget, st);
+  net.sendOp({ type: 'tone', id: menuTarget, patch: { chord: c, mode: st.mode } });
   showHud(toneLabel(st));
   renderSourceMenu();
 }
@@ -812,6 +913,7 @@ async function bake(description) {
       spec._mtime = Date.now() / 1000;
       shelfSpecs.push(spec);
       renderShelf();
+      net.sendShelf(); // the other bakers' shelves refresh too
     }
     spawnPedal(spec);
     bakeStatus.textContent = data.cached
@@ -851,29 +953,211 @@ bakeInput.addEventListener('keydown', (e) => {
 });
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') { cancelPatch(); hideSourceMenu(); }
-  if ((e.key === 'Delete' || e.key === 'Backspace')
-      && selected && document.activeElement !== bakeInput) {
+  if ((e.key === 'Delete' || e.key === 'Backspace') && selected
+      && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
     e.preventDefault();
-    removePedal(selected);
+    if (instances.has(selected)) removePedal(selected);
+    else removeEndpoint(selected);
   }
 });
+
+/* --------------------------------------------------- the room lifecycle -- */
+
+const badge = document.getElementById('room-badge');
+const badgeCode = document.getElementById('room-code-txt');
+const badgePlayers = document.getElementById('room-players');
+const badgeCopy = document.getElementById('room-copy');
+
+function updateBadge() {
+  const n = others.size + 1;
+  badgeCode.textContent = net.code() || '';
+  badgePlayers.textContent = `${n} BAKER${n === 1 ? '' : 'S'}`;
+}
+badgeCopy.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(net.code() || '');
+    badgeCopy.textContent = 'COPIED';
+    setTimeout(() => { badgeCopy.textContent = 'COPY'; }, 1400);
+  } catch { /* clipboard needs https or localhost; the code is visible anyway */ }
+});
+
+function resetWorld() {
+  cancelPatch();
+  selectPedal(null);
+  hideSourceMenu();
+  for (const inst of instances.values()) {
+    audio.disposeRig(inst.id);
+    inst.view.dispose();
+  }
+  instances.clear();
+  for (const post of posts.values()) {
+    if (post.type === 'source') audio.disposeSource(post.id);
+    else audio.disposeAmp(post.id);
+    post.view.dispose();
+  }
+  posts.clear();
+  for (const c of board.connections()) board.disconnectJack(c.from, 'out');
+  refreshBoard();
+}
+
+// Every welcome — first join AND reconnect — rebuilds from the server
+// snapshot. The snapshot is the truth; whatever we had is gone.
+function enterRoom(msg) {
+  resetWorld();
+  others.clear();
+  view.clearPlayerMarkers();
+  for (const p of msg.players) {
+    others.set(p.id, p);
+    view.setPlayerMarker(p.id, p);
+  }
+  const st = msg.state;
+  for (const [id, post] of Object.entries(st.posts)) {
+    applySpawnPost({ type: 'spawnPost', id, ptype: post.ptype, st: post.st, pos: post.pos });
+  }
+  for (const [id, pedal] of Object.entries(st.pedals)) {
+    applySpawn({ type: 'spawn', id, spec: pedal.spec, st: pedal.st, pos: pedal.pos });
+  }
+  for (const [from, to] of st.cables) board.connect(from, to);
+  if (st.bpm) audio.setTransportBpm(st.bpm);
+  refreshBoard();
+  if (!posts.size && !instances.size) { // a brand-new bakery gets the basics
+    spawnSource();
+    spawnAmp();
+  }
+  overlay.remove();
+  badge.hidden = false;
+  updateBadge();
+  showHud(`BAKERY ${msg.code} — invite with the code (top right)`);
+}
+
+/* presence: stream where our camera looks + where our cursor is */
+let lastSent = { x: NaN, z: NaN, cx: NaN, cz: NaN };
+setInterval(() => {
+  if (!net.connected()) return;
+  const t = view.camera.target, c = cursorGround;
+  const moved = Math.abs(t.x - lastSent.x) + Math.abs(t.z - lastSent.z)
+              + Math.abs(c.x - lastSent.cx) + Math.abs(c.z - lastSent.cz);
+  if (!(moved > 0.01)) return; // NaN on the first pass compares false -> sends once
+  lastSent = { x: t.x, z: t.z, cx: c.x, cz: c.z };
+  net.sendPos(t.x, t.z, c.x, c.z);
+}, 90);
+
+/* ----------------------------------------------------------- the lobby -- */
+
+const params = new URLSearchParams(location.search);
+const nameInput = document.getElementById('player-name');
+const lobbyError = document.getElementById('lobby-error');
+const joinRow = document.getElementById('join-row');
+const joinCode = document.getElementById('join-code');
+const sessionsList = document.getElementById('lobby-sessions');
+const sessionsTitle = document.getElementById('lobby-title-sm');
+
+function setLobbyBusy(busy) {
+  for (const b of overlay.querySelectorAll('button')) b.disabled = busy;
+}
+
+async function enterBakery(code, role) {
+  const name = nameInput.value.trim() || 'baker';
+  localStorage.setItem('playerName', name);
+  lobbyError.textContent = '';
+  setLobbyBusy(true);
+  audio.start(); // we are inside a user gesture — the only place sound can start
+  try {
+    await net.connect(code, name);
+    rememberBakery(code, role); // enterRoom() has already run via onWelcome
+  } catch (err) {
+    lobbyError.textContent = err.message;
+    setLobbyBusy(false);
+  }
+}
+
+async function createBakery() {
+  lobbyError.textContent = '';
+  try {
+    const res = await fetch('/room', { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    await enterBakery(data.code, 'host');
+  } catch (err) {
+    lobbyError.textContent = /fetch/i.test(err.message)
+      ? 'bakery server unreachable — run python3 bakery/server.py' : err.message;
+    setLobbyBusy(false);
+  }
+}
+
+function renderSessions() {
+  const list = savedBakeries();
+  sessionsTitle.hidden = !list.length;
+  sessionsList.innerHTML = '';
+  for (const b of list) {
+    const row = document.createElement('button');
+    row.className = 'session-row';
+    const code = document.createElement('span');
+    code.className = 'session-code';
+    code.textContent = b.code;
+    const meta = document.createElement('span');
+    meta.className = 'session-meta';
+    meta.textContent = (b.role === 'host' ? 'yours · ' : 'joined · ')
+      + new Date(b.ts).toLocaleDateString();
+    const x = document.createElement('span');
+    x.className = 'session-x';
+    x.textContent = '✕';
+    x.addEventListener('click', (e) => {
+      e.stopPropagation();
+      forgetBakery(b.code);
+      renderSessions();
+    });
+    row.append(code, meta, x);
+    row.addEventListener('click', () => enterBakery(b.code, b.role));
+    sessionsList.appendChild(row);
+  }
+}
+
+function wireLobby() {
+  nameInput.value = localStorage.getItem('playerName') || '';
+  document.getElementById('create-bakery').addEventListener('click', createBakery);
+  document.getElementById('join-bakery').addEventListener('click', () => {
+    joinRow.hidden = false;
+    joinCode.focus();
+  });
+  const join = () => {
+    const code = joinCode.value.trim().toUpperCase();
+    if (code.length !== 5) { lobbyError.textContent = 'codes are 5 characters'; return; }
+    enterBakery(code, 'guest');
+  };
+  document.getElementById('join-go').addEventListener('click', join);
+  joinCode.addEventListener('keydown', (e) => { if (e.key === 'Enter') join(); });
+  nameInput.addEventListener('keydown', (e) => e.stopPropagation());
+  joinCode.addEventListener('keydown', (e) => e.stopPropagation());
+  renderSessions();
+  if (params.get('room')) { // invite links: ?room=CODE prefills the join flow
+    joinRow.hidden = false;
+    joinCode.value = params.get('room').toUpperCase();
+  }
+}
 
 /* ----------------------------------------------------------------- boot -- */
 
-spawnSource();
-spawnAmp();
 loadShelf();
 
-overlay.addEventListener('click', () => {
-  audio.start();
-  for (const post of posts.values()) {
-    if (post.type === 'source') audio.createSource(post.id, post.state);
-    else audio.createAmp(post.id, post.state);
-  }
-  for (const inst of instances.values()) audio.createRig(inst.id, inst.spec, inst.state);
-  audio.setChain(boardChains());
+if (params.get('solo')) {
+  // headless/offline path: straight to a playable board, no lobby, no room.
+  // net.sendOp() is a no-op while disconnected, so everything just works.
   overlay.remove();
-});
+  spawnSource();
+  spawnAmp();
+  canvas.addEventListener('pointerdown', () => { // sound still needs a gesture
+    audio.start();
+    for (const post of posts.values()) {
+      if (post.type === 'source') audio.createSource(post.id, post.state);
+      else audio.createAmp(post.id, post.state);
+    }
+    for (const inst of instances.values()) audio.createRig(inst.id, inst.spec, inst.state);
+    audio.setChain(boardChains());
+  }, { once: true });
+} else {
+  wireLobby();
+}
 
 /* debug hooks for automated browser tests */
 window.__pedal = {
@@ -885,14 +1169,20 @@ window.__pedal = {
   spawnSource,
   spawnAmp,
   remove: (id) => (instances.has(id) ? removePedal(id) : removeEndpoint(id)),
-  connect: (from, to) => { board.connect(from, to); refreshBoard(); },
-  disconnect: (node, kind) => { board.disconnectJack(node, kind); refreshBoard(); },
+  connect: (from, to) => {
+    board.connect(from, to);
+    refreshBoard();
+    net.sendOp({ type: 'connect', from, to });
+  },
+  disconnect: (node, kind) => {
+    board.disconnectJack(node, kind);
+    refreshBoard();
+    net.sendOp({ type: 'disconnect', node, kind });
+  },
   chains: boardChains,
   set: (id, cid, v) => {
-    const inst = instances.get(id);
-    inst.state.values[cid] = v;
-    inst.view.setKnobValue(cid, v);
-    audio.applyRig(id, inst.spec, inst.state);
+    applyKnob({ id, control: cid, value: v });
+    net.sendOp({ type: 'knob', id, control: cid, value: v });
   },
   setSource: async (id, kind, chord) => {
     menuTarget = id;
@@ -901,12 +1191,14 @@ window.__pedal = {
     if (chord) audio.refreshTone(id, posts.get(id).state);
   },
   tone: (id, field, value) => { menuTarget = id; chooseToneOption(field, value); },
-  openMenu: openPanel,
+  openMenu: (id) => { menuTarget = id; openSourceMenu(320, 160); },
   volume: (id, v) => {
-    const post = posts.get(id);
-    post.state.volume = v;
-    post.view.setKnobValue(v);
-    audio.setPostVolume(id, v);
+    applyVolume({ id, value: v });
+    net.sendOp({ type: 'volume', id, value: v });
+  },
+  bpm: (v) => {
+    applyBpm({ value: v });
+    net.sendOp({ type: 'bpm', value: v });
   },
   select: selectPedal,
   selected: () => selected,
@@ -916,4 +1208,17 @@ window.__pedal = {
     alpha: view.camera.alpha, beta: view.camera.beta,
     radius: view.camera.radius, target: view.camera.target.asArray(),
   }),
+  setCamera: (alpha, beta, radius, target) => {
+    view.camera.alpha = alpha;
+    view.camera.beta = beta;
+    view.camera.radius = radius;
+    if (target) view.camera.target = new BABYLON.Vector3(target[0], target[1], target[2]);
+  },
+  net: () => ({ code: net.code(), connected: net.connected(),
+    you: net.you(), players: [...others.values()] }),
+  join: (code, name) => {
+    if (name) nameInput.value = name;
+    return enterBakery(code, 'guest');
+  },
+  create: () => createBakery(),
 };

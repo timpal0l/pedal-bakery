@@ -11,7 +11,7 @@
 // ---------------------------------------------------------------------------
 
 import { computeLayout } from './layout.js';
-import { paintFaceplate } from './artwork.js';
+import { paintFaceplate, paintAmpTop, paintGrille, paintTolex } from './artwork.js';
 
 export const GRID_HALF = 60;     // play area; dropping a pedal past this
                                  // (far outside the panning range) removes it
@@ -187,17 +187,15 @@ export function createScene(canvas) {
     return { node, kind, pos: () => root.position.add(tip), dir };
   }
 
-  const matTolex = pbr('tolex', '#232326', 0.05, 0.8);
-  const matGrille = pbr('grille', '#4d453a', 0.1, 0.9);
-  const matTrimGold = pbr('trimGold', '#c8b37e', 0.8, 0.35);
   const matSrcBody = pbr('srcBody', '#b04a3a', 0.2, 0.6);
 
-  // a small volume knob shared by tone posts and amps
-  function buildVolumeKnob(root, id, x, y, z, d) {
+  // a small volume knob shared by tone posts and amps; yaw turns the whole
+  // dial so amp knobs read right when you face the grille
+  function buildVolumeKnob(root, id, x, y, z, d, yaw = 0) {
     const spin = new BABYLON.TransformNode('vk_' + id, scene);
     spin.parent = root;
     spin.position.set(x, y, z);
-    spin.rotation.y = valueToAngle(5);
+    spin.rotation.y = yaw + valueToAngle(5);
     const cap = BABYLON.MeshBuilder.CreateCylinder('vkc',
       { diameter: d, height: 0.12, tessellation: 24 }, scene);
     cap.parent = spin;
@@ -211,41 +209,172 @@ export function createScene(canvas) {
     line.material = matLine;
     line.metadata = { postKnob: id };
     glow.addExcludedMesh(line);
-    return { setValue: (v) => { spin.rotation.y = valueToAngle(v); } };
+    return { setValue: (v) => { spin.rotation.y = yaw + valueToAngle(v); } };
   }
 
-  function endpointHandles(id, root, jack, knob) {
+  function endpointHandles(id, root, jack, knob, extraDispose) {
     return {
       id, root, jack,
       setKnobValue: knob.setValue,
       position: () => root.position,
       setPosition: (x, z) => root.position.set(x, 0, z),
-      dispose: () => root.dispose(false, false),
+      dispose: () => { root.dispose(false, false); if (extraDispose) extraDispose(); },
     };
   }
 
-  /* an amp cabinet — spawnable, input jack facing the pedals (+x) */
+  /* ------------------------------------------------------- amp cabinets -- */
+  // One builder for every amp in the app — baked amp specs and the default
+  // endpoint amp. World units: W front-to-back (x), D across the face (z),
+  // H tall. The grille faces +x, toward the pedals. Creates per-instance
+  // painted materials; call the returned dispose() alongside the root's.
+  const GRILLE_RECT = { // grille band on the front face, as fractions of H
+    practice: { y0: 0.1, y1: 0.78 },
+    combo: { y0: 0.08, y1: 0.7 },
+    stack: { y0: 0.045, y1: 0.665 }, // cab is the lower 70%; the head sits above
+  };
+
+  function buildCabinet(root, o) {
+    const { id, meta, W, D, H } = o;
+    const cab = o.cab || {};
+    const fmt = GRILLE_RECT[cab.format] ? cab.format
+      : H >= 2.8 ? 'stack' : H <= 1.4 ? 'practice' : 'combo';
+    const disposables = [];
+    const own = (r) => { disposables.push(r); return r; };
+
+    const tolexTex = own(new BABYLON.DynamicTexture('tolex_' + id,
+      { width: 512, height: 512 }, scene, true));
+    paintTolex(tolexTex.getContext(), 512, 512, o.color || '#232326', cab.tolex || 'levant');
+    tolexTex.update();
+    const matCab = own(new BABYLON.PBRMaterial('cab_' + id, scene));
+    matCab.albedoTexture = tolexTex;
+    matCab.metallic = 0.05;
+    matCab.roughness = 0.85;
+    const matTrim = own(pbr('trim_' + id, cab.trim || '#d6c58f', 0.65, 0.38));
+    const matPanel = own(pbr('panel_' + id, cab.panel || '#141416', 0.35, 0.5));
+
+    const stack = fmt === 'stack';
+    const cabH = stack ? H * 0.7 : H;
+    const headH = H - cabH;
+
+    const body = BABYLON.MeshBuilder.CreateBox('cab_' + id,
+      { width: W, height: cabH, depth: D }, scene);
+    body.parent = root;
+    body.position.y = cabH / 2;
+    body.material = matCab;
+    body.metadata = meta;
+    shadows.addShadowCaster(body);
+
+    /* the grille: painted cloth on a thin box, artwork on the +x face only */
+    const gRect = GRILLE_RECT[fmt];
+    const gy0 = gRect.y0 * H, gy1 = gRect.y1 * H;
+    const gh = gy1 - gy0, gw = D * 0.86;
+    const gtH = Math.max(64, Math.min(1024, Math.round(1024 * (gh / gw))));
+    const grilleTex = own(new BABYLON.DynamicTexture('grille_' + id,
+      { width: 1024, height: gtH }, scene, true));
+    paintGrille(grilleTex.getContext(), 1024, gtH, cab, o.name);
+    grilleTex.update();
+    const matGr = own(new BABYLON.PBRMaterial('grille_' + id, scene));
+    matGr.albedoTexture = grilleTex;
+    matGr.metallic = 0.0;
+    matGr.roughness = 0.95;
+    matGr.specularIntensity = 0.3;
+    const faceUV = Array.from({ length: 6 }, () => new BABYLON.Vector4(0, 0, 0.02, 0.02));
+    faceUV[2] = new BABYLON.Vector4(0, 0, 1, 1); // +x face wears the full cloth
+    const grille = BABYLON.MeshBuilder.CreateBox('grille_' + id,
+      { width: 0.07, height: gh, depth: gw, faceUV }, scene);
+    grille.parent = root;
+    grille.position.set(W / 2 + 0.005, (gy0 + gy1) / 2, 0);
+    grille.material = matGr;
+    grille.metadata = meta;
+
+    /* piping around the grille */
+    const t = 0.055, px = W / 2 + 0.02;
+    const bar = (bw, bh, bd, x, y, z) => {
+      const b = BABYLON.MeshBuilder.CreateBox('trim', { width: bw, height: bh, depth: bd }, scene);
+      b.parent = root;
+      b.position.set(x, y, z);
+      b.material = matTrim;
+      b.metadata = meta;
+      return b;
+    };
+    bar(t, t, gw + 2 * t, px, gy1 + t / 2, 0);
+    bar(t, t, gw + 2 * t, px, gy0 - t / 2, 0);
+    bar(t, gh, t, px, (gy0 + gy1) / 2, gw / 2 + t / 2);
+    bar(t, gh, t, px, (gy0 + gy1) / 2, -gw / 2 - t / 2);
+
+    if (stack) {
+      const head = BABYLON.MeshBuilder.CreateBox('head_' + id,
+        { width: W, height: headH - 0.04, depth: D }, scene);
+      head.parent = root;
+      head.position.y = cabH + 0.02 + (headH - 0.04) / 2;
+      head.material = matCab;
+      head.metadata = meta;
+      shadows.addShadowCaster(head);
+      const seam = BABYLON.MeshBuilder.CreateBox('seam',
+        { width: W + 0.01, height: 0.05, depth: D + 0.01 }, scene);
+      seam.parent = root;
+      seam.position.y = cabH;
+      seam.material = matPlug;
+      seam.metadata = meta;
+      const hp = BABYLON.MeshBuilder.CreateBox('hpanel',
+        { width: 0.05, height: (headH - 0.04) * 0.62, depth: D * 0.9 }, scene);
+      hp.parent = root;
+      hp.position.set(W / 2 + 0.005, cabH + headH * 0.5, 0);
+      hp.material = matPanel;
+      hp.metadata = meta;
+      bar(0.03, 0.03, D * 0.9, px, cabH + headH * 0.5 + (headH - 0.04) * 0.31 + 0.03, 0);
+      bar(0.03, 0.03, D * 0.9, px, cabH + headH * 0.5 - (headH - 0.04) * 0.31 - 0.03, 0);
+      for (const sx of [-1, 1]) { // metal corner protectors on the cab
+        for (const sy of [0, 1]) {
+          for (const sz of [-1, 1]) {
+            const c = BABYLON.MeshBuilder.CreateBox('corner',
+              { width: 0.11, height: 0.11, depth: 0.11 }, scene);
+            c.parent = root;
+            c.position.set(sx * (W / 2 - 0.01), sy ? cabH - 0.055 : 0.055, sz * (D / 2 - 0.01));
+            c.material = matJack;
+            c.metadata = meta;
+          }
+        }
+      }
+    } else if (o.handle) { // strap handle on top of combos and practice cubes
+      const arc = [];
+      for (let i = 0; i <= 8; i++) {
+        const a = (i / 8) * Math.PI;
+        arc.push(new BABYLON.Vector3(-W * 0.12, H + Math.sin(a) * 0.17, Math.cos(a) * 0.3));
+      }
+      const handle = BABYLON.MeshBuilder.CreateTube('handle_' + id,
+        { path: arc, radius: 0.05, tessellation: 10, cap: BABYLON.Mesh.CAP_ALL }, scene);
+      handle.parent = root;
+      handle.material = matPlug;
+      handle.metadata = meta;
+      shadows.addShadowCaster(handle);
+    }
+
+    return {
+      body,
+      jackY: stack ? cabH + headH * 0.5 : Math.min(H * 0.86, gy1 + (H - gy1) * 0.55),
+      dispose: () => disposables.forEach((d) => d.dispose()),
+    };
+  }
+
+  /* the default amp — a classic black 2x12 combo, input facing the pedals */
   function buildAmp(id, pos) {
     const root = new BABYLON.TransformNode('amp_' + id, scene);
     root.position.set(pos.x, 0, pos.z);
-    const cab = BABYLON.MeshBuilder.CreateBox('ampCab', { width: 1.1, height: 3.6, depth: 2.4 }, scene);
-    cab.parent = root;
-    cab.position.y = 1.8;
-    cab.material = matTolex;
-    cab.metadata = { endpoint: id };
-    shadows.addShadowCaster(cab);
-    const grille = BABYLON.MeshBuilder.CreateBox('ampGrille', { width: 0.06, height: 3.0, depth: 2.1 }, scene);
-    grille.parent = root;
-    grille.position.set(0.56, 1.6, 0);
-    grille.material = matGrille;
-    grille.metadata = { endpoint: id };
-    const trim = BABYLON.MeshBuilder.CreateBox('ampTrim', { width: 0.07, height: 0.16, depth: 2.1 }, scene);
-    trim.parent = root;
-    trim.position.set(0.56, 3.3, 0);
-    trim.material = matTrimGold;
-    trim.metadata = { endpoint: id };
-    const knob = buildVolumeKnob(root, id, 0.3, 3.6, 0.8, 0.3);
-    return endpointHandles(id, root, buildEndpointJack(root, id, 'in', 0.56, 0.32, +1), knob);
+    const H = 3.3, W = 1.2, D = 2.6;
+    const parts = buildCabinet(root, {
+      id: 'amp_' + id, meta: { endpoint: id }, W, D, H,
+      color: '#232326',
+      cab: {
+        format: 'combo', speakers: 2, tolex: 'levant', trim: '#c8b37e',
+        panel: '#141416', logo: 'none',
+        grille: { style: 'weave', color: '#3d362c', accent: '#5a5244' },
+      },
+      handle: true,
+    });
+    const knob = buildVolumeKnob(root, id, 0.22, H, D * 0.34, 0.3, -Math.PI / 2);
+    return endpointHandles(id, root,
+      buildEndpointJack(root, id, 'in', W / 2 + 0.01, parts.jackY, +1), knob, parts.dispose);
   }
 
   /* a source post — one tone generator, output jack toward the pedals (-x) */
@@ -259,7 +388,8 @@ export function createScene(canvas) {
     post.metadata = { endpoint: id };
     shadows.addShadowCaster(post);
     const knob = buildVolumeKnob(root, id, 0, 0.55, 0, 0.26);
-    return endpointHandles(id, root, buildEndpointJack(root, id, 'out', -0.27, 0.3, -1), knob);
+    return endpointHandles(id, root,
+      buildEndpointJack(root, id, 'out', -0.27, 0.3, -1), knob, 1.5, 1.5);
   }
 
   /* --------------------------------------------------------------- cables -- */
@@ -482,32 +612,53 @@ export function createScene(canvas) {
   /* ------------------------------------------------ pedal construction -- */
 
   function buildPedal(id, spec, state, position) {
-    const { width: W, depth: D, height: H } = spec.enclosure;
+    const isAmp = spec.kind === 'amp';
+    // amps: enclosure.width runs ACROSS the face (z) and depth front-to-back
+    // (x), so a "wide amp" is wide when you stand in front of its grille
+    const W = isAmp ? spec.enclosure.depth : spec.enclosure.width;
+    const D = isAmp ? spec.enclosure.width : spec.enclosure.depth;
+    const H = spec.enclosure.height;
     const TOP_Y = H + 0.001;
     const layout = computeLayout(spec);
     const root = new BABYLON.TransformNode('pedal_' + id, scene);
     root.position.set(position.x, 0, position.z);
 
-    const isAmp = spec.kind === 'amp';
     const uvToWorld = (u, v) => ({ x: (u - 0.5) * W, z: (0.5 - v) * D });
-    const matBody = pbr('body_' + id, spec.enclosure.color || '#8f969c', isAmp ? 0.1 : 0.85, isAmp ? 0.75 : 0.4);
 
-    const isRound = spec.shape === 'round';
-    const body = isRound
-      ? BABYLON.MeshBuilder.CreateCylinder('body_' + id,
-          { diameter: Math.min(W, D), height: H, tessellation: 48 }, scene)
-      : BABYLON.MeshBuilder.CreateBox('body_' + id, { width: W, height: H, depth: D }, scene);
-    body.parent = root;
-    body.position.y = H / 2;
-    body.material = matBody;
-    body.metadata = { pedal: id, body: true };
-    shadows.addShadowCaster(body);
+    let matBody = null, cabParts = null, body;
+    if (isAmp) {
+      cabParts = buildCabinet(root, {
+        id, meta: { pedal: id, body: true }, W, D, H,
+        cab: spec.cabinet, color: spec.enclosure.color, name: spec.name,
+        handle: H < 2.8 && !(layout.amp && layout.amp.twoRow),
+      });
+      body = cabParts.body;
+    } else {
+      matBody = pbr('body_' + id, spec.enclosure.color || '#8f969c', 0.85, 0.4);
+      const isRound = spec.shape === 'round';
+      body = isRound
+        ? BABYLON.MeshBuilder.CreateCylinder('body_' + id,
+            { diameter: Math.min(W, D), height: H, tessellation: 48 }, scene)
+        : BABYLON.MeshBuilder.CreateBox('body_' + id, { width: W, height: H, depth: D }, scene);
+      body.parent = root;
+      body.position.y = H / 2;
+      body.material = matBody;
+      body.metadata = { pedal: id, body: true };
+      shadows.addShadowCaster(body);
+    }
 
     let faceTex;
     if (spec.artwork.image) {
       faceTex = new BABYLON.Texture(spec.artwork.image, scene, false, true,
         BABYLON.Texture.TRILINEAR_SAMPLINGMODE, null,
         (msg) => console.error('[scene] face texture FAILED', msg));
+    } else if (isAmp) { // long axis capped at 1024, aspect preserved
+      const aspect = D / W;
+      const TW = aspect >= 1 ? Math.max(128, Math.round(1024 / aspect)) : 1024;
+      const TH = aspect >= 1 ? 1024 : Math.max(128, Math.round(1024 * aspect));
+      faceTex = new BABYLON.DynamicTexture('face_' + id, { width: TW, height: TH }, scene, true);
+      paintAmpTop(faceTex.getContext(), TW, TH, spec, layout);
+      faceTex.update();
     } else {
       const TW = 1024, TH = Math.round(1024 * (D / W));
       faceTex = new BABYLON.DynamicTexture('face_' + id, { width: TW, height: TH }, scene, true);
@@ -533,6 +684,8 @@ export function createScene(canvas) {
     topPlate.metadata = { pedal: id, body: true };
     glow.addExcludedMesh(topPlate);
 
+    // amp dials are yawed -90° so "noon" points away from the grille viewer
+    const knobYaw = isAmp ? -Math.PI / 2 : 0;
     const knobs = {};
     for (const k of layout.knobs) {
       const p = uvToWorld(k.u, k.v);
@@ -548,7 +701,7 @@ export function createScene(canvas) {
       shadows.addShadowCaster(bezel);
       const spin = new BABYLON.TransformNode('ks', scene);
       spin.parent = base;
-      spin.rotation.y = valueToAngle(state.values[k.id]);
+      spin.rotation.y = knobYaw + valueToAngle(state.values[k.id]);
       const cap = BABYLON.MeshBuilder.CreateCylinder('kc',
         { diameter: 0.26, height: 0.2, tessellation: 32 }, scene);
       cap.parent = spin;
@@ -625,17 +778,9 @@ export function createScene(canvas) {
     led.material = matLed;
     led.isPickable = false;
 
-    if (isAmp) { // speaker grille on the front face
-      const grille = BABYLON.MeshBuilder.CreateBox('grille_' + id,
-        { width: 0.06, height: H * 0.5, depth: D * 0.88 }, scene);
-      grille.parent = root;
-      grille.position.set(W / 2 + 0.01, H * 0.27, 0);
-      grille.material = matGrille;
-      grille.metadata = { pedal: id, body: true };
-    }
-
-    /* jacks: INPUT on the right (+x), OUTPUT on the left (-x); amps only IN */
-    const jackY = H * (isAmp ? 0.7 : 0.55);
+    /* jacks: INPUT on the right (+x), OUTPUT on the left (-x); amps only IN,
+       placed on the head panel (stacks) or above the grille (combos) */
+    const jackY = isAmp ? cabParts.jackY : H * 0.55;
     const jackDefs = {};
     for (const [kind, side] of (isAmp ? [['in', +1]] : [['in', +1], ['out', -1]])) {
       const meta = { jack: { node: id, kind } };
@@ -667,7 +812,7 @@ export function createScene(canvas) {
       position: () => root.position,
       setPosition(x, z) { root.position.set(x, 0, z); },
       jack: (kind) => jackDefs[kind],
-      setKnobValue(cid, value) { knobs[cid].spin.rotation.y = valueToAngle(value); },
+      setKnobValue(cid, value) { knobs[cid].spin.rotation.y = knobYaw + valueToAngle(value); },
       setToggle(sid, on) { toggles[sid].lever.rotation.x = on ? -0.45 : 0.45; },
       setLed(on) {
         matLed.emissiveColor = on
@@ -700,7 +845,8 @@ export function createScene(canvas) {
         // never pass disposeMaterialAndTextures here — the knob/jack/cable
         // materials are SHARED; only this pedal's own resources may die
         root.dispose(false, false);
-        matBody.dispose();
+        if (matBody) matBody.dispose();
+        if (cabParts) cabParts.dispose();
         matTop.dispose();
         faceTex.dispose();
         matLed.dispose();
@@ -717,9 +863,12 @@ export function createScene(canvas) {
     const FAR = 500;
     const W = 160, H = 110;
     const handles = buildPedal('__thumb', spec, state, { x: FAR, z: FAR });
+    const tall = spec.kind === 'amp'; // frame the whole cabinet, grille visible
     const cam = new BABYLON.ArcRotateCamera('thumbCam',
-      -Math.PI / 2 + 0.55, 0.95, Math.max(3.2, spec.enclosure.width * 1.7),
-      new BABYLON.Vector3(FAR, 0.25, FAR), scene);
+      -Math.PI / 2 + 0.55, tall ? 1.12 : 0.95,
+      Math.max(3.2, spec.enclosure.width * 1.7,
+        tall ? spec.enclosure.height * 1.6 : 0),
+      new BABYLON.Vector3(FAR, tall ? spec.enclosure.height * 0.42 : 0.25, FAR), scene);
     const rtt = new BABYLON.RenderTargetTexture('thumbRTT', { width: W, height: H }, scene, false);
     rtt.activeCamera = cam;
     rtt.renderList = handles.root.getChildMeshes();
