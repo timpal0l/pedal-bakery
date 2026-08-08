@@ -18,9 +18,70 @@
   }
   #overlay .t1 { font-size: 44px; font-weight: 700; letter-spacing: 0.14em; }
   #overlay .t2 { font-size: 15px; letter-spacing: 0.55em; text-transform: uppercase; color: #6a6a72; }
-  #overlay .t3 {
-    margin-top: 26px; font-size: 14px; letter-spacing: 0.1em;
-    border: 1px solid #c9c9d0; border-radius: 999px; padding: 10px 22px; background: #fff;
+  #lobby {
+    margin-top: 30px; display: flex; flex-direction: column; gap: 11px;
+    width: min(360px, 86vw); align-items: stretch;
+  }
+  #player-name {
+    font: inherit; font-size: 15px; text-align: center; color: #2b2b30;
+    padding: 12px 18px; border-radius: 999px; border: 1px solid #c9c9d0;
+    outline: none; background: #fff; letter-spacing: 0.06em;
+  }
+  #player-name:focus { border-color: #a9a9b4; }
+  .lobby-btn {
+    font: inherit; font-size: 15px; letter-spacing: 0.14em; cursor: pointer;
+    border: none; border-radius: 999px; padding: 14px 22px;
+  }
+  .lobby-btn:disabled { opacity: 0.5; cursor: wait; }
+  #create-bakery { background: #2b2b30; color: #fff; }
+  #join-bakery { background: #fff; color: #2b2b30; border: 1px solid #c9c9d0; }
+  #join-row { display: flex; gap: 8px; }
+  #join-code {
+    flex: 1; min-width: 0; font: inherit; font-size: 18px; font-weight: 700;
+    letter-spacing: 0.5em; text-transform: uppercase; text-align: center;
+    color: #2b2b30; padding: 12px 0 12px 12px; border-radius: 999px;
+    border: 1px solid #c9c9d0; outline: none; background: #fff;
+  }
+  #join-go { background: #3a7bd5; color: #fff; flex: none; }
+  #lobby-error { min-height: 18px; font-size: 13px; color: #a05252; text-align: center; }
+  #lobby-title-sm {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.3em; color: #9a9aa4;
+    margin-top: 8px; text-align: center;
+  }
+  #lobby-sessions {
+    display: flex; flex-direction: column; gap: 6px;
+    max-height: 190px; overflow-y: auto;
+  }
+  .session-row {
+    display: flex; align-items: center; gap: 10px; text-align: left;
+    font: inherit; font-size: 14px; color: #2b2b30; cursor: pointer;
+    background: #fff; border: 1px solid #e3e3e8; border-radius: 12px;
+    padding: 10px 12px 10px 16px;
+  }
+  .session-row:hover { border-color: #a9a9b4; }
+  .session-code { font-weight: 700; letter-spacing: 0.2em; }
+  .session-meta { color: #8a8a92; font-size: 12px; flex: 1; text-align: right; }
+  .session-x {
+    border: none; background: none; color: #b0b0b8; cursor: pointer;
+    font: inherit; font-size: 14px; padding: 2px 4px;
+  }
+  .session-x:hover { color: #a05252; }
+  #room-badge {
+    position: fixed; top: 14px; right: 14px; z-index: 7;
+    display: flex; align-items: center; gap: 12px;
+    background: rgba(255, 255, 255, 0.9); border: 1px solid #dcdce2;
+    border-radius: 999px; padding: 8px 10px 8px 18px;
+    font-size: 13px; letter-spacing: 0.08em; color: #2b2b30;
+    box-shadow: 0 6px 24px rgba(30, 30, 40, 0.10);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  }
+  #room-badge[hidden] { display: none; }
+  #room-code-txt { font-weight: 700; letter-spacing: 0.24em; }
+  #room-players { color: #6a6a72; white-space: nowrap; }
+  #room-copy {
+    font: inherit; font-size: 11px; letter-spacing: 0.1em; cursor: pointer;
+    background: #2b2b30; color: #fff; border: none; border-radius: 999px;
+    padding: 6px 13px;
   }
   #bakery {
     position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 5;
@@ -167,7 +228,25 @@
 <div id="overlay">
   <div class="t1">PEDAL BAKERY</div>
   <div class="t2">limitless guitar effects</div>
-  <div class="t3">click to plug in</div>
+  <div id="lobby">
+    <input id="player-name" type="text" maxlength="24" spellcheck="false"
+      autocomplete="off" placeholder="your name">
+    <button id="create-bakery" class="lobby-btn">CREATE BAKERY</button>
+    <button id="join-bakery" class="lobby-btn">JOIN BAKERY</button>
+    <div id="join-row" hidden>
+      <input id="join-code" type="text" maxlength="5" spellcheck="false"
+        autocomplete="off" placeholder="CODE">
+      <button id="join-go" class="lobby-btn">JOIN</button>
+    </div>
+    <div id="lobby-error"></div>
+    <div id="lobby-title-sm" hidden>YOUR BAKERIES</div>
+    <div id="lobby-sessions"></div>
+  </div>
+</div>
+<div id="room-badge" hidden>
+  <span id="room-code-txt"></span>
+  <span id="room-players"></span>
+  <button id="room-copy">COPY</button>
 </div>
 <div id="source-menu"></div>
 <div id="hud"></div>

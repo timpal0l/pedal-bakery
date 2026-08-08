@@ -1,0 +1,93 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Seaglass",
+  "tagline": "vhs-clean shimmer in a cold blue room",
+  "enclosure": {
+    "width": 2.4,
+    "depth": 2.6,
+    "height": 0.5,
+    "color": "#9fd8cf"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#bfeee6",
+      "#6fb8c9",
+      "#e8f6f2"
+    ],
+    "textColor": "#1e4f5a"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 4.0,
+        "attack": 6.0
+      }
+    },
+    {
+      "id": "cho",
+      "type": "chorus",
+      "params": {
+        "rate": 2.5,
+        "depth": 2.0,
+        "mix": 3.0
+      }
+    },
+    {
+      "id": "flt",
+      "type": "filter",
+      "params": {
+        "cutoff": 8.5,
+        "resonance": 1.5
+      }
+    },
+    {
+      "id": "rvb",
+      "type": "reverb",
+      "params": {
+        "size": 6.5,
+        "mix": 5.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "WASH",
+      "target": "rvb.mix"
+    },
+    {
+      "id": "k2",
+      "label": "ROOM",
+      "target": "rvb.size"
+    },
+    {
+      "id": "k3",
+      "label": "SHEEN",
+      "target": "cho.mix"
+    },
+    {
+      "id": "k4",
+      "label": "GLASS",
+      "target": "flt.cutoff"
+    },
+    {
+      "id": "k5",
+      "label": "SQUISH",
+      "target": "cmp.sustain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "DREAM",
+      "target": "cho.depth",
+      "off": 2.0,
+      "on": 5.0
+    }
+  ],
+  "bakedFrom": "1990s soft reverb glassy"
+}

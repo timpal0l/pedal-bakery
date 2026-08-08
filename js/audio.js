@@ -328,6 +328,27 @@ export const STRUM_STYLES = {
              { t: 0.5, dir: -1, g: 0.6, strings: 'high' },
              { t: 1, dir: 1, g: 0.9, strings: 'low' },
              { t: 1.5, dir: -1, g: 0.6, strings: 'high' }] },
+  shuffle: { label: 'Shuffle', beats: 4, ring: 0.7, damp: 0.994, // swung eighths
+    events: [0, 1, 2, 3].flatMap((b) => [
+      { t: b, dir: 1, g: 1 }, { t: b + 0.66, dir: -1, g: 0.55 }]) },
+  disco: { label: 'Disco', beats: 4, ring: 0.22, damp: 0.985, sweep: 0.012,
+    events: Array.from({ length: 16 }, (_, i) =>
+      ({ t: i * 0.25, dir: i % 2 ? -1 : 1, g: i % 4 === 0 ? 1 : 0.6, strings: 'high' })) },
+  surf: { label: 'Surf', beats: 4, ring: 0.5, damp: 0.99, sweep: 0.01, // tremolo burst
+    events: [...Array.from({ length: 8 }, (_, i) =>
+      ({ t: i * 0.125, dir: i % 2 ? -1 : 1, g: 0.7, strings: 'high' })),
+      { t: 2, dir: 1, g: 1 }] },
+  country: { label: 'Country', beats: 2, ring: 0.8, damp: 0.995, // boom-chicka
+    events: [{ t: 0, dir: 1, g: 1, strings: 'low' },
+             { t: 0.5, dir: 1, g: 0.75 }, { t: 0.75, dir: -1, g: 0.5 },
+             { t: 1, dir: 1, g: 0.9, strings: 'low' },
+             { t: 1.5, dir: 1, g: 0.75 }, { t: 1.75, dir: -1, g: 0.5 }] },
+  bossa: { label: 'Bossa', beats: 4, ring: 1.2, damp: 0.997,
+    events: [{ t: 0, dir: 1, g: 0.9 }, { t: 1.5, dir: -1, g: 0.6 },
+             { t: 2, dir: 1, g: 0.8 }, { t: 3.5, dir: -1, g: 0.6 }] },
+  doom: { label: 'Doom', beats: 8, ring: 5.0, damp: 0.9985,
+    events: [{ t: 0, dir: 1, g: 1, strings: 'low' },
+             { t: 6, dir: 1, g: 0.7, strings: 'low' }] },
 };
 
 // Arpeggio patterns: string order inside the loop. step is BEATS per note
