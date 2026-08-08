@@ -13,7 +13,7 @@
 import { computeLayout } from './layout.js';
 import { paintFaceplate } from './artwork.js';
 
-export const GRID_HALF = 30;     // play area; dropping a pedal past this
+export const GRID_HALF = 60;     // play area; dropping a pedal past this
                                  // (far outside the panning range) removes it
 export const SNAP = 0.5;         // grid snap step
 
@@ -30,17 +30,17 @@ export function createScene(canvas) {
     new BABYLON.Vector3(0, 0.3, 0), scene);
   camera.attachControl(canvas, true);
   camera.lowerRadiusLimit = 2.5;
-  camera.upperRadiusLimit = 42;
+  camera.upperRadiusLimit = 60;
   camera.lowerBetaLimit = 0.15;
   camera.upperBetaLimit = 1.35;
   camera.minZ = 0.1;
-  camera.maxZ = 260; // tight far plane = solid depth precision, no grid shimmer
+  camera.maxZ = 340; // tight far plane = solid depth precision, no grid shimmer
   // left-drag rotates in place, right-drag moves you around the room (pan
   // along the floor), wheel zooms — stock ArcRotate behavior, tuned to feel
   // like a DCC viewport: proportional zoom, a little inertia everywhere
   camera.panningSensibility = 130; // higher = slower; tuned for calm mouse2 moves
   camera.panningAxis = new BABYLON.Vector3(1, 0, 1);
-  camera.panningDistanceLimit = 32;
+  camera.panningDistanceLimit = 62;
   camera.panningInertia = 0.85;
   camera.inertia = 0.88;
   camera.angularSensibilityX = 900;
@@ -71,7 +71,7 @@ export function createScene(canvas) {
     // new vector would re-aim from the current position = rotation)
     const t = camera.target.add(fwd.scale(fz * speed)).add(right.scale(fx * speed));
     camera.target.set(
-      Math.max(-32, Math.min(32, t.x)), 0.3, Math.max(-32, Math.min(32, t.z)));
+      Math.max(-62, Math.min(62, t.x)), 0.3, Math.max(-62, Math.min(62, t.z)));
   });
 
   const hemi = new BABYLON.HemisphericLight('hemi', new BABYLON.Vector3(0, 1, 0), scene);
@@ -100,7 +100,7 @@ export function createScene(canvas) {
 
   /* white room with a viewport-style grid floor and a soft mirror finish */
   const matWhite = pbr('white', '#f2f2f4', 0, 0.95);
-  const ground = BABYLON.MeshBuilder.CreateGround('ground', { width: 130, height: 130 }, scene);
+  const ground = BABYLON.MeshBuilder.CreateGround('ground', { width: 260, height: 260 }, scene);
   const groundMat = new BABYLON.StandardMaterial('groundMat', scene);
   groundMat.diffuseColor = BABYLON.Color3.FromHexString('#e9eaee'); // a lit pool under the board
   groundMat.specularColor = new BABYLON.Color3(0.03, 0.03, 0.03);
@@ -144,7 +144,7 @@ export function createScene(canvas) {
     gmat.majorUnitFrequency = 4;
     gmat.opacity = 0.95;
     gmat.zOffset = -2;        // win the depth fight against the floor
-    const grid = BABYLON.MeshBuilder.CreateGround('gridOverlay', { width: 130, height: 130 }, scene);
+    const grid = BABYLON.MeshBuilder.CreateGround('gridOverlay', { width: 260, height: 260 }, scene);
     grid.material = gmat;
     grid.position.y = 0.01;
     grid.isPickable = false;
