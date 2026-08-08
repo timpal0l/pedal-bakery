@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // The sound engine. One AudioContext and the amp bus (master) live forever.
-// Every SOURCE POST on the board owns its own tone generator (sustained
-// chord, plucked arpeggio, live guitar, or silence) and every pedal owns a
+// Every SOURCE POST on the board owns its own tone generator (strummed
+// chord, plucked arpeggio, microtone dyad, live guitar, or silence) and every pedal owns a
 // "rig". setChain() wires each complete source->pedals->amp path in
 // parallel into the master — several tones at once, mixed at the amps.
 //
@@ -102,15 +102,19 @@ export function createAudio() {
     s.guitar = null;
   }
 
-  // Both tone modes are seamless Karplus-Strong loops: 'chord' is a strummed
-  // chord (in the chosen style), 'arp' a picked pattern — both in any key.
+  // All tone modes are seamless Karplus-Strong loops: 'chord' is a strummed
+  // chord (in the chosen style), 'arp' a picked pattern — both in any key —
+  // and 'interval' is a dyad of the root plus any interval in cents, which
+  // is what opens the door to microtones (neutral thirds, quarter tones…).
   function startLoop(s, kind, state) {
-    const root = state.root || 0;
+    // detune is cents — a fractional semitone that rides the whole pitch
+    // pipeline, so any input can sit e.g. a quarter tone off standard
+    const root = (state.root || 0) + (state.detune || 0) / 100;
     const semis = (CHORDS[state.chord] || CHORDS.major).map((x) => x + root);
     const spb = beatSeconds(state);
     const src = ctx.createBufferSource();
-    src.buffer = kind === 'arp'
-      ? makeArpBuffer(ctx, semis, state.arpPattern, spb)
+    src.buffer = kind === 'arp' ? makeArpBuffer(ctx, semis, state.arpPattern, spb)
+      : kind === 'interval' ? makeIntervalBuffer(ctx, root, state.interval ?? 350, spb)
       : makeStrumBuffer(ctx, semis, state.strumStyle, spb);
     src.loop = true;
     const g = ctx.createGain();
@@ -138,8 +142,8 @@ export function createAudio() {
     startLoop(s, kind, state);
   }
 
-  // Mode: 'chord' | 'arp' | 'off' | 'guitar'. Mutates state, returns a HUD
-  // label (or null). Throws if the mic is refused.
+  // Mode: 'chord' | 'arp' | 'interval' | 'off' | 'guitar'. Mutates state,
+  // returns a HUD label (or null). Throws if the mic is refused.
   async function setSourceMode(id, mode, state) {
     const s = sources.get(id);
     if (!s || !ctx) return null;
@@ -178,12 +182,13 @@ export function createAudio() {
       state.mode = 'off';
       return 'UNPLUGGED';
     }
-    const kind = mode === 'arp' ? 'arp' : 'chord';
+    const kind = mode === 'arp' || mode === 'interval' ? mode : 'chord';
     if (!s.loop || s.loop.kind !== kind) {
       stopLoop(s);
       startLoop(s, kind, state);
     }
     state.mode = kind;
+    if (kind === 'interval') return `DYAD — ROOT + ${state.interval ?? 350}¢`;
     return `${(state.chord || 'major').toUpperCase()}${kind === 'arp' ? ' ARPEGGIO' : ''}`;
   }
 
@@ -404,9 +409,17 @@ export const ARP_PATTERNS = {
 };
 
 // One Karplus-Strong pluck rendered into a wrap-around loop buffer.
+// The loop is tuned to a fraction of a sample with a first-order allpass —
+// an integer delay line alone quantizes pitch by up to ~10 cents up high,
+// which would smear the microtone intervals this engine now supports.
 function pluckInto(out, sr, len, f, startSec, ringSec, damp, gain) {
   const start = Math.floor(sr * startSec);
-  const N = Math.max(4, Math.round(sr / f));
+  // the two-tap average delays N - 0.5 samples; the allpass adds frac more,
+  // kept in [0.3, 1.3) so its pole stays well inside the unit circle
+  const exact = sr / f + 0.5;
+  const N = Math.max(4, Math.floor(exact - 0.3));
+  const frac = Math.max(0.1, exact - N);
+  const C = (1 - frac) / (1 + frac);
   const ring = new Float32Array(N);
   const seed = new Float32Array(N);
   let prev = 0;
@@ -418,11 +431,15 @@ function pluckInto(out, sr, len, f, startSec, ringSec, damp, gain) {
   const comb = Math.max(1, Math.round(N * 0.16)); // pickup-position comb -> quack
   for (let j = 0; j < N; j++) ring[j] = seed[j] - 0.9 * seed[(j - comb + N) % N];
   let idx = 0;
+  let apX = 0, apY = 0; // allpass state
   const dur = Math.min(len, Math.floor(sr * ringSec));
   for (let j = 0; j < dur; j++) {
     const p = (start + j) % len; // tail wraps -> seamless loop
     const next = (idx + 1) % N;
-    ring[idx] = damp * 0.5 * (ring[idx] + ring[next]);
+    const avg = 0.5 * (ring[idx] + ring[next]);
+    apY = C * avg + apX - C * apY;
+    apX = avg;
+    ring[idx] = damp * apY;
     out[p] += gain * ring[idx];
     idx = next;
   }
@@ -477,5 +494,25 @@ function makeArpBuffer(ctx, semis, patternKey, spb) {
     pluckInto(out, sr, len, E2 * Math.pow(2, semi / 12), step * i, ring, 0.9965, 0.5);
   });
   normalize(out, 0.7);
+  return buf;
+}
+
+// A microtone dyad over an 8-beat loop: the root alone, the chosen interval
+// alone, then both together — melodic first, harmonic second, so the ear
+// can grab the interval's size before hearing how it beats. `cents` is any
+// value, not a 12-TET multiple: 350 = neutral third, 969 = harmonic seventh.
+function makeIntervalBuffer(ctx, rootSemi, cents, spb) {
+  const sr = ctx.sampleRate;
+  const len = Math.floor(sr * 8 * spb);
+  const buf = ctx.createBuffer(1, len, sr);
+  const out = buf.getChannelData(0);
+  const root = 2 * E2 * Math.pow(2, rootSemi / 12); // E3 register reads clearest
+  const upper = root * Math.pow(2, cents / 1200);
+  const ring = 6.0, damp = 0.999;
+  pluckInto(out, sr, len, root, 0, ring, damp, 0.6);
+  pluckInto(out, sr, len, upper, 2 * spb, ring, damp, 0.5);
+  pluckInto(out, sr, len, root, 4 * spb, ring, damp, 0.55);
+  pluckInto(out, sr, len, upper, 4 * spb + 0.03, ring, damp, 0.48);
+  normalize(out, CHORD_LEVEL * 1.4);
   return buf;
 }

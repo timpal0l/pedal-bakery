@@ -309,6 +309,8 @@ function selectPedal(id) {
   instances.get(selected)?.view.setSelected(false);
   selected = id;
   instances.get(selected)?.view.setSelected(true);
+  if (id) openPanel(id);
+  else if (instances.has(menuTarget)) hidePanel(); // empty click closes a pedal panel
 }
 
 // The camera is held while dragging an object or pulling a cable — a
@@ -453,6 +455,11 @@ view.scene.onPointerObservable.add((pi) => {
         inst.state.values[dragKnob.id] = v;
         inst.view.setKnobValue(dragKnob.id, v);
         audio.applyRig(dragKnob.pedal, inst.spec, inst.state);
+        if (menuTarget === dragKnob.pedal && panelRefs.has(dragKnob.id)) {
+          const ref = panelRefs.get(dragKnob.id);
+          ref.slider.value = v;
+          ref.val.textContent = v.toFixed(1);
+        }
         showHud(`${knobLabel(inst, dragKnob.id)} ${v.toFixed(1)}`, true);
       } else if (dragPostKnob) {
         const post = posts.get(dragPostKnob.id);
@@ -494,8 +501,7 @@ view.scene.onPointerObservable.add((pi) => {
         if (Math.abs(p.x) > GRID_HALF || Math.abs(p.z) > GRID_HALF) {
           removeEndpoint(dragEndpoint.id);
         } else if (post.type === 'source' && dragEndpoint.moved < 6) {
-          menuTarget = dragEndpoint.id;
-          openSourceMenu(pi.event.clientX, pi.event.clientY);
+          openPanel(dragEndpoint.id);
         }
         dragEndpoint = null;
       }
@@ -523,15 +529,39 @@ const SOUND_MODES = [
   { label: 'Off', kind: 'off' },
 ];
 
+const panelRefs = new Map(); // control id -> { slider, val } while a pedal shows
+
+function panelHead(title, sub) {
+  const head = document.createElement('div');
+  head.className = 'panel-head';
+  const left = document.createElement('div');
+  const t = document.createElement('div');
+  t.className = 'panel-title';
+  t.textContent = title;
+  left.appendChild(t);
+  if (sub) {
+    const sb = document.createElement('div');
+    sb.className = 'panel-sub';
+    sb.textContent = sub;
+    left.appendChild(sb);
+  }
+  const x = document.createElement('button');
+  x.className = 'panel-x';
+  x.textContent = '✕';
+  x.addEventListener('click', hidePanel);
+  head.append(left, x);
+  sourceMenu.appendChild(head);
+}
+
 function renderSourceMenu() {
+  panelRefs.clear();
+  const inst = instances.get(menuTarget);
+  if (inst) { renderPedalPanel(inst); return; }
   const post = posts.get(menuTarget);
   if (!post || post.type !== 'source') return;
   const st = post.state;
   sourceMenu.innerHTML = '';
-  const handle = document.createElement('div');
-  handle.id = 'menu-handle';
-  handle.textContent = 'TONE';
-  sourceMenu.appendChild(handle);
+  panelHead('Tone', 'input settings');
   const section = (label) => {
     const d = document.createElement('div');
     d.className = 'menu-section';
@@ -600,6 +630,67 @@ function renderSourceMenu() {
     (c) => chooseChord(c), 5);
 }
 
+function renderPedalPanel(inst) {
+  sourceMenu.innerHTML = '';
+  panelHead(inst.spec.name, inst.spec.tagline
+    || inst.spec.chain.map((m) => m.type).join(' → '));
+  for (const c of inst.spec.controls) {
+    const row = document.createElement('div');
+    row.className = 'ctl-row';
+    const label = document.createElement('label');
+    label.textContent = c.label;
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.min = 0; slider.max = 10; slider.step = 0.1;
+    slider.value = inst.state.values[c.id];
+    const val = document.createElement('span');
+    val.className = 'val';
+    val.textContent = Number(inst.state.values[c.id]).toFixed(1);
+    slider.addEventListener('input', () => {
+      const v = Number(slider.value);
+      inst.state.values[c.id] = v;
+      inst.view.setKnobValue(c.id, v);
+      audio.applyRig(inst.id, inst.spec, inst.state);
+      val.textContent = v.toFixed(1);
+    });
+    row.append(label, slider, val);
+    sourceMenu.appendChild(row);
+    panelRefs.set(c.id, { slider, val });
+  }
+  for (const sw of inst.spec.switches || []) {
+    const b = document.createElement('button');
+    const on = () => inst.state.switches[sw.id];
+    b.className = 'menu-row' + (on() ? ' active' : '');
+    b.innerHTML = `<span class="check">${on() ? '✓' : ''}</span><span></span>`;
+    b.lastChild.textContent = sw.label;
+    b.addEventListener('click', () => {
+      inst.state.switches[sw.id] = !on();
+      inst.view.setToggle(sw.id, inst.state.switches[sw.id]);
+      audio.applyRig(inst.id, inst.spec, inst.state);
+      renderSourceMenu();
+    });
+    sourceMenu.appendChild(b);
+  }
+  const byp = document.createElement('button');
+  byp.className = 'panel-btn';
+  byp.textContent = inst.state.on
+    ? (inst.spec.kind === 'amp' ? 'STANDBY' : 'BYPASS')
+    : 'ENGAGE';
+  byp.addEventListener('click', () => {
+    inst.state.on = !inst.state.on;
+    inst.view.setLed(inst.state.on);
+    inst.view.pressFootswitch();
+    audio.applyRig(inst.id, inst.spec, inst.state);
+    renderSourceMenu();
+  });
+  sourceMenu.appendChild(byp);
+  const rm = document.createElement('button');
+  rm.className = 'panel-btn danger';
+  rm.textContent = 'REMOVE';
+  rm.addEventListener('click', () => { hidePanel(); removePedal(inst.id); });
+  sourceMenu.appendChild(rm);
+}
+
 function chooseBpm(bpm) {
   const post = posts.get(menuTarget);
   if (!post) return;
@@ -641,37 +732,14 @@ function chooseToneOption(field, value) {
   renderSourceMenu();
 }
 
-const UI_ZOOM = 1.2; // keep in sync with the CSS zoom on #source-menu
-
-function openSourceMenu(x, y) {
+// the settings panel docks to the right edge — it never floats
+function openPanel(id) {
+  menuTarget = id;
   renderSourceMenu();
   sourceMenu.style.display = 'flex';
-  const zx = x / UI_ZOOM, zy = y / UI_ZOOM;
-  const vw = window.innerWidth / UI_ZOOM, vh = window.innerHeight / UI_ZOOM;
-  sourceMenu.style.maxHeight = `${Math.floor(vh - 20)}px`; // vh units misbehave under zoom
-  sourceMenu.style.left = `${Math.min(zx, vw - 356)}px`;
-  const h = sourceMenu.offsetHeight;
-  sourceMenu.style.top = `${Math.max(10, Math.min(zy - 40, vh - h - 10))}px`;
 }
-function hideSourceMenu() { sourceMenu.style.display = 'none'; }
-document.addEventListener('pointerdown', (e) => {
-  if (!sourceMenu.contains(e.target)) hideSourceMenu();
-});
-
-// the menu is draggable by its TONE handle
-let menuDrag = null;
-sourceMenu.addEventListener('pointerdown', (e) => {
-  if (e.target.id !== 'menu-handle') return;
-  menuDrag = { dx: e.clientX / UI_ZOOM - sourceMenu.offsetLeft,
-               dy: e.clientY / UI_ZOOM - sourceMenu.offsetTop };
-  e.preventDefault();
-});
-document.addEventListener('pointermove', (e) => {
-  if (!menuDrag) return;
-  sourceMenu.style.left = `${e.clientX / UI_ZOOM - menuDrag.dx}px`;
-  sourceMenu.style.top = `${e.clientY / UI_ZOOM - menuDrag.dy}px`;
-});
-document.addEventListener('pointerup', () => { menuDrag = null; });
+function hidePanel() { sourceMenu.style.display = 'none'; }
+const hideSourceMenu = hidePanel; // old name, still used by Escape
 
 async function chooseMode(m) {
   const post = posts.get(menuTarget);
@@ -833,7 +901,7 @@ window.__pedal = {
     if (chord) audio.refreshTone(id, posts.get(id).state);
   },
   tone: (id, field, value) => { menuTarget = id; chooseToneOption(field, value); },
-  openMenu: (id) => { menuTarget = id; openSourceMenu(320, 160); },
+  openMenu: openPanel,
   volume: (id, v) => {
     const post = posts.get(id);
     post.state.volume = v;

@@ -168,16 +168,36 @@
     padding: 6px; box-shadow: 0 8px 28px rgba(30, 30, 40, 0.14);
   }
   #source-menu {
-    width: 340px; padding: 8px; border-radius: 16px;
-    /* 100vh / 1.2 zoom, minus margins */
-    max-height: calc(83.3vh - 26px); overflow-y: auto;
+    width: 300px; padding: 10px 12px; border-radius: 0;
+    top: 0; right: 0; bottom: 0; left: auto;
+    border-left: 1px solid rgba(220, 220, 226, 0.6); border-top: none;
+    border-right: none; border-bottom: none;
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    overflow-y: auto; box-shadow: none;
   }
-  #menu-handle {
-    text-align: center; font-size: 10.5px; font-weight: 700; letter-spacing: 0.3em;
-    color: #b8b9c2; padding: 4px 0 2px; cursor: grab; user-select: none;
-    -webkit-user-select: none; touch-action: none;
+  .panel-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 6px 10px;
   }
-  #menu-handle:active { cursor: grabbing; }
+  .panel-title { font-size: 15px; font-weight: 700; letter-spacing: 0.06em; color: #2b2b30; }
+  .panel-sub { font-size: 11px; color: #8a8a94; margin-top: 2px; }
+  .panel-x {
+    font: inherit; font-size: 14px; cursor: pointer; color: #6a6a72;
+    background: rgba(255, 255, 255, 0.8); border: 1px solid #dcdce2;
+    border-radius: 999px; width: 26px; height: 26px; line-height: 1;
+  }
+  .ctl-row { display: flex; align-items: center; gap: 8px; padding: 5px 8px; }
+  .ctl-row label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+    color: #55555c; width: 64px; flex: none; overflow: hidden; text-overflow: ellipsis; }
+  .ctl-row input[type=range] { flex: 1; accent-color: #3a7bd5; }
+  .ctl-row .val { font-size: 11px; color: #8a8a94; width: 26px; text-align: right; }
+  .panel-btn {
+    font: inherit; font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
+    cursor: pointer; border-radius: 9px; padding: 8px 0; margin: 4px 8px;
+    border: 1px solid #dcdce2; background: rgba(255, 255, 255, 0.8); color: #2b2b30;
+  }
+  .panel-btn.danger { color: #a03434; border-color: #dcb9b9; }
   .menu-section {
     font-size: 10.5px; font-weight: 700; letter-spacing: 0.18em; color: #9a9aa4;
     padding: 8px 10px 4px;
@@ -199,6 +219,7 @@
   }
   .chip-sm:hover { background: #e6e6ec; }
   .chip-sm.active { background: #3a7bd5; color: #fff; font-weight: 600; }
+  .chip-sm small { display: block; font-size: 9px; font-weight: 600; opacity: 0.6; }
   #hud {
     display: none;
     position: fixed; left: 50%; bottom: 104px; transform: translateX(-50%); z-index: 5;
