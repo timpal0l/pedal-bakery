@@ -881,7 +881,7 @@ export function createScene(canvas) {
     const rtt = new BABYLON.RenderTargetTexture('thumbRTT', { width: W, height: H }, scene, false);
     rtt.activeCamera = cam;
     rtt.renderList = handles.root.getChildMeshes();
-    rtt.clearColor = new BABYLON.Color4(0.945, 0.945, 0.96, 1);
+    rtt.clearColor = new BABYLON.Color4(0.15, 0.155, 0.17, 1);
     scene.customRenderTargets.push(rtt);
     try {
       await new Promise((res) => scene.executeWhenReady(res));
