@@ -24,7 +24,7 @@ function valueToAngle(v) {
 export function createScene(canvas) {
   const engine = new BABYLON.Engine(canvas, true, { adaptToDeviceRatio: true });
   const scene = new BABYLON.Scene(engine);
-  scene.clearColor = new BABYLON.Color4(0.855, 0.86, 0.875, 1); // studio grey, not blown white
+  scene.clearColor = new BABYLON.Color4(0.145, 0.15, 0.163, 1); // dark studio charcoal
 
   const camera = new BABYLON.ArcRotateCamera('cam', -Math.PI / 2, 0.9, 11,
     new BABYLON.Vector3(0, 0.3, 0), scene);
@@ -75,9 +75,9 @@ export function createScene(canvas) {
   });
 
   const hemi = new BABYLON.HemisphericLight('hemi', new BABYLON.Vector3(0, 1, 0), scene);
-  hemi.intensity = 0.55;
-  hemi.diffuse = new BABYLON.Color3(0.93, 0.95, 1.0);      // cool sky fill
-  hemi.groundColor = new BABYLON.Color3(0.88, 0.86, 0.84); // warm floor bounce
+  hemi.intensity = 0.5;
+  hemi.diffuse = new BABYLON.Color3(0.85, 0.88, 0.95);     // cool sky fill
+  hemi.groundColor = new BABYLON.Color3(0.28, 0.27, 0.26); // dim warm floor bounce
   const sun = new BABYLON.DirectionalLight('sun', new BABYLON.Vector3(-0.35, -1, 0.25), scene);
   sun.position = new BABYLON.Vector3(6, 14, -6);
   sun.intensity = 1.15;
@@ -102,11 +102,11 @@ export function createScene(canvas) {
   const matWhite = pbr('white', '#f2f2f4', 0, 0.95);
   const ground = BABYLON.MeshBuilder.CreateGround('ground', { width: 260, height: 260 }, scene);
   const groundMat = new BABYLON.StandardMaterial('groundMat', scene);
-  groundMat.diffuseColor = BABYLON.Color3.FromHexString('#e9eaee'); // a lit pool under the board
+  groundMat.diffuseColor = BABYLON.Color3.FromHexString('#2e3036'); // dark stage floor
   groundMat.specularColor = new BABYLON.Color3(0.03, 0.03, 0.03);
   const mirror = new BABYLON.MirrorTexture('mirror', { ratio: 0.5 }, scene, true);
   mirror.mirrorPlane = new BABYLON.Plane(0, -1, 0, 0);
-  mirror.level = 0.22;
+  mirror.level = 0.3; // dark gloss shows reflections beautifully
   mirror.adaptiveBlurKernel = 24;
   groundMat.reflectionTexture = mirror;
   ground.material = groundMat;
@@ -138,8 +138,8 @@ export function createScene(canvas) {
   aa.samples = 4;
   if (BABYLON.GridMaterial) {
     const gmat = new BABYLON.GridMaterial('grid', scene);
-    gmat.mainColor = BABYLON.Color3.FromHexString('#e9eaee');
-    gmat.lineColor = BABYLON.Color3.FromHexString('#989ba8');
+    gmat.mainColor = BABYLON.Color3.FromHexString('#2e3036');
+    gmat.lineColor = BABYLON.Color3.FromHexString('#4d515c');
     gmat.gridRatio = SNAP;
     gmat.majorUnitFrequency = 4;
     gmat.opacity = 0.95;
@@ -278,14 +278,22 @@ export function createScene(canvas) {
     matGr.metallic = 0.0;
     matGr.roughness = 0.95;
     matGr.specularIntensity = 0.3;
+    // a dark slab gives the baffle depth; the artwork rides on a plane in
+    // front of it — box side faces mount their UVs rotated 90°, planes don't
     const faceUV = Array.from({ length: 6 }, () => new BABYLON.Vector4(0, 0, 0.02, 0.02));
-    faceUV[2] = new BABYLON.Vector4(0, 0, 1, 1); // +x face wears the full cloth
-    const grille = BABYLON.MeshBuilder.CreateBox('grille_' + id,
+    const slab = BABYLON.MeshBuilder.CreateBox('grille_' + id,
       { width: 0.07, height: gh, depth: gw, faceUV }, scene);
-    grille.parent = root;
-    grille.position.set(W / 2 + 0.005, (gy0 + gy1) / 2, 0);
-    grille.material = matGr;
-    grille.metadata = meta;
+    slab.parent = root;
+    slab.position.set(W / 2 + 0.005, (gy0 + gy1) / 2, 0);
+    slab.material = matGr;
+    slab.metadata = meta;
+    const cloth = BABYLON.MeshBuilder.CreatePlane('grille_' + id,
+      { width: gw, height: gh }, scene);
+    cloth.parent = root;
+    cloth.rotation.y = -Math.PI / 2; // face +x, canvas upright for the viewer
+    cloth.position.set(W / 2 + 0.045, (gy0 + gy1) / 2, 0);
+    cloth.material = matGr;
+    cloth.metadata = meta;
 
     /* piping around the grille */
     const t = 0.055, px = W / 2 + 0.02;
@@ -665,6 +673,7 @@ export function createScene(canvas) {
       paintFaceplate(faceTex.getContext(), TW, TH, spec, layout);
       faceTex.update();
     }
+    faceTex.anisotropicFilteringLevel = 16; // stops shimmer at shallow angles
     const matTop = new BABYLON.PBRMaterial('top_' + id, scene);
     matTop.albedoTexture = faceTex;
     matTop.emissiveTexture = faceTex;
