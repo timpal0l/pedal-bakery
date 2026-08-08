@@ -1,0 +1,86 @@
+{
+  "name": "Velvet Room",
+  "tagline": "late-set ballads in blue",
+  "enclosure": {
+    "width": 2.4,
+    "depth": 2.4,
+    "height": 0.55,
+    "color": "#1c2a45"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#23395d",
+      "#3e5c76",
+      "#d4a95c"
+    ],
+    "textColor": "#f2e8d5"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 4.0,
+        "attack": 3.0
+      }
+    },
+    {
+      "id": "flt",
+      "type": "filter",
+      "params": {
+        "cutoff": 6.5,
+        "resonance": 1.0
+      }
+    },
+    {
+      "id": "cho",
+      "type": "chorus",
+      "params": {
+        "rate": 2.0,
+        "depth": 2.0,
+        "mix": 2.5
+      }
+    },
+    {
+      "id": "rev",
+      "type": "reverb",
+      "params": {
+        "size": 7.0,
+        "mix": 5.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "SPACE",
+      "target": "rev.size"
+    },
+    {
+      "id": "k2",
+      "label": "WASH",
+      "target": "rev.mix"
+    },
+    {
+      "id": "k3",
+      "label": "WARMTH",
+      "target": "flt.cutoff"
+    },
+    {
+      "id": "k4",
+      "label": "SUSTAIN",
+      "target": "cmp.sustain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "VELVET",
+      "target": "cho.depth",
+      "off": 0,
+      "on": 2.5
+    }
+  ],
+  "bakedFrom": "smooth reverb jazz"
+}

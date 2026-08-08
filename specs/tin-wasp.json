@@ -1,0 +1,18 @@
+{
+  "bakedFrom": "a tiny angry one-trick fuzz that sounds like a wasp in a tin can",
+  "name": "Tin Wasp",
+  "tagline": "one sting, no mercy",
+  "enclosure": { "width": 1.2, "depth": 1.7, "height": 0.5, "color": "#f2b705" },
+  "artwork": { "style": "stripes", "palette": ["#151310", "#f2b705", "#151310"], "textColor": "#151310" },
+  "chain": [
+    { "id": "dr", "type": "drive", "params": { "amount": 9.6, "tone": 8.7, "level": 6.5 } },
+    { "id": "fl", "type": "filter", "params": { "cutoff": 6.8, "resonance": 8.8 } },
+    { "id": "rv", "type": "reverb", "params": { "size": 1.2, "mix": 2.2 } }
+  ],
+  "controls": [
+    { "id": "sting", "label": "STING", "target": "dr.amount" }
+  ],
+  "switches": [
+    { "id": "can", "label": "CAN", "target": "rv.mix", "off": 0.5, "on": 4.5 }
+  ]
+}

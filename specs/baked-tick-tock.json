@@ -1,0 +1,92 @@
+{
+  "name": "Tick Tock",
+  "tagline": "wooden time, ear to ear",
+  "enclosure": {
+    "width": 2.2,
+    "depth": 2.6,
+    "height": 0.55,
+    "color": "#6B3F23"
+  },
+  "artwork": {
+    "style": "stripes",
+    "palette": [
+      "#6B3F23",
+      "#F2E8D5",
+      "#C9A227"
+    ],
+    "textColor": "#F2E8D5"
+  },
+  "chain": [
+    {
+      "id": "squash",
+      "type": "comp",
+      "params": {
+        "sustain": 7.0,
+        "attack": 8.0
+      }
+    },
+    {
+      "id": "clave",
+      "type": "ring",
+      "params": {
+        "freq": 6.5,
+        "mix": 4.0
+      }
+    },
+    {
+      "id": "wood",
+      "type": "filter",
+      "params": {
+        "cutoff": 5.0,
+        "resonance": 7.0
+      }
+    },
+    {
+      "id": "pend",
+      "type": "tremolo",
+      "params": {
+        "rate": 5.0,
+        "depth": 10
+      }
+    },
+    {
+      "id": "out",
+      "type": "level",
+      "params": {
+        "gain": 5.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "TEMPO",
+      "target": "pend.rate"
+    },
+    {
+      "id": "k2",
+      "label": "CHOP",
+      "target": "pend.depth"
+    },
+    {
+      "id": "k3",
+      "label": "CLICK",
+      "target": "clave.mix"
+    },
+    {
+      "id": "k4",
+      "label": "WOOD",
+      "target": "wood.cutoff"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "TOCK",
+      "target": "clave.freq",
+      "off": 6.5,
+      "on": 3.0
+    }
+  ],
+  "bakedFrom": "metronome"
+}

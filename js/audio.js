@@ -1,0 +1,394 @@
+// ---------------------------------------------------------------------------
+// The sound engine. One AudioContext and the amp bus (master) live forever.
+// Every SOURCE POST on the board owns its own tone generator (sustained
+// chord, plucked arpeggio, live guitar, or silence) and every pedal owns a
+// "rig". setChain() wires each complete source->pedals->amp path in
+// parallel into the master — several tones at once, mixed at the amps.
+//
+//   src A: chord ──┐ bus ── rig ── rig ──┐
+//                                        ├── master (all amps) ── speakers
+//   src B: arp ────┘ bus ───── rig ──────┘
+// ---------------------------------------------------------------------------
+
+import { CHORDS, CHORD_GAINS, CHORD_LEVEL, E2 } from './config.js';
+import { MODULES } from './modules.js';
+
+export function createAudio() {
+  let ctx = null;     // created on the first user gesture, then permanent
+  let master = null;
+  const rigs = new Map();     // pedal instanceId -> rig
+  const sources = new Map();  // source post id -> { bus, loop, guitar }
+  const ampGains = new Map(); // amp post id -> gain (its volume knob)
+
+  function vol(v) { return Math.pow((v ?? 5) / 10, 1.5) * 2; }
+
+  // Browsers only allow sound after a user gesture, so call this from a click.
+  function start() {
+    if (ctx) { ctx.resume(); return; }
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    master = ctx.createGain();
+    master.gain.value = 0.9;
+    master.connect(ctx.destination);
+    console.log('[audio] started');
+  }
+
+  /* ------------------------------------------------------- source posts -- */
+
+  function createSource(id, state) {
+    if (!ctx || sources.has(id)) return;
+    const bus = ctx.createGain();
+    bus.gain.value = vol(state.volume);
+    sources.set(id, { bus, loop: null, guitar: null });
+    applyMode(id, state);
+  }
+
+  function createAmp(id, state) {
+    if (!ctx || ampGains.has(id)) return;
+    const g = ctx.createGain();
+    g.gain.value = vol(state?.volume);
+    g.connect(master);
+    ampGains.set(id, g);
+  }
+
+  function disposeAmp(id) {
+    const g = ampGains.get(id);
+    if (!g) return;
+    try { g.disconnect(); } catch { /* ok */ }
+    ampGains.delete(id);
+  }
+
+  // The volume knob on a tone post (input trim) or an amp (output level).
+  function setPostVolume(id, v) {
+    if (!ctx) return;
+    const target = sources.get(id)?.bus.gain ?? ampGains.get(id)?.gain;
+    target?.setTargetAtTime(vol(v), ctx.currentTime, 0.05);
+  }
+
+  function disposeSource(id) {
+    const s = sources.get(id);
+    if (!s) return;
+    stopLoop(s);
+    dropGuitar(s);
+    try { s.bus.disconnect(); } catch { /* ok */ }
+    sources.delete(id);
+  }
+
+  function stopLoop(s) {
+    if (!s.loop) return;
+    try { s.loop.src.stop(); } catch { /* ok */ }
+    s.loop.src.disconnect();
+    s.loop.g.disconnect();
+    for (const n of s.loop.voicing || []) { try { n.disconnect(); } catch { /* ok */ } }
+    s.loop = null;
+  }
+
+  function dropGuitar(s) {
+    if (!s.guitar) return;
+    s.guitar.trim.disconnect();
+    s.guitar.srcNode.disconnect();
+    s.guitar.stream.getTracks().forEach((t) => t.stop());
+    s.guitar = null;
+  }
+
+  // Both tone modes are seamless Karplus-Strong loops: 'chord' is a strummed
+  // chord (in the chosen style), 'arp' a picked pattern — both in any key.
+  function startLoop(s, kind, state) {
+    const root = state.root || 0;
+    const semis = (CHORDS[state.chord] || CHORDS.major).map((x) => x + root);
+    const src = ctx.createBufferSource();
+    src.buffer = kind === 'arp'
+      ? makeArpBuffer(ctx, semis, state.arpPattern)
+      : makeStrumBuffer(ctx, semis, state.strumStyle);
+    src.loop = true;
+    const g = ctx.createGain();
+    g.gain.value = kind === 'arp' ? 0.8 : 0.9;
+    // single-coil voicing: tight lows, scooped mids, glassy presence
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 85; hp.Q.value = 0.6;
+    const scoop = ctx.createBiquadFilter();
+    scoop.type = 'peaking'; scoop.frequency.value = 650; scoop.Q.value = 0.8; scoop.gain.value = -3.5;
+    const spark = ctx.createBiquadFilter();
+    spark.type = 'peaking'; spark.frequency.value = 3300; spark.Q.value = 1.0; spark.gain.value = 3.0;
+    src.connect(g).connect(hp).connect(scoop).connect(spark).connect(s.bus);
+    src.start();
+    s.loop = { src, g, kind, voicing: [hp, scoop, spark] };
+  }
+
+  // Rebuild whichever loop is playing after chord/key/style changes.
+  function refreshTone(id, state) {
+    const s = sources.get(id);
+    if (!s || !s.loop) return;
+    const kind = s.loop.kind;
+    stopLoop(s);
+    startLoop(s, kind, state);
+  }
+
+  // Mode: 'chord' | 'arp' | 'off' | 'guitar'. Mutates state, returns a HUD
+  // label (or null). Throws if the mic is refused.
+  async function setSourceMode(id, mode, state) {
+    const s = sources.get(id);
+    if (!s || !ctx) return null;
+    const t = ctx.currentTime;
+
+    if (mode === 'guitar') {
+      const noProcessing = {
+        echoCancellation: false, noiseSuppression: false, autoGainControl: false,
+      };
+      let stream = await navigator.mediaDevices.getUserMedia({ audio: noProcessing });
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const scarlett = devices.find((d) =>
+        d.kind === 'audioinput' && /focusrite|scarlett/i.test(d.label));
+      const defaultLabel = stream.getAudioTracks()[0]?.label || '';
+      if (scarlett && !/focusrite|scarlett/i.test(defaultLabel)) {
+        stream.getTracks().forEach((tr) => tr.stop());
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: { ...noProcessing, deviceId: { exact: scarlett.deviceId } } });
+      }
+      const srcNode = ctx.createMediaStreamSource(stream);
+      const split = ctx.createChannelSplitter(2);
+      const trim = ctx.createGain();
+      const ch = Math.min(1, Math.max(0, state.channel || 0)); // Scarlett input 1 or 2
+      srcNode.connect(split);
+      split.connect(trim, ch, 0);
+      trim.connect(s.bus);
+      stopLoop(s);
+      s.guitar = { stream, srcNode, trim };
+      state.mode = 'guitar';
+      return `GUITAR INPUT ${ch + 1} — ${stream.getAudioTracks()[0]?.label || 'default input'}`;
+    }
+
+    dropGuitar(s);
+    if (mode === 'off') {
+      stopLoop(s);
+      state.mode = 'off';
+      return 'UNPLUGGED';
+    }
+    const kind = mode === 'arp' ? 'arp' : 'chord';
+    if (!s.loop || s.loop.kind !== kind) {
+      stopLoop(s);
+      startLoop(s, kind, state);
+    }
+    state.mode = kind;
+    return `${(state.chord || 'major').toUpperCase()}${kind === 'arp' ? ' ARPEGGIO' : ''}`;
+  }
+
+  function applyMode(id, state) {
+    setSourceMode(id, state.mode, state).catch(() => {});
+  }
+
+  /* -------------------------------------------------------- pedal rigs -- */
+
+  function createRig(id, spec, state) {
+    if (!ctx) return;
+    disposeRig(id);
+    const pedalIn = ctx.createGain();
+    const wet = ctx.createGain();
+    const bypass = ctx.createGain();
+    const out = ctx.createGain();
+    const modules = {};
+    let node = pedalIn;
+    for (const m of spec.chain) {
+      const def = MODULES[m.type];
+      if (!def) { console.warn('[audio] unknown module type', m.type); continue; }
+      const mod = def.create(ctx);
+      modules[m.id] = mod;
+      node.connect(mod.in);
+      node = mod.out;
+    }
+    node.connect(wet).connect(out);
+    pedalIn.connect(bypass).connect(out);
+    rigs.set(id, { pedalIn, wet, bypass, out, modules });
+    applyRig(id, spec, state);
+  }
+
+  function applyRig(id, spec, state) {
+    const rig = rigs.get(id);
+    if (!rig) return;
+    const t = ctx.currentTime;
+    rig.wet.gain.setTargetAtTime(state.on ? 1 : 0, t, 0.05);
+    rig.bypass.gain.setTargetAtTime(state.on ? 0 : 1, t, 0.05);
+    const set = (target, value) => {
+      const [mid, param] = String(target).split('.');
+      rig.modules[mid]?.set(param, value);
+    };
+    for (const c of spec.controls) set(c.target, state.values[c.id]);
+    for (const sw of spec.switches || []) set(sw.target, state.switches[sw.id] ? sw.on : sw.off);
+  }
+
+  function disposeRig(id) {
+    const rig = rigs.get(id);
+    if (!rig) return;
+    for (const m of Object.values(rig.modules)) m.dispose();
+    for (const n of [rig.pedalIn, rig.wet, rig.bypass, rig.out]) {
+      try { n.disconnect(); } catch { /* ok */ }
+    }
+    rigs.delete(id);
+  }
+
+  /* ------------------------------------------------------ chain routing -- */
+
+  // chains: [{ source: sourceId, pedals: [pedalId, ...] }] — only complete
+  // source->amp paths. Everything not in a chain stays silent.
+  function setChain(chains) {
+    if (!ctx) return;
+    for (const s of sources.values()) { try { s.bus.disconnect(); } catch { /* ok */ } }
+    for (const rig of rigs.values()) { try { rig.out.disconnect(); } catch { /* ok */ } }
+    // internal source wiring survives disconnect() of the bus outputs only —
+    // reconnect generators to their bus is not needed (they feed INTO bus)
+    for (const chain of chains) {
+      const s = sources.get(chain.source);
+      if (!s) continue;
+      let node = s.bus;
+      let ok = true;
+      for (const pid of chain.pedals) {
+        const rig = rigs.get(pid);
+        if (!rig) { ok = false; break; }
+        node.connect(rig.pedalIn);
+        node = rig.out;
+      }
+      if (ok) node.connect(ampGains.get(chain.amp) ?? master);
+    }
+    console.log('[audio] chains:', chains.length
+      ? chains.map((c) => [c.source, ...c.pedals].join(' → ') + ' → amp').join('  |  ')
+      : 'none (silence)');
+  }
+
+  return {
+    start, createSource, disposeSource, createAmp, disposeAmp,
+    setSourceMode, refreshTone, setPostVolume,
+    createRig, applyRig, disposeRig, setChain,
+    started: () => !!ctx,
+    contextState: () => (ctx ? ctx.state : 'uninitialized'),
+  };
+}
+
+/* ------------------------------------------------------ tone generators -- */
+
+// Strumming styles: when and how the chord gets hit inside one loop.
+// dir 1 = downstroke (low strings first), -1 = upstroke (top strings, softer).
+// strings: 'low'/'high' restricts an event to part of the chord (boom-chick).
+// sweep = seconds between strings in one stroke (rasgueado wants it tight).
+export const STRUM_STYLES = {
+  ring: { label: 'Ring out', dur: 9.0, ring: 9.0, damp: 0.999,
+    events: [{ t: 0, dir: 1, g: 1 }] },
+  steady: { label: 'Steady', dur: 8.0, ring: 4.0, damp: 0.9985,
+    events: [{ t: 0, dir: 1, g: 1 }, { t: 2, dir: 1, g: 0.85 },
+             { t: 4, dir: 1, g: 0.95 }, { t: 6, dir: 1, g: 0.85 }] },
+  ballad: { label: 'Ballad', dur: 8.0, ring: 7.0, damp: 0.999,
+    events: [{ t: 0, dir: 1, g: 0.95 }, { t: 4, dir: 1, g: 0.7 }] },
+  folk: { label: 'Folk', dur: 4.8, ring: 2.6, damp: 0.998,
+    events: [{ t: 0, dir: 1, g: 1 }, { t: 1.2, dir: 1, g: 0.8 },
+             { t: 1.8, dir: -1, g: 0.6 }, { t: 3.0, dir: -1, g: 0.6 },
+             { t: 3.6, dir: 1, g: 0.85 }, { t: 4.2, dir: -1, g: 0.6 }] },
+  waltz: { label: 'Waltz', dur: 2.4, ring: 1.6, damp: 0.998,
+    events: [{ t: 0, dir: 1, g: 1 }, { t: 0.8, dir: -1, g: 0.55 },
+             { t: 1.6, dir: -1, g: 0.55 }] },
+  chop: { label: 'Chop', dur: 3.2, ring: 0.34, damp: 0.988,
+    events: Array.from({ length: 8 }, (_, i) =>
+      ({ t: i * 0.4, dir: i % 2 ? -1 : 1, g: i % 2 ? 0.7 : 1 })) },
+  reggae: { label: 'Reggae', dur: 3.2, ring: 0.3, damp: 0.986,
+    events: [0.4, 1.2, 2.0, 2.8].map((t) => ({ t, dir: -1, g: 0.85, strings: 'high' })) },
+  punk: { label: 'Punk', dur: 2.4, ring: 0.5, damp: 0.99, sweep: 0.02,
+    events: Array.from({ length: 8 }, (_, i) =>
+      ({ t: i * 0.3, dir: 1, g: i % 2 ? 0.85 : 1 })) },
+  flamenco: { label: 'Flamenco', dur: 4.0, ring: 2.2, damp: 0.9975, sweep: 0.018,
+    events: [{ t: 0, dir: 1, g: 0.7 }, { t: 0.07, dir: -1, g: 0.7 },
+             { t: 0.14, dir: 1, g: 0.8 }, { t: 0.22, dir: 1, g: 1 },
+             { t: 2.0, dir: -1, g: 0.6 }, { t: 2.07, dir: 1, g: 0.9 }] },
+  train: { label: 'Train', dur: 2.4, ring: 0.9, damp: 0.993,
+    events: [{ t: 0, dir: 1, g: 1, strings: 'low' },
+             { t: 0.6, dir: -1, g: 0.6, strings: 'high' },
+             { t: 1.2, dir: 1, g: 0.9, strings: 'low' },
+             { t: 1.8, dir: -1, g: 0.6, strings: 'high' }] },
+};
+
+// Arpeggio patterns: string order inside the loop. Optional step (seconds
+// per note) and ring (seconds each note sustains).
+export const ARP_PATTERNS = {
+  up:      { label: 'Up', order: [0, 1, 2, 3, 4, 5] },
+  down:    { label: 'Down', order: [5, 4, 3, 2, 1, 0] },
+  updown:  { label: 'Up-down', order: [0, 1, 2, 3, 4, 5, 4, 3, 2, 1] },
+  picked:  { label: 'Picked', order: [0, 3, 2, 4, 1, 4, 2, 3] },
+  outside: { label: 'Outside', order: [0, 5, 1, 4, 2, 3] },
+  cascade: { label: 'Cascade', order: [0, 1, 2, 0, 2, 3, 2, 3, 4, 3, 4, 5], step: 0.21 },
+  pedal:   { label: 'Pedal', order: [0, 5, 0, 4, 0, 3, 0, 2] },
+  gallop:  { label: 'Gallop', order: [0, 2, 4, 0, 2, 5, 0, 2, 4, 0, 2, 3], step: 0.14, ring: 0.9 },
+  harp:    { label: 'Harp', order: [0, 1, 2, 3, 4, 5, 4, 3, 2, 1], step: 0.16, ring: 2.4 },
+};
+
+// One Karplus-Strong pluck rendered into a wrap-around loop buffer.
+function pluckInto(out, sr, len, f, startSec, ringSec, damp, gain) {
+  const start = Math.floor(sr * startSec);
+  const N = Math.max(4, Math.round(sr / f));
+  const ring = new Float32Array(N);
+  const seed = new Float32Array(N);
+  let prev = 0;
+  for (let j = 0; j < N; j++) {
+    const white = Math.random() * 2 - 1;
+    prev = 0.3 * prev + 0.7 * white; // bright single-coil pick attack
+    seed[j] = prev;
+  }
+  const comb = Math.max(1, Math.round(N * 0.16)); // pickup-position comb -> quack
+  for (let j = 0; j < N; j++) ring[j] = seed[j] - 0.9 * seed[(j - comb + N) % N];
+  let idx = 0;
+  const dur = Math.min(len, Math.floor(sr * ringSec));
+  for (let j = 0; j < dur; j++) {
+    const p = (start + j) % len; // tail wraps -> seamless loop
+    const next = (idx + 1) % N;
+    ring[idx] = damp * 0.5 * (ring[idx] + ring[next]);
+    out[p] += gain * ring[idx];
+    idx = next;
+  }
+}
+
+function normalize(out, target) {
+  let peak = 0;
+  for (let i = 0; i < out.length; i++) peak = Math.max(peak, Math.abs(out[i]));
+  const s = peak > 0 ? target / peak : 1;
+  for (let i = 0; i < out.length; i++) out[i] *= s;
+}
+
+// A strummed electric guitar chord in the chosen style — every hit sweeps
+// across the strings (down or up), rings naturally, and the tails wrap so
+// the loop never goes silent.
+function makeStrumBuffer(ctx, semis, styleKey) {
+  const style = STRUM_STYLES[styleKey] || STRUM_STYLES.ring;
+  const sr = ctx.sampleRate;
+  const len = Math.floor(sr * style.dur);
+  const buf = ctx.createBuffer(1, len, sr);
+  const out = buf.getChannelData(0);
+  const sweep = style.sweep ?? 0.045;
+  for (const ev of style.events) {
+    let order = semis.map((_, i) => i);
+    if (ev.strings === 'low') order = order.slice(0, 3);
+    else if (ev.strings === 'high') order = order.slice(2);
+    else if (ev.dir < 0) order = order.slice(2); // upstrokes skip low strings
+    if (ev.dir < 0) order = [...order].reverse();
+    order.forEach((stringIdx, k) => {
+      const f = E2 * Math.pow(2, semis[stringIdx] / 12);
+      pluckInto(out, sr, len, f, ev.t + k * sweep, style.ring, style.damp,
+        (CHORD_GAINS[stringIdx] ?? 0.15) * 2.2 * ev.g);
+    });
+  }
+  normalize(out, CHORD_LEVEL * 1.5);
+  return buf;
+}
+
+// Plucked Karplus-Strong arpeggio over the chord shape in the chosen
+// pattern, looping seamlessly — the transient-rich source that makes
+// drives, delays and comps audible.
+function makeArpBuffer(ctx, semis, patternKey) {
+  const pattern = ARP_PATTERNS[patternKey] || ARP_PATTERNS.up;
+  const sr = ctx.sampleRate;
+  const step = pattern.step ?? 0.28;
+  const ring = pattern.ring ?? 1.7;
+  const len = Math.floor(sr * step * pattern.order.length);
+  const buf = ctx.createBuffer(1, len, sr);
+  const out = buf.getChannelData(0);
+  pattern.order.forEach((noteIdx, i) => {
+    const semi = semis[noteIdx] ?? semis[semis.length - 1];
+    pluckInto(out, sr, len, E2 * Math.pow(2, semi / 12), step * i, ring, 0.9965, 0.5);
+  });
+  normalize(out, 0.7);
+  return buf;
+}

@@ -1,0 +1,19 @@
+{
+  "name": "Rusty Sunset",
+  "tagline": "cracked amp on a desert porch",
+  "enclosure": { "width": 2.0, "depth": 2.2, "height": 0.55, "color": "#7a4a2b" },
+  "artwork": { "style": "burst", "palette": ["#e8792e", "#c0392b", "#3d1f14"], "textColor": "#ffe9c9" },
+  "chain": [
+    { "id": "dirt", "type": "drive", "params": { "amount": 6, "tone": 6, "level": 5 } },
+    { "id": "trem", "type": "tremolo", "params": { "rate": 4, "depth": 5 } }
+  ],
+  "controls": [
+    { "id": "grit",  "label": "GRIT",  "target": "dirt.amount" },
+    { "id": "tone",  "label": "TONE",  "target": "dirt.tone" },
+    { "id": "shake", "label": "SHAKE", "target": "trem.depth" },
+    { "id": "speed", "label": "SPEED", "target": "trem.rate" }
+  ],
+  "switches": [
+    { "id": "boost", "label": "BOOST", "target": "dirt.level", "off": 5, "on": 8 }
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "name": "Tide Tank",
+  "tagline": "drippy spring splash for the shoreline set",
+  "enclosure": {
+    "width": 2.2,
+    "depth": 2.4,
+    "height": 0.55,
+    "color": "#7fd8c9"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#0e7c86",
+      "#4fc3b8",
+      "#f4e8c1"
+    ],
+    "textColor": "#06343a"
+  },
+  "chain": [
+    {
+      "id": "flt",
+      "type": "filter",
+      "params": {
+        "cutoff": 8.0,
+        "resonance": 3.5
+      }
+    },
+    {
+      "id": "trm",
+      "type": "tremolo",
+      "params": {
+        "rate": 5.5,
+        "depth": 0
+      }
+    },
+    {
+      "id": "rvb",
+      "type": "reverb",
+      "params": {
+        "size": 6.5,
+        "mix": 7.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "drip",
+      "label": "DRIP",
+      "target": "rvb.size"
+    },
+    {
+      "id": "splash",
+      "label": "SPLASH",
+      "target": "rvb.mix"
+    },
+    {
+      "id": "tone",
+      "label": "TONE",
+      "target": "flt.cutoff"
+    },
+    {
+      "id": "twang",
+      "label": "TWANG",
+      "target": "flt.resonance"
+    }
+  ],
+  "switches": [
+    {
+      "id": "surf",
+      "label": "SURF",
+      "target": "trm.depth",
+      "off": 0,
+      "on": 6.0
+    }
+  ],
+  "bakedFrom": "spring surf reverb"
+}

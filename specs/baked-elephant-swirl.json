@@ -1,0 +1,97 @@
+{
+  "name": "Elephant Swirl",
+  "tagline": "let the fuzz happen",
+  "enclosure": {
+    "width": 3.0,
+    "depth": 2.6,
+    "height": 0.6,
+    "color": "#2A2D83"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#FF5DA2",
+      "#4DD0E1",
+      "#F9F871"
+    ],
+    "textColor": "#FFF8E7"
+  },
+  "chain": [
+    {
+      "id": "fz",
+      "type": "drive",
+      "params": {
+        "amount": 8.2,
+        "tone": 4.4,
+        "level": 6.0
+      }
+    },
+    {
+      "id": "sq",
+      "type": "comp",
+      "params": {
+        "sustain": 7.2,
+        "attack": 3.0
+      }
+    },
+    {
+      "id": "ph",
+      "type": "phaser",
+      "params": {
+        "rate": 2.4,
+        "depth": 6.5,
+        "feedback": 4.2
+      }
+    },
+    {
+      "id": "rv",
+      "type": "reverb",
+      "params": {
+        "size": 6.5,
+        "mix": 4.2
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "FUZZ",
+      "target": "fz.amount"
+    },
+    {
+      "id": "k2",
+      "label": "TONE",
+      "target": "fz.tone"
+    },
+    {
+      "id": "k3",
+      "label": "SQUASH",
+      "target": "sq.sustain"
+    },
+    {
+      "id": "k4",
+      "label": "SWIRL",
+      "target": "ph.rate"
+    },
+    {
+      "id": "k5",
+      "label": "DEPTH",
+      "target": "ph.depth"
+    },
+    {
+      "id": "k6",
+      "label": "SPACE",
+      "target": "rv.mix"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "WASH",
+      "target": "rv.size",
+      "off": 6.5,
+      "on": 9.5
+    }
+  ],
+  "bakedFrom": "tame impala fuzz"
+}

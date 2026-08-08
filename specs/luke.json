@@ -1,0 +1,19 @@
+{
+  "name": "Luke the Puke",
+  "tagline": "chorus",
+  "enclosure": { "width": 3.6, "depth": 1.9636, "height": 0.5, "color": "#8f969c" },
+  "artwork": { "image": "assets/pedal-top.png" },
+  "chain": [
+    { "id": "cho", "type": "chorus", "params": { "rate": 5, "depth": 5, "mix": 5 } },
+    { "id": "out", "type": "level", "params": { "gain": 5 } }
+  ],
+  "controls": [
+    { "id": "rate",  "label": "RATE",  "target": "cho.rate",  "u": 0.178, "v": 0.378 },
+    { "id": "depth", "label": "DEPTH", "target": "cho.depth", "u": 0.388, "v": 0.378 },
+    { "id": "mix",   "label": "MIX",   "target": "cho.mix",   "u": 0.606, "v": 0.378 },
+    { "id": "level", "label": "LEVEL", "target": "out.gain",  "u": 0.810, "v": 0.378 }
+  ],
+  "switches": [],
+  "footswitch": { "u": 0.499, "v": 0.797 },
+  "led": { "u": 0.409, "v": 0.782 }
+}

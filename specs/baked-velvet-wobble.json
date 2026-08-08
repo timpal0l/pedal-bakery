@@ -1,0 +1,55 @@
+{
+  "name": "Velvet Wobble",
+  "tagline": "warm brownface throb, straight off the amp",
+  "enclosure": {
+    "width": 2.0,
+    "depth": 2.4,
+    "height": 0.55,
+    "color": "#8a4b2a"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#f2d8a7",
+      "#d98e3f",
+      "#6e3418"
+    ],
+    "textColor": "#2b1608"
+  },
+  "chain": [
+    {
+      "id": "trem",
+      "type": "tremolo",
+      "params": {
+        "rate": 4.5,
+        "depth": 7.0
+      }
+    },
+    {
+      "id": "out",
+      "type": "level",
+      "params": {
+        "gain": 5.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "SPEED",
+      "target": "trem.rate"
+    },
+    {
+      "id": "k2",
+      "label": "DEPTH",
+      "target": "trem.depth"
+    },
+    {
+      "id": "k3",
+      "label": "VOLUME",
+      "target": "out.gain"
+    }
+  ],
+  "switches": [],
+  "bakedFrom": "tremolo"
+}

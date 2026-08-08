@@ -1,0 +1,83 @@
+{
+  "name": "Point Break",
+  "tagline": "wet spring, dirty pipeline",
+  "enclosure": {
+    "width": 2.4,
+    "depth": 2.7,
+    "height": 0.55,
+    "color": "#2ec4b6"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#0b3954",
+      "#2ec4b6",
+      "#f5e9d0"
+    ],
+    "textColor": "#f5e9d0"
+  },
+  "chain": [
+    {
+      "id": "drv",
+      "type": "drive",
+      "params": {
+        "amount": 6.0,
+        "tone": 7.5,
+        "level": 6.0
+      }
+    },
+    {
+      "id": "trm",
+      "type": "tremolo",
+      "params": {
+        "rate": 6.5,
+        "depth": 5.5
+      }
+    },
+    {
+      "id": "rvb",
+      "type": "reverb",
+      "params": {
+        "size": 7.0,
+        "mix": 6.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "CRUNCH",
+      "target": "drv.amount"
+    },
+    {
+      "id": "k2",
+      "label": "TONE",
+      "target": "drv.tone"
+    },
+    {
+      "id": "k3",
+      "label": "SPEED",
+      "target": "trm.rate"
+    },
+    {
+      "id": "k4",
+      "label": "DEPTH",
+      "target": "trm.depth"
+    },
+    {
+      "id": "k5",
+      "label": "SPLASH",
+      "target": "rvb.mix"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "DRIP",
+      "target": "rvb.size",
+      "off": 5.0,
+      "on": 9.0
+    }
+  ],
+  "bakedFrom": "surf crunch"
+}

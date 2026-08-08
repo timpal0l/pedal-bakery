@@ -1,0 +1,61 @@
+{
+  "name": "Purple Haze",
+  "tagline": "scuse me while i kiss the sky",
+  "enclosure": {
+    "width": 1.7,
+    "depth": 1.8,
+    "height": 0.55,
+    "color": "#3b1354"
+  },
+  "artwork": {
+    "style": "burst",
+    "palette": [
+      "#5b1f8a",
+      "#c026d3",
+      "#f59e0b"
+    ],
+    "textColor": "#fde68a"
+  },
+  "chain": [
+    {
+      "id": "fz",
+      "type": "drive",
+      "params": {
+        "amount": 8.7,
+        "tone": 4.2,
+        "level": 6.5
+      }
+    },
+    {
+      "id": "vibe",
+      "type": "phaser",
+      "params": {
+        "rate": 2.8,
+        "depth": 0,
+        "feedback": 3.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "FUZZ",
+      "target": "fz.amount"
+    },
+    {
+      "id": "k2",
+      "label": "VOLUME",
+      "target": "fz.level"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "VIBE",
+      "target": "vibe.depth",
+      "off": 0,
+      "on": 6.5
+    }
+  ],
+  "bakedFrom": "jimi hendrix dist"
+}

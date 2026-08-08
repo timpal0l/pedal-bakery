@@ -1,0 +1,91 @@
+{
+  "name": "Velvet Lounge",
+  "tagline": "soft edges, slow lights, warm nights",
+  "enclosure": {
+    "width": 2.4,
+    "depth": 2.4,
+    "height": 0.55,
+    "color": "#3d1f33"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#5c2a45",
+      "#b98a2f",
+      "#f0e6d2"
+    ],
+    "textColor": "#f0e6d2"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 5.0,
+        "attack": 6.5
+      }
+    },
+    {
+      "id": "flt",
+      "type": "filter",
+      "params": {
+        "cutoff": 4.5,
+        "resonance": 1.0
+      }
+    },
+    {
+      "id": "cho",
+      "type": "chorus",
+      "params": {
+        "rate": 1.8,
+        "depth": 2.5,
+        "mix": 3.0
+      }
+    },
+    {
+      "id": "rev",
+      "type": "reverb",
+      "params": {
+        "size": 4.0,
+        "mix": 3.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "CUSHION",
+      "target": "cmp.sustain"
+    },
+    {
+      "id": "k2",
+      "label": "WARMTH",
+      "target": "flt.cutoff"
+    },
+    {
+      "id": "k3",
+      "label": "SHIMMER",
+      "target": "cho.depth"
+    },
+    {
+      "id": "k4",
+      "label": "DRIFT",
+      "target": "cho.rate"
+    },
+    {
+      "id": "k5",
+      "label": "ROOM",
+      "target": "rev.mix"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "PLUSH",
+      "target": "rev.size",
+      "off": 4.0,
+      "on": 7.0
+    }
+  ],
+  "bakedFrom": "a velvet-smooth jazz tone with soft edges and a slow shimmer"
+}

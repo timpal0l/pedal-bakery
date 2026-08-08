@@ -1,0 +1,17 @@
+{
+  "name": "Glass Wobble",
+  "tagline": "underwater neon",
+  "enclosure": { "width": 1.8, "depth": 2.2, "height": 0.6, "color": "#0f6f6a" },
+  "artwork": { "style": "dots", "palette": ["#0d8f86", "#083c3f", "#7ff5e3"], "textColor": "#eafffb" },
+  "chain": [
+    { "id": "ph", "type": "phaser", "params": { "rate": 4, "depth": 6, "feedback": 4 } },
+    { "id": "lp", "type": "filter", "params": { "cutoff": 7, "resonance": 3 } }
+  ],
+  "controls": [
+    { "id": "swirl", "label": "SWIRL", "target": "ph.rate" },
+    { "id": "deep",  "label": "DEEP",  "target": "ph.depth" },
+    { "id": "glow",  "label": "GLOW",  "target": "ph.feedback" },
+    { "id": "murk",  "label": "MURK",  "target": "lp.cutoff" }
+  ],
+  "switches": []
+}

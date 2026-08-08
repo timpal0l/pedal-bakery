@@ -1,0 +1,24 @@
+{
+  "bakedFrom": "a broken church organ underwater, slow and haunted",
+  "name": "Drowned Cathedral",
+  "tagline": "hymns from beneath the flood",
+  "enclosure": { "width": 3.2, "depth": 2.4, "height": 0.6, "color": "#1c3a34" },
+  "artwork": { "style": "burst", "palette": ["#0b1f24", "#2e6b5e", "#9fbfae"], "textColor": "#dce8d9" },
+  "chain": [
+    { "id": "rot", "type": "drive", "params": { "amount": 2.5, "tone": 2.0, "level": 5.0 } },
+    { "id": "warp", "type": "chorus", "params": { "rate": 1.5, "depth": 8.0, "mix": 9.0 } },
+    { "id": "murk", "type": "filter", "params": { "cutoff": 3.0, "resonance": 4.5 } },
+    { "id": "nave", "type": "reverb", "params": { "size": 9.5, "mix": 7.5 } }
+  ],
+  "controls": [
+    { "id": "k1", "label": "ROT", "target": "rot.amount" },
+    { "id": "k2", "label": "SLOW", "target": "warp.rate" },
+    { "id": "k3", "label": "WARP", "target": "warp.depth" },
+    { "id": "k4", "label": "DROWN", "target": "murk.cutoff" },
+    { "id": "k5", "label": "NAVE", "target": "nave.size" }
+  ],
+  "switches": [
+    { "id": "s1", "label": "SEANCE", "target": "warp.mix", "off": 6.0, "on": 10 },
+    { "id": "s2", "label": "FLOOD", "target": "nave.mix", "off": 5.0, "on": 9.0 }
+  ]
+}
