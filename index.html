@@ -8,6 +8,17 @@
   html, body { margin: 0; height: 100%; overflow: hidden; background: #212227;
     font-family: "Avenir Next", "Helvetica Neue", Arial, sans-serif; }
   #view { width: 100%; height: 100%; display: block; outline: none; touch-action: none; }
+  /* dark scrollbars everywhere the UI scrolls */
+  ::-webkit-scrollbar { width: 9px; height: 9px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.16); border-radius: 999px;
+    border: 2px solid transparent; background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); background-clip: padding-box; }
+  #shelf-list, #source-menu, #lobby-sessions {
+    scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  }
   /* the whole 2D UI runs at 120% — it reads better at GarageBand scale */
   #shelf, #bakery, #hud, #source-menu { zoom: 1.2; }
   #overlay {
