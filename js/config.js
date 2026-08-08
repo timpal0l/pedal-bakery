@@ -15,6 +15,22 @@ export const KEYS = [
   ['A#', 6], ['B', 7], ['C', 8], ['C#', 9], ['D', 10], ['D#', 11],
 ];
 
+// Interval palette for the microtone dyad input: cents above the root.
+// 12-TET anchors sit beside their just and quarter-tone neighbours so the
+// microtonal differences are easy to A/B. [label, cents, sub-caption?]
+export const INTERVALS = [
+  ['Unison', 0],            ['Quarter sharp', 50],      ['Minor 2nd', 100],
+  ['Neutral 2nd', 150],     ['Major 2nd', 200],         ['Septimal 3rd', 267, '7:6 · 267¢'],
+  ['Minor 3rd', 300],       ['Neutral 3rd', 350],       ['Just major 3rd', 386, '5:4 · 386¢'],
+  ['Major 3rd', 400],       ['Fourth', 500],            ['Harmonic 11th', 551, '11:8 · 551¢'],
+  ['Tritone', 600],         ['Fifth', 700],             ['Minor 6th', 800],
+  ['Neutral 6th', 850],     ['Major 6th', 900],         ['Harmonic 7th', 969, '7:4 · 969¢'],
+  ['Minor 7th', 1000],      ['Neutral 7th', 1050],      ['Octave', 1200],
+];
+
+// fine-tune chips: cents offsets applied to a whole tone input
+export const DETUNES = [-50, -25, -10, 0, 10, 25, 50];
+
 // six-voice chord shapes as semitone offsets from the chosen root
 export const CHORDS = {
   major: [0, 7, 12, 16, 19, 24],

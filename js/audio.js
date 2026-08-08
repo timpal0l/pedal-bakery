@@ -349,6 +349,44 @@ export const STRUM_STYLES = {
   doom: { label: 'Doom', beats: 8, ring: 5.0, damp: 0.9985,
     events: [{ t: 0, dir: 1, g: 1, strings: 'low' },
              { t: 6, dir: 1, g: 0.7, strings: 'low' }] },
+  blackmetal: { label: 'Black metal', beats: 4, ring: 0.3, damp: 0.988, sweep: 0.008,
+    // relentless tremolo picking, an icy wall of sixteenths
+    events: Array.from({ length: 16 }, (_, i) =>
+      ({ t: i * 0.25, dir: i % 2 ? -1 : 1, g: 0.85, strings: 'high' })) },
+  deathmetal: { label: 'Death metal', beats: 4, ring: 0.15, damp: 0.978, sweep: 0.01,
+    // palm-muted chug clusters with an open accent on the downbeat
+    events: [{ t: 0, dir: 1, g: 1.15 },
+      ...[0, 1, 2, 3].flatMap((b) => [
+        { t: b + 0.25, dir: 1, g: 0.9, strings: 'low' },
+        { t: b + 0.5, dir: 1, g: 0.85, strings: 'low' },
+        { t: b + 0.75, dir: 1, g: 0.9, strings: 'low' }])] },
+  metal: { label: 'Metal', beats: 4, ring: 0.3, damp: 0.985, sweep: 0.012,
+    // the gallop: da-da-DUM on the low strings
+    events: [0, 1, 2, 3].flatMap((b) => [
+      { t: b, dir: 1, g: 1, strings: 'low' },
+      { t: b + 0.5, dir: 1, g: 0.75, strings: 'low' },
+      { t: b + 0.75, dir: 1, g: 0.8, strings: 'low' }]) },
+  stoner: { label: 'Stoner', beats: 8, ring: 2.5, damp: 0.998,
+    events: [{ t: 0, dir: 1, g: 1 }, { t: 2.5, dir: 1, g: 0.7, strings: 'low' },
+             { t: 3.5, dir: -1, g: 0.6 }, { t: 4, dir: 1, g: 0.9 },
+             { t: 6.5, dir: 1, g: 0.75, strings: 'low' }] },
+  garage: { label: 'Garage', beats: 4, ring: 0.8, damp: 0.995, sweep: 0.06,
+    // sloppy, wide, uneven — all downstroke attitude
+    events: [1, 0.7, 0.85, 0.65, 0.95, 0.7, 0.8, 0.6].map((g, i) =>
+      ({ t: i * 0.5, dir: i % 2 ? -1 : 1, g })) },
+  grunge: { label: 'Grunge', beats: 4, ring: 1.0, damp: 0.996,
+    events: [{ t: 0, dir: 1, g: 1 }, { t: 1, dir: 1, g: 0.8 },
+             { t: 1.5, dir: -1, g: 0.6 }, { t: 2.5, dir: 1, g: 1 },
+             { t: 3, dir: 1, g: 0.8 }, { t: 3.5, dir: -1, g: 0.6 }] },
+  funk: { label: 'Funk', beats: 2, ring: 0.15, damp: 0.975, sweep: 0.01,
+    // scratchy sixteenth chops with ghost notes on the top strings
+    events: [{ t: 0, dir: 1, g: 1, strings: 'high' },
+             { t: 0.25, dir: -1, g: 0.4, strings: 'high' },
+             { t: 0.5, dir: 1, g: 0.5, strings: 'high' },
+             { t: 0.75, dir: -1, g: 0.95, strings: 'high' },
+             { t: 1.25, dir: -1, g: 0.4, strings: 'high' },
+             { t: 1.5, dir: 1, g: 0.9, strings: 'high' },
+             { t: 1.75, dir: -1, g: 0.45, strings: 'high' }] },
 };
 
 // Arpeggio patterns: string order inside the loop. step is BEATS per note
