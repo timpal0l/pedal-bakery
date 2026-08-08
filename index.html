@@ -45,9 +45,10 @@
     border: none; border-radius: 999px; padding: 14px 22px;
   }
   .lobby-btn:disabled { opacity: 0.5; cursor: wait; }
-  #create-bakery { background: #e8e8ec; color: #1c1d21; }
+  #create-bakery { background: #3a7bd5; color: #fff; }
   #join-bakery { background: rgba(255,255,255,0.08); color: #e8e8ec; border: 1px solid rgba(255,255,255,0.14); }
   #join-row { display: flex; gap: 8px; }
+  #join-row[hidden] { display: none; } /* display:flex would defeat [hidden] */
   #join-code {
     flex: 1; min-width: 0; font: inherit; font-size: 18px; font-weight: 700;
     letter-spacing: 0.5em; text-transform: uppercase; text-align: center;
@@ -93,7 +94,7 @@
   #room-players { color: #8a8b95; white-space: nowrap; }
   #room-copy {
     font: inherit; font-size: 11px; letter-spacing: 0.1em; cursor: pointer;
-    background: #e8e8ec; color: #1c1d21; border: none; border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12); color: #e8e8ec; border: none; border-radius: 999px;
     padding: 6px 13px;
   }
   #bakery {
@@ -111,14 +112,15 @@
   #bake-input::placeholder { color: #7c7d87; }
   #bake-input:focus { border-color: rgba(255,255,255,0.3); }
   #bake-button {
-    font: inherit; font-size: 15px; letter-spacing: 0.12em; cursor: pointer; color: #1c1d21;
-    background: #e8e8ec; border: none; border-radius: 999px; padding: 14px 28px;
+    font: inherit; font-size: 15px; letter-spacing: 0.12em; cursor: pointer; color: #fff;
+    background: #3a7bd5; border: none; border-radius: 999px; padding: 14px 28px;
     box-shadow: 0 6px 24px rgba(30, 30, 40, 0.14);
   }
-  #bake-button:disabled { background: #6a6b74; color: #2a2b30; cursor: wait; }
+  #bake-button:hover { background: #4a89e0; }
+  #bake-button:disabled { background: #33415c; color: #9db4d8; cursor: wait; }
   .spinner {
     display: inline-block; width: 13px; height: 13px; vertical-align: -2px;
-    border: 2px solid rgba(20, 20, 25, 0.3); border-top-color: #1c1d21;
+    border: 2px solid rgba(255, 255, 255, 0.35); border-top-color: #fff;
     border-radius: 50%; animation: spin 0.8s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
