@@ -67,8 +67,10 @@ export function createScene(canvas) {
     const fwd = camera.getDirection(BABYLON.Axis.Z); fwd.y = 0; fwd.normalize();
     const right = camera.getDirection(BABYLON.Axis.X); right.y = 0; right.normalize();
     const speed = 9 * dt * Math.max(0.5, camera.radius / 11);
+    // mutate the target in place: the camera TRANSLATES with it (assigning a
+    // new vector would re-aim from the current position = rotation)
     const t = camera.target.add(fwd.scale(fz * speed)).add(right.scale(fx * speed));
-    camera.target = new BABYLON.Vector3(
+    camera.target.set(
       Math.max(-32, Math.min(32, t.x)), 0.3, Math.max(-32, Math.min(32, t.z)));
   });
 
