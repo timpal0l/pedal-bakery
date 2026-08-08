@@ -30,7 +30,7 @@ export function createScene(canvas) {
     new BABYLON.Vector3(0, 0.3, 0), scene);
   camera.attachControl(canvas, true);
   camera.lowerRadiusLimit = 2.5;
-  camera.upperRadiusLimit = 22;
+  camera.upperRadiusLimit = 42;
   camera.lowerBetaLimit = 0.15;
   camera.upperBetaLimit = 1.35;
   camera.minZ = 0.1;
@@ -40,7 +40,7 @@ export function createScene(canvas) {
   // like a DCC viewport: proportional zoom, a little inertia everywhere
   camera.panningSensibility = 130; // higher = slower; tuned for calm mouse2 moves
   camera.panningAxis = new BABYLON.Vector3(1, 0, 1);
-  camera.panningDistanceLimit = 14;
+  camera.panningDistanceLimit = 32;
   camera.panningInertia = 0.85;
   camera.inertia = 0.88;
   camera.angularSensibilityX = 900;
@@ -48,6 +48,29 @@ export function createScene(canvas) {
   camera.wheelDeltaPercentage = 0.06;
   camera.zoomToMouseLocation = true; // wheel zooms toward the cursor, not the center
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  // WASD flies the camera target around the floor (disabled while typing)
+  const wasd = new Set();
+  window.addEventListener('keydown', (e) => wasd.add(e.code));
+  window.addEventListener('keyup', (e) => wasd.delete(e.code));
+  window.addEventListener('blur', () => wasd.clear());
+  scene.onBeforeRenderObservable.add(() => {
+    const el = document.activeElement;
+    if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) return;
+    let fx = 0, fz = 0;
+    if (wasd.has('KeyW')) fz += 1;
+    if (wasd.has('KeyS')) fz -= 1;
+    if (wasd.has('KeyA')) fx -= 1;
+    if (wasd.has('KeyD')) fx += 1;
+    if (!fx && !fz) return;
+    const dt = engine.getDeltaTime() / 1000;
+    const fwd = camera.getDirection(BABYLON.Axis.Z); fwd.y = 0; fwd.normalize();
+    const right = camera.getDirection(BABYLON.Axis.X); right.y = 0; right.normalize();
+    const speed = 9 * dt * Math.max(0.5, camera.radius / 11);
+    const t = camera.target.add(fwd.scale(fz * speed)).add(right.scale(fx * speed));
+    camera.target = new BABYLON.Vector3(
+      Math.max(-32, Math.min(32, t.x)), 0.3, Math.max(-32, Math.min(32, t.z)));
+  });
 
   const hemi = new BABYLON.HemisphericLight('hemi', new BABYLON.Vector3(0, 1, 0), scene);
   hemi.intensity = 0.55;
@@ -344,10 +367,15 @@ export function createScene(canvas) {
     const root = new BABYLON.TransformNode('pedal_' + id, scene);
     root.position.set(position.x, 0, position.z);
 
+    const isAmp = spec.kind === 'amp';
     const uvToWorld = (u, v) => ({ x: (u - 0.5) * W, z: (0.5 - v) * D });
-    const matBody = pbr('body_' + id, spec.enclosure.color || '#8f969c', 0.85, 0.4);
+    const matBody = pbr('body_' + id, spec.enclosure.color || '#8f969c', isAmp ? 0.1 : 0.85, isAmp ? 0.75 : 0.4);
 
-    const body = BABYLON.MeshBuilder.CreateBox('body_' + id, { width: W, height: H, depth: D }, scene);
+    const isRound = spec.shape === 'round';
+    const body = isRound
+      ? BABYLON.MeshBuilder.CreateCylinder('body_' + id,
+          { diameter: Math.min(W, D), height: H, tessellation: 48 }, scene)
+      : BABYLON.MeshBuilder.CreateBox('body_' + id, { width: W, height: H, depth: D }, scene);
     body.parent = root;
     body.position.y = H / 2;
     body.material = matBody;
@@ -372,6 +400,11 @@ export function createScene(canvas) {
     matTop.metallic = 0.0;
     matTop.roughness = 0.9;
     matTop.specularIntensity = 0.3;
+    if (spec.shape === 'round' && faceTex.hasAlpha !== undefined) {
+      faceTex.hasAlpha = true; // circular art, transparent corners
+      matTop.useAlphaFromAlbedoTexture = true;
+      matTop.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
+    }
     const topPlate = BABYLON.MeshBuilder.CreateGround('top_' + id, { width: W, height: D }, scene);
     topPlate.parent = root;
     topPlate.position.y = TOP_Y;
@@ -471,10 +504,19 @@ export function createScene(canvas) {
     led.material = matLed;
     led.isPickable = false;
 
-    /* jacks: INPUT on the right (+x), OUTPUT on the left (-x) */
-    const jackY = H * 0.55;
+    if (isAmp) { // speaker grille on the front face
+      const grille = BABYLON.MeshBuilder.CreateBox('grille_' + id,
+        { width: 0.06, height: H * 0.5, depth: D * 0.88 }, scene);
+      grille.parent = root;
+      grille.position.set(W / 2 + 0.01, H * 0.27, 0);
+      grille.material = matGrille;
+      grille.metadata = { pedal: id, body: true };
+    }
+
+    /* jacks: INPUT on the right (+x), OUTPUT on the left (-x); amps only IN */
+    const jackY = H * (isAmp ? 0.7 : 0.55);
     const jackDefs = {};
-    for (const [kind, side] of [['in', +1], ['out', -1]]) {
+    for (const [kind, side] of (isAmp ? [['in', +1]] : [['in', +1], ['out', -1]])) {
       const meta = { jack: { node: id, kind } };
       const sock = BABYLON.MeshBuilder.CreateCylinder('js',
         { diameter: 0.17, height: 0.18 }, scene);

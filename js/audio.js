@@ -206,7 +206,8 @@ export function createAudio() {
     if (!rig) return;
     const t = ctx.currentTime;
     rig.wet.gain.setTargetAtTime(state.on ? 1 : 0, t, 0.05);
-    rig.bypass.gain.setTargetAtTime(state.on ? 0 : 1, t, 0.05);
+    // pedals bypass dry when off; an amp on standby is simply silent
+    rig.bypass.gain.setTargetAtTime(state.on || spec.kind === 'amp' ? 0 : 1, t, 0.05);
     const set = (target, value) => {
       const [mid, param] = String(target).split('.');
       rig.modules[mid]?.set(param, value);
@@ -246,7 +247,14 @@ export function createAudio() {
         node.connect(rig.pedalIn);
         node = rig.out;
       }
-      if (ok) node.connect(ampGains.get(chain.amp) ?? master);
+      if (!ok) continue;
+      const ampRig = rigs.get(chain.amp); // a baked amp: route through its tone stack
+      if (ampRig) {
+        node.connect(ampRig.pedalIn);
+        ampRig.out.connect(master);
+      } else {
+        node.connect(ampGains.get(chain.amp) ?? master);
+      }
     }
     console.log('[audio] chains:', chains.length
       ? chains.map((c) => [c.source, ...c.pedals].join(' → ') + ' → amp').join('  |  ')

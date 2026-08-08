@@ -17,7 +17,9 @@ export function computeLayout(spec) {
     const { depth } = spec.enclosure;
     const n = spec.controls.length;
     const du = 0.55 / width;                                  // knob pitch in u
-    const perRow = Math.max(1, Math.min(4, Math.floor(0.84 / du) + 1));
+    const perRow = spec.shape === 'round'
+      ? 2 // stay inside the circle
+      : Math.max(1, Math.min(4, Math.floor(0.84 / du) + 1));
     const rows = Math.ceil(n / perRow);
     // rows are spaced in world units so deep and shallow boxes both work
     const rowV = rows === 1 ? [0.34] : [0.26, 0.26 + 0.52 / depth];

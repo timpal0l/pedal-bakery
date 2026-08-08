@@ -1,0 +1,79 @@
+{
+  "name": "Dub Scorcher",
+  "tagline": "one drop, plenty dirt",
+  "enclosure": {
+    "width": 2.2,
+    "depth": 2.6,
+    "height": 0.55,
+    "color": "#146b38"
+  },
+  "artwork": {
+    "style": "stripes",
+    "palette": [
+      "#e8272c",
+      "#f7c948",
+      "#1b7a3d"
+    ],
+    "textColor": "#fff6dc"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 6.5,
+        "attack": 2.5
+      }
+    },
+    {
+      "id": "drv",
+      "type": "drive",
+      "params": {
+        "amount": 6.5,
+        "tone": 5.5,
+        "level": 6.0
+      }
+    },
+    {
+      "id": "dly",
+      "type": "delay",
+      "params": {
+        "time": 3.5,
+        "feedback": 3.5,
+        "mix": 3.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "DIRT",
+      "target": "drv.amount"
+    },
+    {
+      "id": "k2",
+      "label": "TONE",
+      "target": "drv.tone"
+    },
+    {
+      "id": "k3",
+      "label": "SKANK",
+      "target": "cmp.sustain"
+    },
+    {
+      "id": "k4",
+      "label": "ECHO",
+      "target": "dly.mix"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "DUB",
+      "target": "dly.feedback",
+      "off": 3.5,
+      "on": 7.5
+    }
+  ],
+  "bakedFrom": "reggea dist"
+}

@@ -35,16 +35,18 @@ MODULES = {
     "level":   ["gain"],
 }
 
-ART_STYLES = ("gradient", "burst", "stripes", "dots", "waves", "checker")
+ART_STYLES = ("gradient", "burst", "stripes", "dots", "waves", "checker", "diagonal", "rings", "flake", "plaid")
 
 PROMPT = """You are the Pedal Bakery: you turn a description of a guitar sound into a JSON spec for a virtual effect pedal. Reply with ONLY one JSON object — no markdown fences, no commentary.
 
 Schema (all numeric params are knob-space 0-10):
 {{
-  "name": "2-3 punchy words",
+  "kind": "pedal" | "amp",
+  "shape": "box" | "round",
+  "name": "1-3 words, wildly varied",
   "tagline": "short vibe line, lowercase",
   "enclosure": {{ "width": 1.1-4.2, "depth": 1.6-3.2, "height": 0.35-0.9, "color": "#hex" }},
-  "artwork": {{ "style": "gradient"|"burst"|"stripes"|"dots"|"waves"|"checker", "palette": ["#hex","#hex","#hex"], "textColor": "#hex" }},
+  "artwork": {{ "style": "gradient"|"burst"|"stripes"|"dots"|"waves"|"checker"|"diagonal"|"rings"|"flake"|"plaid", "palette": ["#hex","#hex","#hex"], "textColor": "#hex" }},
   "chain": [ {{ "id": "shortId", "type": "<module>", "params": {{ "<param>": 0-10 }} }} ],
   "controls": [ {{ "id": "shortId", "label": "UPPERCASE, max 7 chars", "target": "moduleId.param" }} ],
   "switches": [ {{ "id": "shortId", "label": "UPPERCASE", "target": "moduleId.param", "off": 0-10, "on": 0-10 }} ]
@@ -63,13 +65,17 @@ Available modules and their params (each param 0-10, module owns the real-unit c
 - level: gain (0 silent, 5 unity, 10 hot)
 
 Rules:
+- kind: decide from the description. An AMP is a chain terminator — its chain is the amp's tone stack (drive/filter/comp/reverb/level fit well) and its controls are front-panel knobs; give it a tall cabinet (height 1.2-2.2). Anything said to be an amp/combo/stack/cab is an amp; otherwise it's a pedal.
 - chain: 1-6 modules in signal order that genuinely produce the described sound.
 - params are the default knob positions: choose musical values that already sound like the description.
 - controls: 1-8 knobs targeting the most expressive params, each target must be an existing "moduleId.param". Do not give a knob and a switch the same target.
 - switches: 0-2, for character flips (boost, bright, wobble-double...).
 - VARY THE HARDWARE with the sound. A one-trick fuzz is a mini box (width ~1.2, 1-2 knobs). A classic stomp is ~2.2 wide with 3-4 knobs. A complex multi-effect monster is a wide console (width 3-4.2, depth up to 3.2, 5-8 knobs, taller box). Pick the format the described sound deserves — do not default to medium.
+- shape: "round" (fuzz-face style circular pedal, max 4 knobs, suits simple vintage circuits) or "box". Use round sometimes — variety matters. Amps are always boxes.
 - name, palette, art style, enclosure color: match the vibe. Be bold and varied; different sounds should look like they came from different builders.
+- NAMES MUST VARY in structure: mix single evocative words ("Vermilion", "Motorik"), compounds ("Rustbucket"), place/person names ("Saint Fuzz", "Osaka Drift"), and puns — never the same Adjective-Noun formula twice in a row.
 - BE BOLD WITH PARAMS: defaults must already SOUND like the description. A filthy fuzz wants amount 8-10; a subtle shimmer wants depth 2. Never park everything near 5, and prefer distinctive module combos (ring, comp, phaser, tremolo where they fit) over defaulting to drive+reverb.
+- KNOB COUNT MUST VARY — do NOT default to 4. One-trick boxes get 1-2 knobs. Classic stomps 3-4. Rich or complex descriptions get 6-8 knobs exposing secondary parameters (tone, level, feedback, attack, resonance...). Spread across the whole 1-8 range.
 
 Description of the wanted sound:
 {description}"""
@@ -112,13 +118,18 @@ def validate(raw: dict) -> dict:
     enc = raw.get("enclosure") or {}
     art = raw.get("artwork") or {}
     palette = art.get("palette") or []
+    kind = raw.get("kind") if raw.get("kind") in ("pedal", "amp") else "pedal"
+    shape = raw.get("shape") if raw.get("shape") in ("box", "round") and kind == "pedal" else "box"
     spec = {
+        "kind": kind,
+        "shape": shape,
         "name": str(raw.get("name") or "Mystery Loaf")[:28],
         "tagline": str(raw.get("tagline") or "")[:48],
         "enclosure": {
             "width": clamp(enc.get("width"), 1.1, 4.2, 2.2),
             "depth": clamp(enc.get("depth"), 1.6, 3.2, 2.2),
-            "height": clamp(enc.get("height"), 0.35, 0.9, 0.5),
+            "height": (clamp(enc.get("height"), 1.1, 2.2, 1.5) if kind == "amp"
+                       else clamp(enc.get("height"), 0.35, 0.9, 0.5)),
             "color": hex_or(enc.get("color"), "#4a4f5a"),
         },
         "artwork": {
@@ -164,6 +175,10 @@ def validate(raw: dict) -> dict:
         })
     if not spec["controls"]:
         raise ValueError("Claude produced no usable knobs")
+    if shape == "round":
+        spec["controls"] = spec["controls"][:4]
+        d = (spec["enclosure"]["width"] + spec["enclosure"]["depth"]) / 2
+        spec["enclosure"]["width"] = spec["enclosure"]["depth"] = clamp(d, 1.8, 2.8, 2.2)
 
     for i, s in enumerate((raw.get("switches") or [])[:2]):
         if not target_ok(s.get("target")):
@@ -248,7 +263,9 @@ class Handler(SimpleHTTPRequestHandler):
         specs = []
         for f in sorted((ROOT / "specs").glob("*.json")):
             try:
-                specs.append(json.loads(f.read_text()))
+                spec = json.loads(f.read_text())
+                spec["_mtime"] = f.stat().st_mtime
+                specs.append(spec)
             except Exception as exc:
                 print(f"[shelf] skipping {f.name}: {exc}")
         specs.sort(key=lambda s: str(s.get("name", "")))

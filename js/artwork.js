@@ -8,6 +8,15 @@ export function paintFaceplate(c2d, W, H, spec, layout) {
   const art = spec.artwork;
   const [c0, c1, c2] = art.palette;
   const text = art.textColor || '#ffffff';
+  const round = spec.shape === 'round';
+
+  if (round) { // transparent corners -> the plate reads as a circle
+    c2d.clearRect(0, 0, W, H);
+    c2d.save();
+    c2d.beginPath();
+    c2d.ellipse(W / 2, H / 2, W / 2 - 2, H / 2 - 2, 0, 0, Math.PI * 2);
+    c2d.clip();
+  }
 
   /* background */
   c2d.fillStyle = c1;
@@ -67,6 +76,39 @@ export function paintFaceplate(c2d, W, H, spec, layout) {
         c2d.fillRect(x * s, y * s, s, s);
       }
     }
+  } else if (art.style === 'diagonal') {
+    c2d.fillStyle = c0;
+    c2d.beginPath();
+    c2d.moveTo(0, 0); c2d.lineTo(W, 0); c2d.lineTo(0, H);
+    c2d.closePath(); c2d.fill();
+    c2d.fillStyle = withAlpha(c2, 0.5);
+    c2d.fillRect(0, 0, W, H * 0.06);
+  } else if (art.style === 'rings') {
+    for (let r = 14; r > 0; r--) {
+      c2d.fillStyle = r % 2 ? c0 : c1;
+      c2d.beginPath();
+      c2d.ellipse(W / 2, H / 2, (W * r) / 16, (W * r) / 16, 0, 0, Math.PI * 2);
+      c2d.fill();
+    }
+  } else if (art.style === 'flake') { // metal-flake sparkle
+    const g = c2d.createLinearGradient(0, 0, W, H);
+    g.addColorStop(0, c0); g.addColorStop(1, c1);
+    c2d.fillStyle = g;
+    c2d.fillRect(0, 0, W, H);
+    for (let i = 0; i < 900; i++) {
+      c2d.fillStyle = withAlpha(i % 4 ? '#ffffff' : c2, 0.25 + Math.random() * 0.5);
+      c2d.fillRect(Math.random() * W, Math.random() * H, 2, 2);
+    }
+  } else if (art.style === 'plaid') {
+    const step = W / 9;
+    for (let x = 0; x < 9; x++) {
+      c2d.fillStyle = withAlpha(c0, x % 2 ? 0.5 : 0.9);
+      c2d.fillRect(x * step, 0, step * 0.55, H);
+    }
+    for (let y = 0; y < H / step + 1; y++) {
+      c2d.fillStyle = withAlpha(c2, y % 2 ? 0.35 : 0.6);
+      c2d.fillRect(0, y * step, W, step * 0.55);
+    }
   } else { // 'dots'
     for (let i = 0; i < 70; i++) {
       c2d.fillStyle = withAlpha(i % 3 ? c0 : c2, 0.5 + Math.random() * 0.4);
@@ -79,7 +121,13 @@ export function paintFaceplate(c2d, W, H, spec, layout) {
   /* border */
   c2d.strokeStyle = withAlpha(text, 0.65);
   c2d.lineWidth = W * 0.008;
-  c2d.strokeRect(W * 0.02, W * 0.02, W - W * 0.04, H - W * 0.04);
+  if (round) {
+    c2d.beginPath();
+    c2d.ellipse(W / 2, H / 2, W / 2 - W * 0.025, H / 2 - W * 0.025, 0, 0, Math.PI * 2);
+    c2d.stroke();
+  } else {
+    c2d.strokeRect(W * 0.02, W * 0.02, W - W * 0.04, H - W * 0.04);
+  }
 
   /* title + tagline */
   c2d.textAlign = 'center';
@@ -88,7 +136,7 @@ export function paintFaceplate(c2d, W, H, spec, layout) {
   c2d.shadowColor = 'rgba(0,0,0,0.45)';
   c2d.shadowBlur = W * 0.012;
   c2d.font = `900 ${Math.floor(W * 0.062)}px Futura, 'Arial Black', Arial, sans-serif`;
-  c2d.fillText(spec.name.toUpperCase(), W / 2, H * layout.titleV, W * 0.9);
+  c2d.fillText(spec.name.toUpperCase(), W / 2, H * layout.titleV, W * (round ? 0.55 : 0.9));
   c2d.shadowBlur = 0;
   c2d.font = `600 ${Math.floor(W * 0.024)}px Futura, Arial, sans-serif`;
   c2d.fillStyle = withAlpha(text, 0.8);
@@ -120,6 +168,7 @@ export function paintFaceplate(c2d, W, H, spec, layout) {
   }
   c2d.fillText('ON / OFF', layout.footswitch.u * W,
     layout.footswitch.v * H + (0.23 / spec.enclosure.width) * W * 1.6);
+  if (round) c2d.restore();
 }
 
 function withAlpha(hex, a) {

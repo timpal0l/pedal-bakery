@@ -19,6 +19,8 @@ const bakeButton = document.getElementById('bake-button');
 const bakeStatus = document.getElementById('bake-status');
 const shelfList = document.getElementById('shelf-list');
 const shelfTools = document.getElementById('shelf-tools');
+const shelfSearch = document.getElementById('shelf-search');
+const shelfSortBar = document.getElementById('shelf-sort');
 
 const audio = createAudio();
 const view = createScene(canvas);
@@ -47,6 +49,9 @@ function endpointOf(node, kind) {
 function boardChains() {
   const sourceIds = [...posts.values()].filter((p) => p.type === 'source').map((p) => p.id);
   const ampIds = new Set([...posts.values()].filter((p) => p.type === 'amp').map((p) => p.id));
+  for (const inst of instances.values()) {
+    if (inst.spec.kind === 'amp') ampIds.add(inst.id); // baked amps terminate chains
+  }
   return board.chains(sourceIds, ampIds);
 }
 
@@ -166,23 +171,69 @@ for (const [label, fn] of [['+ TONE IN', spawnSource], ['+ AMP', spawnAmp]]) {
   shelfTools.appendChild(b);
 }
 
+let shelfSpecs = [];
+let shelfSort = localStorage.getItem('shelfSort') || 'custom';
+let customOrder = JSON.parse(localStorage.getItem('shelfOrder') || '[]');
+const thumbCache = new Map(); // spec name -> dataURL (survives re-renders)
+let thumbQueue = Promise.resolve(); // 3D snapshots render one at a time
+
+const SORTS = [['custom', 'MINE'], ['az', 'A–Z'], ['new', 'NEW'], ['type', 'TYPE']];
+for (const [key, label] of SORTS) {
+  const b = document.createElement('button');
+  b.textContent = label;
+  b.dataset.sort = key;
+  b.addEventListener('click', () => {
+    shelfSort = key;
+    localStorage.setItem('shelfSort', key);
+    renderShelf();
+  });
+  shelfSortBar.appendChild(b);
+}
+shelfSearch.addEventListener('input', renderShelf);
+
+function sortedSpecs() {
+  const arr = [...shelfSpecs];
+  if (shelfSort === 'az') arr.sort((a, b) => a.name.localeCompare(b.name));
+  else if (shelfSort === 'new') arr.sort((a, b) => (b._mtime || 0) - (a._mtime || 0));
+  else if (shelfSort === 'type') {
+    arr.sort((a, b) => (a.kind || 'pedal').localeCompare(b.kind || 'pedal')
+      || a.name.localeCompare(b.name));
+  } else {
+    arr.sort((a, b) => {
+      const ia = customOrder.indexOf(a.name), ib = customOrder.indexOf(b.name);
+      return (ia < 0 ? 1e9 : ia) - (ib < 0 ? 1e9 : ib) || a.name.localeCompare(b.name);
+    });
+  }
+  const q = shelfSearch.value.trim().toLowerCase();
+  if (!q) return arr;
+  return arr.filter((sp) =>
+    `${sp.name} ${sp.tagline || ''} ${sp.chain.map((m) => m.type).join(' ')}`
+      .toLowerCase().includes(q));
+}
+
+function renderShelf() {
+  for (const b of shelfSortBar.children) {
+    b.classList.toggle('active', b.dataset.sort === shelfSort);
+  }
+  shelfList.innerHTML = '';
+  for (const spec of sortedSpecs()) addShelfItem(spec);
+}
+
 async function loadShelf() {
   try {
     const res = await fetch('/specs');
-    const specs = await res.json();
-    shelfList.innerHTML = '';
-    for (const spec of specs) addShelfItem(spec);
+    shelfSpecs = await res.json();
+    renderShelf();
   } catch (err) {
     console.error('[shelf] failed to load specs', err);
     shelfList.innerHTML = '<div class="shelf-error">shelf unavailable — is bakery/server.py running?</div>';
   }
 }
 
-let thumbQueue = Promise.resolve(); // 3D snapshots render one at a time
-
 function addShelfItem(spec) {
   const item = document.createElement('button');
   item.className = 'shelf-item';
+  item.dataset.name = spec.name;
   item.title = `${spec.tagline || ''}\n${spec.chain.map((m) => m.type).join(' → ')}`.trim();
   const img = document.createElement('img');
   img.className = 'si-icon';
@@ -190,21 +241,55 @@ function addShelfItem(spec) {
   const name = document.createElement('div');
   name.className = 'si-name';
   name.textContent = spec.name;
+  if (spec.kind === 'amp') {
+    const badge = document.createElement('span');
+    badge.className = 'si-badge';
+    badge.textContent = 'AMP';
+    name.appendChild(badge);
+  }
   item.append(img, name);
   item.addEventListener('click', () => spawnPedal(spec));
-  item.draggable = true; // or drag it straight onto the floor
+  item.draggable = true; // drag onto the floor to spawn, or within the list to reorder
   item.addEventListener('dragstart', (e) => {
     e.dataTransfer.setData('application/x-pedal-spec', JSON.stringify(spec));
-    e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.setData('application/x-shelf-name', spec.name);
+    e.dataTransfer.effectAllowed = 'copyMove';
+  });
+  item.addEventListener('dragover', (e) => {
+    if (!e.dataTransfer.types.includes('application/x-shelf-name')) return;
+    e.preventDefault();
+    item.classList.add('drop-above');
+  });
+  item.addEventListener('dragleave', () => item.classList.remove('drop-above'));
+  item.addEventListener('drop', (e) => {
+    const dragged = e.dataTransfer.getData('application/x-shelf-name');
+    item.classList.remove('drop-above');
+    if (!dragged || dragged === spec.name) return;
+    e.preventDefault();
+    e.stopPropagation();
+    // adopt the current visual order, then move `dragged` before this item
+    const order = sortedSpecs().map((s) => s.name).filter((n) => n !== dragged);
+    order.splice(order.indexOf(spec.name), 0, dragged);
+    customOrder = order;
+    shelfSort = 'custom';
+    localStorage.setItem('shelfOrder', JSON.stringify(customOrder));
+    localStorage.setItem('shelfSort', 'custom');
+    renderShelf();
   });
   shelfList.appendChild(item);
-  thumbQueue = thumbQueue.then(async () => {
-    try {
-      img.src = await view.snapshotPedal(spec, makeState(spec));
-    } catch (err) {
-      console.warn('[shelf] thumbnail failed for', spec.name, err);
-    }
-  });
+  if (thumbCache.has(spec.name)) {
+    img.src = thumbCache.get(spec.name);
+  } else {
+    thumbQueue = thumbQueue.then(async () => {
+      try {
+        const url = await view.snapshotPedal(spec, makeState(spec));
+        thumbCache.set(spec.name, url);
+        img.src = url;
+      } catch (err) {
+        console.warn('[shelf] thumbnail failed for', spec.name, err);
+      }
+    });
+  }
 }
 
 /* ---------------------------------------------------------- interaction -- */
@@ -602,7 +687,11 @@ async function bake(description) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
     const spec = data.spec;
-    if (!data.cached) addShelfItem(spec); // cached pedals are already on the shelf
+    if (!data.cached) {
+      spec._mtime = Date.now() / 1000;
+      shelfSpecs.push(spec);
+      renderShelf();
+    }
     spawnPedal(spec);
     bakeStatus.textContent = data.cached
       ? `from the shelf (cached, ${Math.round(data.similarity * 100)}% match): ${spec.name}`
