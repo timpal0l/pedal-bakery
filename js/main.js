@@ -65,6 +65,7 @@ const net = createNet({
     others.set(player.id, player);
     view.setPlayerMarker(player.id, player);
     updateBadge();
+    lastSent = null; // re-announce our position so the newcomer can place us
     showHud(`${player.name.toUpperCase()} IS IN THE BAKERY`);
   },
   onLeave(playerId) {
@@ -304,6 +305,7 @@ function spawnSource(at) {
     pos: at ?? { x: 7.6, z: [0, 3.5, -3.5, 7, -7][n % 5] },
     st: { mode: 'chord', chord: 'major', root: 0, strumStyle: 'ring',
       arpPattern: 'up', interval: 350, detune: 0, volume: 5,
+      bpm: 100, sync: true, // inputs join the shared clock by default
       channel: n } }; // post N maps to interface input N+1
   applySpawnPost(op);
   net.sendOp(op);
@@ -769,6 +771,20 @@ function renderSourceMenu() {
     }
     sourceMenu.appendChild(grid);
   }
+  if (['chord', 'arp', 'interval'].includes(st.mode)) {
+    section('TEMPO');
+    const syncRow = document.createElement('button');
+    syncRow.className = 'menu-row' + (st.sync ? ' active' : '');
+    syncRow.innerHTML = `<span class="check">${st.sync ? '✓' : ''}</span><span></span>`;
+    syncRow.lastChild.textContent = st.sync
+      ? `Sync — shared clock, ${audio.transportBpm()} BPM`
+      : 'Sync to the other inputs';
+    syncRow.addEventListener('click', () => chooseSync(!st.sync));
+    sourceMenu.appendChild(syncRow);
+    const bpmNow = st.sync ? audio.transportBpm() : (st.bpm || 100);
+    chipGrid([70, 85, 100, 115, 130, 150, 170, 190].map((b) => [b, `${b}`]),
+      bpmNow, (b) => chooseBpm(b), 4);
+  }
   if (st.mode === 'chord') {
     section('STRUM STYLE');
     chipGrid(Object.entries(STRUM_STYLES).map(([k, v]) => [k, v.label]),
@@ -806,6 +822,35 @@ function chooseToneOption(field, value) {
   audio.refreshTone(menuTarget, post.state);
   net.sendOp({ type: 'tone', id: menuTarget, patch: { [field]: value } });
   showHud(toneLabel(post.state));
+  renderSourceMenu();
+}
+
+function chooseSync(on) {
+  const post = posts.get(menuTarget);
+  if (!post) return;
+  // sync is per-post tone state; joining the clock also adopts its tempo
+  const patch = on ? { sync: true, bpm: audio.transportBpm() } : { sync: false };
+  Object.assign(post.state, patch);
+  audio.refreshTone(menuTarget, post.state); // re-enters on the shared beat grid
+  net.sendOp({ type: 'tone', id: menuTarget, patch });
+  showHud(on ? `SYNCED — ${audio.transportBpm()} BPM, locked to the beat` : 'FREE RUN');
+  renderSourceMenu();
+}
+
+function chooseBpm(bpm) {
+  const post = posts.get(menuTarget);
+  if (!post) return;
+  if (post.state.sync) {
+    // the shared clock is room-wide state: one op retunes every synced input
+    applyBpm({ value: bpm });
+    net.sendOp({ type: 'bpm', value: bpm });
+    showHud(`TRANSPORT ${bpm} BPM — synced inputs locked`);
+  } else {
+    post.state.bpm = bpm;
+    audio.refreshTone(menuTarget, post.state);
+    net.sendOp({ type: 'tone', id: menuTarget, patch: { bpm } });
+    showHud(`${bpm} BPM (free)`);
+  }
   renderSourceMenu();
 }
 
@@ -1027,17 +1072,20 @@ function enterRoom(msg) {
   overlay.remove();
   badge.hidden = false;
   updateBadge();
+  lastSent = null; // announce our position to the room we just (re)entered
   showHud(`BAKERY ${msg.code} — invite with the code (top right)`);
 }
 
 /* presence: stream where our camera looks + where our cursor is */
-let lastSent = { x: NaN, z: NaN, cx: NaN, cz: NaN };
+let lastSent = null; // null -> always announce ourselves once after connecting
 setInterval(() => {
   if (!net.connected()) return;
   const t = view.camera.target, c = cursorGround;
-  const moved = Math.abs(t.x - lastSent.x) + Math.abs(t.z - lastSent.z)
-              + Math.abs(c.x - lastSent.cx) + Math.abs(c.z - lastSent.cz);
-  if (!(moved > 0.01)) return; // NaN on the first pass compares false -> sends once
+  if (lastSent) {
+    const moved = Math.abs(t.x - lastSent.x) + Math.abs(t.z - lastSent.z)
+                + Math.abs(c.x - lastSent.cx) + Math.abs(c.z - lastSent.cz);
+    if (moved < 0.01) return;
+  }
   lastSent = { x: t.x, z: t.z, cx: c.x, cz: c.z };
   net.sendPos(t.x, t.z, c.x, c.z);
 }, 90);
