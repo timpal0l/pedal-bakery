@@ -56,10 +56,46 @@ After the reboot an Ubuntu window opens by itself and asks for a UNIX
 username and password. Pick anything — but **remember that password**, it's
 your `sudo` password and you'll need it repeatedly.
 
-> If the window doesn't appear, open Windows Terminal and pick **Ubuntu**
-> from the dropdown next to the `+` tab button.
+### Getting into Ubuntu
 
-Bring it up to date (first `sudo` will ask for that password):
+Ubuntu is not a separate app — it's a **profile inside Windows Terminal**,
+like PowerShell is. Staying in Windows Terminal is correct; you switch tabs
+within it. Check the prompt to see where you are:
+
+| Prompt | You're in |
+| --- | --- |
+| `PS C:\Users\Name>` | PowerShell |
+| `C:\Users\Name>` | CMD |
+| `name@machine:~$` | Ubuntu ← what you want |
+
+If you're in PowerShell, the fastest way across is to type:
+
+```powershell
+wsl
+```
+
+then, once the prompt changes:
+
+```bash
+cd ~
+```
+
+That `cd ~` matters. Entering via `wsl` lands you in whatever Windows folder
+you were in, seen as `/mnt/c/Users/Name` — the one place you shouldn't work
+(see the gotchas at the end). `cd ~` puts you in your real Ubuntu home.
+
+You can also open a dedicated Ubuntu tab from the dropdown (`v` next to the
+`+` button). **If Ubuntu isn't in that dropdown, close Windows Terminal
+completely and reopen it** — it only scans for WSL distributions at startup.
+
+If `wsl` errors, check what actually installed with `wsl -l -v`. Ubuntu
+listed as `VERSION 2` is healthy (`STATE Stopped` is fine, it starts on
+demand). Nothing listed means the distro never landed — run
+`wsl --install -d Ubuntu` and reboot.
+
+### Update Ubuntu
+
+Now, in the Ubuntu prompt (first `sudo` will ask for that password):
 
 ```bash
 sudo apt update && sudo apt upgrade -y
