@@ -89,12 +89,12 @@ in `apply_op` in `bakery/server.py` so the server can replay it.
 ## Poking at it while it runs
 
 The app exposes hooks on `window.__pedal` for automation and debugging —
-`instances()`, `spawn`, `remove`, `connect`, `disconnect`, `chain()`, `set`,
+`instances()`, `spawn`, `remove`, `connect`, `disconnect`, `chains`, `set`,
 `state`, `screenPos`, `setCamera`. Open the console and try:
 
 ```js
 __pedal.instances()      // what's on the floor
-__pedal.chain()          // what's actually cabled to the amp
+__pedal.chains           // what's actually cabled to the amp
 ```
 
 Uncaught errors collect in `window.__errors`, which is how the app gets
