@@ -44,6 +44,14 @@ wsl --install
 
 **Reboot when it asks.**
 
+> **If it fails with `0x80370102`** or "the virtual machine could not be
+> started", hardware virtualization is switched off in your BIOS/UEFI —
+> common on prebuilt and gaming desktops. Go to Settings → System → Recovery
+> → Advanced startup → **Restart now** → Troubleshoot → Advanced options →
+> **UEFI Firmware Settings**, and enable **Intel VT-x** or **AMD-V / SVM**
+> (sometimes listed as "Virtualization Technology"). Save, boot back into
+> Windows, and rerun `wsl --install`.
+
 After the reboot an Ubuntu window opens by itself and asks for a UNIX
 username and password. Pick anything — but **remember that password**, it's
 your `sudo` password and you'll need it repeatedly.
@@ -75,6 +83,10 @@ Then start it and log in through the browser that opens:
 claude
 ```
 
+A browser should open for you to log in. If nothing happens — WSL can't
+always launch a Windows browser — copy the URL Claude prints and paste it
+into your browser by hand.
+
 If that says `command not found`, the installer added `claude` to your PATH
 but this shell started before it existed. Run `exec bash` (or open a new tab)
 and try again.
@@ -98,11 +110,18 @@ python3 bakery/server.py
 `cd ~` means "go to my home folder" and works from anywhere — use it rather
 than `cd ..`, which would land you in `/home`, a folder you don't own.
 
-Open <http://localhost:8123> in Chrome **on Windows** — WSL forwards
-localhost automatically, it just works.
+Open <http://localhost:8123> in **Chrome or Edge, on Windows** — WSL forwards
+localhost automatically, it just works. A fresh Windows machine has Edge and
+no Chrome; Edge is Chromium underneath, so the 3D and the live guitar input
+both work fine in it.
 
 Type a name, hit **CREATE BAKERY**, and you should be looking at a 3D
 pedalboard. That's the whole app working. Read `ONBOARDING.md` next.
+
+**That tab now belongs to the server.** It sits there printing its log and
+won't give you a prompt back — that's it working, not frozen. Open a second
+tab with `Ctrl+Shift+T` (or the `+` button) for everything else, including
+Claude Code. `Ctrl+C` in the server tab stops the server when you're done.
 
 ---
 
