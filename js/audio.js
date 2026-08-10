@@ -12,7 +12,7 @@
 
 import { CHORDS, CHORD_GAINS, CHORD_LEVEL, E2 } from './config.js';
 import { MODULES, createCabinet } from './modules.js';
-import { RIFFS } from './riffs.js';
+import { RIFFS, PROGRESSIONS } from './riffs.js';
 
 export function createAudio() {
   let ctx = null;     // created on the first user gesture, then permanent
@@ -126,27 +126,38 @@ export function createAudio() {
       ? [0, ic, 12, 12 + ic, 24, 24 + ic]
       : (CHORDS[state.chord] || CHORDS.major);
     const semis = shape.map((x) => x + root);
+    // a progression makes the strum walk through changes instead of hanging
+    const prog = PROGRESSIONS[state.progression]?.steps || null;
     const spb = beatSeconds(state);
     const src = ctx.createBufferSource();
     src.buffer = kind === 'arp' ? makeArpBuffer(ctx, semis, state.arpPattern, spb)
       : kind === 'interval' ? makeIntervalBuffer(ctx, root, state.interval ?? 350, spb)
       : kind === 'riff' ? makeRiffBuffer(ctx, root, state.riff ?? 'rock', spb)
-      : makeStrumBuffer(ctx, semis, state.strumStyle, spb);
+      : makeStrumBuffer(ctx, semis, state.strumStyle, spb, prog, root);
     src.loop = true;
     const g = ctx.createGain();
     g.gain.value = kind === 'arp' ? 0.8 : 0.9;
-    // single-coil voicing: tight lows, scooped mids, glassy presence
+    // single-coil voicing: tight lows, scooped mids, glassy presence, plus a
+    // wooden body resonance and the gentle squash a real pickup+string gives
     const hp = ctx.createBiquadFilter();
     hp.type = 'highpass'; hp.frequency.value = 85; hp.Q.value = 0.6;
+    const wood = ctx.createBiquadFilter();
+    wood.type = 'peaking'; wood.frequency.value = 196; wood.Q.value = 1.6; wood.gain.value = 2.5;
     const scoop = ctx.createBiquadFilter();
     scoop.type = 'peaking'; scoop.frequency.value = 650; scoop.Q.value = 0.8; scoop.gain.value = -3.5;
     const spark = ctx.createBiquadFilter();
     spark.type = 'peaking'; spark.frequency.value = 3300; spark.Q.value = 1.0; spark.gain.value = 3.0;
-    src.connect(g).connect(hp).connect(scoop).connect(spark).connect(s.bus);
+    const air = ctx.createBiquadFilter();
+    air.type = 'highshelf'; air.frequency.value = 7000; air.gain.value = -6; // no synthetic sizzle
+    const squash = ctx.createDynamicsCompressor();
+    squash.threshold.value = -22; squash.ratio.value = 2.5;
+    squash.attack.value = 0.006; squash.release.value = 0.18;
+    src.connect(g).connect(hp).connect(wood).connect(scoop).connect(spark)
+       .connect(air).connect(squash).connect(s.bus);
     // synced inputs enter exactly on the shared clock's next beat — loops of
     // integer beat lengths then stay locked (or politely polymetric) forever
     src.start(state.sync ? nextBeatTime() : undefined);
-    s.loop = { src, g, kind, voicing: [hp, scoop, spark] };
+    s.loop = { src, g, kind, voicing: [hp, wood, scoop, spark, air, squash] };
   }
 
   // Rebuild whichever loop is playing after chord/key/style changes.
@@ -439,6 +450,9 @@ export const ARP_PATTERNS = {
 // The loop is tuned to a fraction of a sample with a first-order allpass —
 // an integer delay line alone quantizes pitch by up to ~10 cents up high,
 // which would smear the microtone intervals this engine now supports.
+// A real string is two coupled strings' worth of complexity: the pick makes a
+// transient click, the string decays inharmonically, and no two plucks are
+// identical. This renders one pluck with all three.
 function pluckInto(out, sr, len, f, startSec, ringSec, damp, gain) {
   const start = Math.floor(sr * startSec);
   // the two-tap average delays N - 0.5 samples; the allpass adds frac more,
@@ -457,6 +471,14 @@ function pluckInto(out, sr, len, f, startSec, ringSec, damp, gain) {
   }
   const comb = Math.max(1, Math.round(N * 0.16)); // pickup-position comb -> quack
   for (let j = 0; j < N; j++) ring[j] = seed[j] - 0.9 * seed[(j - comb + N) % N];
+  // pick attack: a short bright click before the string settles, which is
+  // most of what the ear uses to identify a plucked instrument
+  const clickLen = Math.min(Math.floor(sr * 0.004), len);
+  const clickStart = Math.floor(sr * startSec);
+  for (let j = 0; j < clickLen; j++) {
+    const p = (clickStart + j) % len;
+    out[p] += gain * 0.5 * (Math.random() * 2 - 1) * (1 - j / clickLen) ** 2;
+  }
   let idx = 0;
   let apX = 0, apY = 0; // allpass state
   const dur = Math.min(len, Math.floor(sr * ringSec));
@@ -482,14 +504,35 @@ function normalize(out, target) {
 // A strummed electric guitar chord in the chosen style — every hit sweeps
 // across the strings (down or up), rings naturally, and the tails wrap so
 // the loop never goes silent.
-function makeStrumBuffer(ctx, semis, styleKey, spb) {
+function makeStrumBuffer(ctx, semis, styleKey, spb, prog, root) {
   const style = STRUM_STYLES[styleKey] || STRUM_STYLES.ring;
   const sr = ctx.sampleRate;
-  const len = Math.floor(sr * style.beats * spb);
+  // with a progression, the loop is as long as the whole sequence and each
+  // step re-voices the chord; without one it's a single repeating bar
+  const steps = prog && prog.length
+    ? prog.map((st) => ({ semis: (CHORDS[st.q] || CHORDS.major).map((x) => x + root + st.d),
+                          beats: (st.b || 1) * 4 }))
+    : [{ semis, beats: style.beats }];
+  const totalBeats = steps.reduce((a, st) => a + st.beats, 0);
+  const len = Math.floor(sr * totalBeats * spb);
   const buf = ctx.createBuffer(1, len, sr);
   const out = buf.getChannelData(0);
+  let beatCursor = 0;
+  for (const step of steps) {
+    renderStrumSpan(out, sr, len, step.semis, style, spb, beatCursor, step.beats);
+    beatCursor += step.beats;
+  }
+  normalize(out, CHORD_LEVEL * 1.5);
+  return buf;
+}
+
+// lay one chord's worth of strumming into the buffer, starting at a beat
+function renderStrumSpan(out, sr, len, semis, style, spb, beatOffset, spanBeats) {
   const sweep = style.sweep ?? 0.045;
-  for (const ev of style.events) {
+  const reps = Math.max(1, Math.round(spanBeats / style.beats));
+  for (const evBase of style.events) {
+   for (let rep = 0; rep < reps; rep++) {
+    const ev = { ...evBase, t: evBase.t + beatOffset + rep * style.beats };
     let order = semis.map((_, i) => i);
     if (ev.strings === 'low') order = order.slice(0, 3);
     else if (ev.strings === 'high') order = order.slice(2);
@@ -500,9 +543,8 @@ function makeStrumBuffer(ctx, semis, styleKey, spb) {
       pluckInto(out, sr, len, f, ev.t * spb + k * sweep, style.ring, style.damp,
         (CHORD_GAINS[stringIdx] ?? 0.15) * 2.2 * ev.g);
     });
+   }
   }
-  normalize(out, CHORD_LEVEL * 1.5);
-  return buf;
 }
 
 // A riff is note data, not a chord: each entry has its own beat position,

@@ -13,7 +13,7 @@ import { createScene, GRID_HALF, SNAP } from './scene.js';
 import { createBoard } from './board.js';
 import { CHORDS, KEYS, INTERVALS, DETUNES } from './config.js';
 import { STRUM_STYLES, ARP_PATTERNS } from './audio.js';
-import { RIFFS } from './riffs.js';
+import { RIFFS, PROGRESSIONS } from './riffs.js';
 import { createNet, playerIdentity, savedBakeries, rememberBakery, forgetBakery } from './net.js';
 
 const canvas = document.getElementById('view');
@@ -364,7 +364,7 @@ function spawnSource(at) {
   const op = { type: 'spawnPost', id: nextId('s'), ptype: 'source',
     pos: at ?? { x: 7.6, z: [0, 3.5, -3.5, 7, -7][n % 5] },
     st: { mode: 'chord', chord: 'major', root: 0, strumStyle: 'ring',
-      arpPattern: 'up', riff: 'rock', interval: 350, detune: 0, volume: 5,
+      arpPattern: 'up', riff: 'rock', progression: 'none', interval: 350, detune: 0, volume: 5,
       bpm: 100, sync: true, // inputs join the shared clock by default
       channel: n } }; // post N maps to interface input N+1
   applySpawnPost(op);
@@ -1058,6 +1058,9 @@ function renderSourceMenu() {
       bpmNow, (b) => chooseBpm(b), 4);
   }
   if (st.mode === 'chord') {
+    section('PROGRESSION');
+    chipGrid(Object.entries(PROGRESSIONS).map(([k, v]) => [k, v.label]),
+      st.progression || 'none', (k) => chooseToneOption('progression', k), 2);
     section('STRUM STYLE');
     chipGrid(Object.entries(STRUM_STYLES).map(([k, v]) => [k, v.label]),
       st.strumStyle || 'ring', (k) => chooseToneOption('strumStyle', k), 4);

@@ -383,8 +383,14 @@ export function createCabinet(ctx) {
   // one short reflection gives the box some depth without a full IR
   const refl = ctx.createDelay(0.01); refl.delayTime.value = 0.0013;
   const reflG = ctx.createGain(); reflG.gain.value = 0.28;
-  input.connect(hp).connect(body).connect(dip).connect(presence).connect(lp1).connect(lp2).connect(out);
-  lp2.connect(refl).connect(reflG).connect(out);
+  // power-amp sag: loud passages compress and bloom back, which is a big part
+  // of why valve amps feel alive rather than static
+  const sag = ctx.createDynamicsCompressor();
+  sag.threshold.value = -16; sag.ratio.value = 3.2;
+  sag.attack.value = 0.012; sag.release.value = 0.28;
+  input.connect(hp).connect(body).connect(dip).connect(presence)
+       .connect(lp1).connect(lp2).connect(sag).connect(out);
+  lp2.connect(refl).connect(reflG).connect(sag);
   return { in: input, out, dispose() { try { input.disconnect(); out.disconnect(); } catch { /* ok */ } } };
 }
 

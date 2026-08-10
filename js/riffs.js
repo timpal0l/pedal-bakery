@@ -175,3 +175,47 @@ export const RIFFS = {
     ],
   },
 };
+
+
+// ---------------------------------------------------------------------------
+// Chord progressions — the source moves through changes instead of hanging on
+// one chord. Each step is { d (degree: semitones above the key root),
+// q (chord quality), b (how many bars it lasts) }. The strum style and BPM
+// still apply, so "Doo-wop at 85 with a Ballad strum" just works.
+// ---------------------------------------------------------------------------
+
+export const PROGRESSIONS = {
+  none:    { label: 'Off (one chord)', steps: null },
+  I_V_vi_IV: { label: 'I–V–vi–IV', steps: [
+    { d: 0, q: 'major', b: 1 }, { d: 7, q: 'major', b: 1 },
+    { d: 9, q: 'minor', b: 1 }, { d: 5, q: 'major', b: 1 }] },
+  doowop:  { label: 'Doo-wop I–vi–IV–V', steps: [
+    { d: 0, q: 'major', b: 1 }, { d: 9, q: 'minor', b: 1 },
+    { d: 5, q: 'major', b: 1 }, { d: 7, q: 'major', b: 1 }] },
+  blues12: { label: '12-bar blues', steps: [
+    { d: 0, q: '7th', b: 4 }, { d: 5, q: '7th', b: 2 }, { d: 0, q: '7th', b: 2 },
+    { d: 7, q: '7th', b: 1 }, { d: 5, q: '7th', b: 1 }, { d: 0, q: '7th', b: 1 },
+    { d: 7, q: '7th', b: 1 }] },
+  ii_V_I:  { label: 'ii–V–I (jazz)', steps: [
+    { d: 2, q: 'min7', b: 1 }, { d: 7, q: '7th', b: 1 }, { d: 0, q: 'maj7', b: 2 }] },
+  andalusian: { label: 'Andalusian i–VII–VI–V', steps: [
+    { d: 0, q: 'minor', b: 1 }, { d: 10, q: 'major', b: 1 },
+    { d: 8, q: 'major', b: 1 }, { d: 7, q: 'major', b: 1 }] },
+  canon:   { label: 'Pachelbel', steps: [
+    { d: 0, q: 'major', b: 1 }, { d: 7, q: 'major', b: 1 },
+    { d: 9, q: 'minor', b: 1 }, { d: 4, q: 'minor', b: 1 },
+    { d: 5, q: 'major', b: 1 }, { d: 0, q: 'major', b: 1 },
+    { d: 5, q: 'major', b: 1 }, { d: 7, q: 'major', b: 1 }] },
+  minor_pop: { label: 'i–VI–III–VII', steps: [
+    { d: 0, q: 'minor', b: 1 }, { d: 8, q: 'major', b: 1 },
+    { d: 3, q: 'major', b: 1 }, { d: 10, q: 'major', b: 1 }] },
+  grunge:  { label: 'i–IV (grunge)', steps: [
+    { d: 0, q: 'power', b: 2 }, { d: 5, q: 'power', b: 1 }, { d: 3, q: 'power', b: 1 }] },
+  reggae:  { label: 'i–VII (reggae)', steps: [
+    { d: 0, q: 'minor', b: 2 }, { d: 10, q: 'major', b: 2 }] },
+  folk:    { label: 'I–IV–V', steps: [
+    { d: 0, q: 'major', b: 2 }, { d: 5, q: 'major', b: 1 }, { d: 7, q: 'major', b: 1 }] },
+  sad:     { label: 'vi–IV–I–V', steps: [
+    { d: 9, q: 'minor', b: 1 }, { d: 5, q: 'major', b: 1 },
+    { d: 0, q: 'major', b: 1 }, { d: 7, q: 'major', b: 1 }] },
+};
