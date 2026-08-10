@@ -38,7 +38,13 @@
     padding: 12px 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.14);
     outline: none; background: rgba(255,255,255,0.07); letter-spacing: 0.06em;
   }
-  #player-name::placeholder { color: #7c7d87; }
+  #bakery-name {
+    font: inherit; font-size: 15px; text-align: center; color: #e8e8ec;
+    padding: 12px 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.14);
+    outline: none; background: rgba(255,255,255,0.07); letter-spacing: 0.04em;
+  }
+  #bakery-name::placeholder, #player-name::placeholder { color: #7c7d87; }
+  #bakery-name:focus { border-color: rgba(255,255,255,0.3); }
   #player-name:focus { border-color: rgba(255,255,255,0.3); }
   .lobby-btn {
     font: inherit; font-size: 15px; letter-spacing: 0.14em; cursor: pointer;
@@ -73,7 +79,8 @@
     padding: 10px 12px 10px 16px;
   }
   .session-row:hover { border-color: rgba(255,255,255,0.28); }
-  .session-code { font-weight: 700; letter-spacing: 0.2em; }
+  .session-name { font-weight: 600; }
+  .session-code { font-weight: 700; letter-spacing: 0.2em; opacity: 0.55; font-size: 12px; }
   .session-meta { color: #8a8b95; font-size: 12px; flex: 1; text-align: right; }
   .session-x {
     border: none; background: none; color: #7c7d87; cursor: pointer;
@@ -90,7 +97,16 @@
     backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
   }
   #room-badge[hidden] { display: none; }
-  #room-code-txt { font-weight: 700; letter-spacing: 0.24em; }
+  #room-name-txt { font-weight: 600; cursor: text; max-width: 200px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #room-name-txt:hover { text-decoration: underline dotted rgba(255,255,255,0.4); }
+  #room-name-txt:empty::before { content: 'name this bakery'; opacity: 0.45; }
+  #room-name-edit {
+    font: inherit; font-size: 13px; color: #e8e8ec; width: 180px;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 999px; padding: 3px 10px; outline: none;
+  }
+  #room-code-txt { font-weight: 700; letter-spacing: 0.24em; opacity: 0.6; font-size: 12px; }
   #room-players { color: #8a8b95; white-space: nowrap; }
   #room-copy {
     font: inherit; font-size: 11px; letter-spacing: 0.1em; cursor: pointer;
@@ -265,6 +281,8 @@
   <div id="lobby">
     <input id="player-name" type="text" maxlength="24" spellcheck="false"
       autocomplete="off" placeholder="your name">
+    <input id="bakery-name" type="text" maxlength="40" spellcheck="false"
+      autocomplete="off" placeholder="bakery name (optional)">
     <button id="create-bakery" class="lobby-btn">CREATE BAKERY</button>
     <button id="join-bakery" class="lobby-btn">JOIN BAKERY</button>
     <div id="join-row" hidden>
@@ -278,6 +296,8 @@
   </div>
 </div>
 <div id="room-badge" hidden>
+  <span id="room-name-txt" title="click to rename"></span>
+  <input id="room-name-edit" type="text" maxlength="40" spellcheck="false" hidden>
   <span id="room-code-txt"></span>
   <span id="room-players"></span>
   <button id="room-copy">COPY</button>

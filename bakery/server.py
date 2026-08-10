@@ -456,8 +456,10 @@ class Client:
 
 
 class Room:
-    def __init__(self, code, state=None, created=None):
+    def __init__(self, code, state=None, created=None, name=""):
         self.code = code
+        self.name = name or ""
+
         self.state = state or empty_state()
         self.created = created or time.time()
         self.lock = threading.Lock()
@@ -494,7 +496,8 @@ class Room:
 
     def save(self):
         with self.lock:
-            doc = {"code": self.code, "created": self.created, "state": self.state}
+            doc = {"code": self.code, "name": self.name,
+                   "created": self.created, "state": self.state}
             data = json.dumps(doc, indent=1)
             self.dirty = False
         with self.save_lock:  # concurrent saves share one .tmp path
@@ -524,7 +527,8 @@ def get_room(code, create=False):
         if path.exists():
             try:
                 doc = json.loads(path.read_text())
-                room = Room(code, doc.get("state") or empty_state(), doc.get("created"))
+                room = Room(code, doc.get("state") or empty_state(),
+                            doc.get("created"), doc.get("name", ""))
             except Exception as exc:
                 print(f"[room] corrupt {path.name} ({exc}) — starting fresh")
                 room = Room(code)
@@ -538,13 +542,16 @@ def get_room(code, create=False):
     return room
 
 
-def new_room():
+def new_room(name=""):
     while True:
         code = "".join(secrets.choice(CODE_ALPHABET) for _ in range(5))
         with ROOMS_LOCK:
             exists = code in ROOMS or (ROOMS_DIR / f"{code}.json").exists()
         if not exists:
-            return get_room(code, create=True)
+            room = get_room(code, create=True)
+            room.name = name or ""
+            room.dirty = True
+            return room
 
 
 def room_saver():
@@ -645,7 +652,8 @@ class Handler(SimpleHTTPRequestHandler):
             with room.lock:
                 players = [{"name": c.name, "color": c.color} for c in room.clients]
                 pedals = len(room.state["pedals"])
-            return self._json(200, {"code": room.code, "players": players, "pedals": pedals})
+            return self._json(200, {"code": room.code, "name": room.name,
+                                    "players": players, "pedals": pedals})
         if route != "/specs":
             return super().do_GET()
         specs = []
@@ -713,7 +721,7 @@ class Handler(SimpleHTTPRequestHandler):
             others = [{"id": c.player_id, "name": c.name, "color": c.color}
                       for c in room.clients if c is not client]
             snapshot = json.dumps({
-                "t": "welcome", "code": room.code,
+                "t": "welcome", "code": room.code, "name": room.name,
                 "you": {"id": player_id, "name": name, "color": color},
                 "players": others, "state": room.state,
             })
@@ -798,17 +806,21 @@ class Handler(SimpleHTTPRequestHandler):
                            exclude=client)
         elif t == "shelf":  # someone baked — everyone refreshes the shelf
             room.broadcast({"t": "shelf"}, exclude=client)
+        elif kind == "rename":
+            room.name = str(msg.get("name", ""))[:40].strip()
+            room.dirty = True
+            room.broadcast({"t": "renamed", "name": room.name})
+            print(f"[room {room.code}] renamed {room.name!r}")
         # heartbeats and unknown types need no reply
 
     def do_POST(self):
         if self.path == "/room":
             try:
                 length = int(self.headers.get("Content-Length", 0))
-                if length:
-                    self.rfile.read(length)
-                room = new_room()
-                print(f"[room {room.code}] created")
-                self._json(200, {"code": room.code})
+                body = json.loads(self.rfile.read(length)) if length else {}
+                room = new_room(str(body.get("name", ""))[:40].strip())
+                print(f"[room {room.code}] created {room.name!r}")
+                self._json(200, {"code": room.code, "name": room.name})
             except Exception as exc:
                 self._json(500, {"error": str(exc)[:300]})
             return

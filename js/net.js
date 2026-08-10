@@ -138,6 +138,7 @@ export function createNet(handlers) {
   function dispatch(msg) {
     switch (msg.t) {
       case 'welcome': handlers.onWelcome?.(msg); break;
+      case 'renamed': handlers.onRenamed?.(msg); break;
       case 'op': handlers.onOp?.(msg.op, msg.from); break;
       case 'pos': handlers.onPos?.(msg); break;
       case 'join': handlers.onJoin?.(msg.player); break;
@@ -189,6 +190,7 @@ export function createNet(handlers) {
 
   return {
     connect, leave, sendOp, sendOpThrottled, flushOps, sendPos, sendShelf,
+    rename: (newName) => push({ t: 'rename', name: newName }),
     connected: () => !!ws && ws.readyState === WebSocket.OPEN && welcomed,
     you: () => you,
     code: () => code,
@@ -206,9 +208,11 @@ export function savedBakeries() {
   } catch { return []; }
 }
 
-export function rememberBakery(code, role) {
+export function rememberBakery(code, role, name) {
+  const prev = savedBakeries().find((b) => b.code === code);
   const list = savedBakeries().filter((b) => b.code !== code);
-  list.unshift({ code, role, ts: Date.now() });
+  // keep the last known name if this call doesn't carry one
+  list.unshift({ code, role, name: name ?? prev?.name ?? '', ts: Date.now() });
   localStorage.setItem(SESSIONS_KEY, JSON.stringify(list.slice(0, 12)));
 }
 

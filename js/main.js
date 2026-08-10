@@ -59,8 +59,10 @@ function showHud(text, sticky) {
 /* ------------------------------------------------------------- the wire -- */
 
 const net = createNet({
+  onRenamed(msg) { setRoomName(msg.name || ''); showHud(`bakery renamed: ${msg.name}`); },
   onWelcome(msg) {
     try {
+      setRoomName(msg.name || '');
       enterRoom(msg);
     } catch (err) {
       // a broken snapshot must not strand the player on a dead lobby
@@ -1275,6 +1277,9 @@ window.addEventListener('keydown', (e) => {
 
 const badge = document.getElementById('room-badge');
 const badgeCode = document.getElementById('room-code-txt');
+const badgeName = document.getElementById('room-name-txt');
+const badgeNameEdit = document.getElementById('room-name-edit');
+let roomName = '';
 const badgePlayers = document.getElementById('room-players');
 const badgeCopy = document.getElementById('room-copy');
 
@@ -1378,6 +1383,8 @@ function setLobbyBusy(busy) {
 // session rows must hit the same wall.
 let entering = false;
 
+const bakeryNameInput = document.getElementById('bakery-name');
+
 async function enterBakery(code, role) {
   if (entering) return;
   entering = true;
@@ -1388,7 +1395,7 @@ async function enterBakery(code, role) {
   audio.start(); // we are inside a user gesture — the only place sound can start
   try {
     await net.connect(code, name);
-    rememberBakery(code, role); // enterRoom() has already run via onWelcome
+    rememberBakery(code, role, roomName); // enterRoom() ran via onWelcome
   } catch (err) {
     seedOnWelcome = false; // a failed host connect must not seed a later join
     lobbyError.textContent = err.message;
@@ -1403,7 +1410,11 @@ async function createBakery() {
   lobbyError.textContent = '';
   setLobbyBusy(true);
   try {
-    const res = await fetch('/room', { method: 'POST' });
+    const res = await fetch('/room', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: bakeryNameInput.value.trim().slice(0, 40) }),
+    });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
     seedOnWelcome = true; // we made this room; we lay out the starter board
@@ -1415,6 +1426,36 @@ async function createBakery() {
   }
 }
 
+function setRoomName(name) {
+  roomName = name || '';
+  badgeName.textContent = roomName;
+  if (net.code()) rememberBakery(net.code(), 'guest', roomName);
+}
+
+function commitRename() {
+  const next = badgeNameEdit.value.trim().slice(0, 40);
+  badgeNameEdit.hidden = true;
+  badgeName.hidden = false;
+  if (next === roomName) return;
+  setRoomName(next);
+  net.rename(next); // everyone in the bakery sees the new name
+  showHud(next ? `renamed to ${next}` : 'name cleared');
+}
+
+badgeName.addEventListener('click', () => {
+  badgeNameEdit.value = roomName;
+  badgeName.hidden = true;
+  badgeNameEdit.hidden = false;
+  badgeNameEdit.focus();
+  badgeNameEdit.select();
+});
+badgeNameEdit.addEventListener('keydown', (e) => {
+  e.stopPropagation(); // typing must not drive the board
+  if (e.key === 'Enter') commitRename();
+  if (e.key === 'Escape') { badgeNameEdit.hidden = true; badgeName.hidden = false; }
+});
+badgeNameEdit.addEventListener('blur', commitRename);
+
 function renderSessions() {
   const list = savedBakeries();
   sessionsTitle.hidden = !list.length;
@@ -1422,6 +1463,9 @@ function renderSessions() {
   for (const b of list) {
     const row = document.createElement('button');
     row.className = 'session-row';
+    const label = document.createElement('span');
+    label.className = 'session-name';
+    label.textContent = b.name || 'unnamed bakery';
     const code = document.createElement('span');
     code.className = 'session-code';
     code.textContent = b.code;
@@ -1437,7 +1481,7 @@ function renderSessions() {
       forgetBakery(b.code);
       renderSessions();
     });
-    row.append(code, meta, x);
+    row.append(label, code, meta, x);
     row.addEventListener('click', () => enterBakery(b.code, b.role));
     sessionsList.appendChild(row);
   }
@@ -1458,6 +1502,7 @@ function wireLobby() {
   document.getElementById('join-go').addEventListener('click', join);
   joinCode.addEventListener('keydown', (e) => { if (e.key === 'Enter') join(); });
   nameInput.addEventListener('keydown', (e) => e.stopPropagation());
+  bakeryNameInput.addEventListener('keydown', (e) => e.stopPropagation());
   joinCode.addEventListener('keydown', (e) => e.stopPropagation());
   renderSessions();
   if (params.get('room')) { // invite links: ?room=CODE prefills the join flow
