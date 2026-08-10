@@ -1823,6 +1823,9 @@ window.__pedal = {
   selected: () => selected,
   audio: audio.contextState,
   ampLevel: (id) => audio.ampScope(id)?.rms ?? null,
+  record: toggleRecording,
+  recording: audio.recording,
+  take: () => take && { name: take.name, type: take.blob.type, size: take.blob.size },
   jacks: () => allJacks().map((j) => ({ node: j.node, kind: j.kind, at: view.project(j.jack.pos()) })),
   patching: () => patching && { node: patching.node, kind: patching.kind },
   screenPos: (id, name) =>

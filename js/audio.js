@@ -41,8 +41,26 @@ export function createAudio() {
     if (ctx) { ctx.resume(); return; }
     ctx = new (window.AudioContext || window.webkitAudioContext)();
     master = ctx.createGain();
-    master.gain.value = 0.9;
-    master.connect(ctx.destination);
+    master.gain.value = 0.75;
+    // Safety net: a fast limiter then a soft knee, so however many pedals get
+    // stacked the output never hard-clips against the sound card.
+    const limiter = ctx.createDynamicsCompressor();
+    limiter.threshold.value = -3;
+    limiter.knee.value = 0;
+    limiter.ratio.value = 20;
+    limiter.attack.value = 0.002;
+    limiter.release.value = 0.12;
+    const softClip = ctx.createWaveShaper();
+    {
+      const n = 2048, curve = new Float32Array(n);
+      for (let i = 0; i < n; i++) {
+        const x = (i / (n - 1)) * 2 - 1;
+        curve[i] = Math.tanh(1.35 * x) / Math.tanh(1.35); // gentle ceiling
+      }
+      softClip.curve = curve;
+      softClip.oversample = '2x';
+    }
+    master.connect(limiter).connect(softClip).connect(ctx.destination);
     transport.origin = ctx.currentTime;
     console.log('[audio] started');
   }

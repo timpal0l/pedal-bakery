@@ -368,6 +368,9 @@ function createEQ(ctx) {
 export function createCabinet(ctx) {
   const input = ctx.createGain();
   const out = ctx.createGain();
+  // the body and presence lifts add real gain; trim it back so a cabinet is
+  // a tone shaper, not a +18dB amplifier
+  out.gain.value = 0.55;
   // valve stage: even a clean amp is slightly non-linear, and that gentle
   // asymmetric squash is the "warmth" people mean when they say tube
   const valve = ctx.createWaveShaper();
@@ -375,8 +378,12 @@ export function createCabinet(ctx) {
     const n = 1024, curve = new Float32Array(n);
     for (let i = 0; i < n; i++) {
       const x = (i / (n - 1)) * 2 - 1;
+      // tanh(kx)/k keeps unity slope for small signals and compresses loud
+      // ones. Normalising by tanh(k) instead would make this a +8dB stage,
+      // which is what was driving the whole rig into hard clipping.
+      const k = 2.4;
       const b = x < 0 ? 0.72 : 1;           // asymmetry -> 2nd harmonic
-      curve[i] = b * Math.tanh(2.4 * x) / Math.tanh(2.4);
+      curve[i] = b * Math.tanh(k * x) / k;
     }
     valve.curve = curve;
     valve.oversample = '4x';
