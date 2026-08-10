@@ -11,12 +11,13 @@
 // ---------------------------------------------------------------------------
 
 import { CHORDS, CHORD_GAINS, CHORD_LEVEL, E2 } from './config.js';
-import { MODULES, createCabinet } from './modules.js';
+import { MODULES, createCabinet, createStrings } from './modules.js';
 import { RIFFS, PROGRESSIONS } from './riffs.js';
 
 export function createAudio() {
   let ctx = null;     // created on the first user gesture, then permanent
   let master = null;
+  let speakers = null; // last node before the destination — what you hear
   const transport = { origin: 0, bpm: 100 }; // the shared clock for synced inputs
 
   function beatSeconds(state) {
@@ -61,6 +62,7 @@ export function createAudio() {
       softClip.oversample = '2x';
     }
     master.connect(limiter).connect(softClip).connect(ctx.destination);
+    speakers = softClip;
     transport.origin = ctx.currentTime;
     console.log('[audio] started');
   }
@@ -167,6 +169,7 @@ export function createAudio() {
     s.loop.src.disconnect();
     s.loop.g.disconnect();
     for (const n of s.loop.voicing || []) { try { n.disconnect(); } catch { /* ok */ } }
+    s.loop.strings?.dispose();
     s.loop = null;
   }
 
@@ -220,12 +223,15 @@ export function createAudio() {
     const squash = ctx.createDynamicsCompressor();
     squash.threshold.value = -22; squash.ratio.value = 2.5;
     squash.attack.value = 0.006; squash.release.value = 0.18;
+    // the other strings ring in sympathy with whatever is being played
+    const strings = createStrings(ctx);
     src.connect(g).connect(hp).connect(wood).connect(scoop).connect(spark)
-       .connect(air).connect(squash).connect(s.bus);
+       .connect(air).connect(squash).connect(strings.in);
+    strings.out.connect(s.bus);
     // synced inputs enter exactly on the shared clock's next beat — loops of
     // integer beat lengths then stay locked (or politely polymetric) forever
     src.start(state.sync ? nextBeatTime() : undefined);
-    s.loop = { src, g, kind, voicing: [hp, wood, scoop, spark, air, squash] };
+    s.loop = { src, g, kind, strings, voicing: [hp, wood, scoop, spark, air, squash] };
   }
 
   // Rebuild whichever loop is playing after chord/key/style changes.
@@ -395,9 +401,9 @@ export function createAudio() {
   }
 
   /* -------------------------------------------------------- the recorder --
-     Taps the master bus into a MediaStreamDestination and lets MediaRecorder
-     encode it. Recording captures exactly what the room hears — every amp,
-     every player's gear — because everything already meets at master. */
+     Splits the last node before the speakers into a MediaStreamDestination
+     and lets MediaRecorder encode it. A take is exactly what the room heard
+     — every amp, every player's gear, limiter and soft clip included. */
 
   let recorder = null, recDest = null, recChunks = [], recStarted = 0;
 
@@ -411,7 +417,7 @@ export function createAudio() {
   function startRecording() {
     if (!ctx || recorder) return false;
     recDest = ctx.createMediaStreamDestination();
-    master.connect(recDest);
+    speakers.connect(recDest);
     const mimeType = REC_TYPES.find((t) => MediaRecorder.isTypeSupported(t));
     recorder = new MediaRecorder(recDest.stream, mimeType ? { mimeType } : undefined);
     recChunks = [];
@@ -428,7 +434,7 @@ export function createAudio() {
       const r = recorder;
       const seconds = ctx.currentTime - recStarted;
       r.onstop = () => {
-        try { master.disconnect(recDest); } catch { /* ok */ }
+        try { speakers.disconnect(recDest); } catch { /* ok */ }
         recDest = null;
         recorder = null;
         const type = r.mimeType || 'audio/webm';

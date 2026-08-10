@@ -300,8 +300,11 @@
     padding: 8px 18px; pointer-events: none; white-space: nowrap;
   }
   /* the tape machine: record the room, then keep the take or bin it */
+  /* anchored just right of the pedal shelf: the strip between the two
+     shelves is the only free real estate, and the room badge owns its far
+     end, so the tape grows rightward from here and never reaches it */
   #recorder {
-    position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 7;
+    position: fixed; top: 14px; left: 330px; z-index: 7;
     display: flex; align-items: center; gap: 10px;
     background: rgba(32, 33, 39, 0.85); border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 999px; padding: 7px 10px 7px 8px; color: #e8e8ec;
@@ -387,7 +390,7 @@
   <div id="riff-status"></div>
 </div>
 <div id="source-menu"></div>
-<div id="recorder">
+<div id="recorder" hidden>
   <button id="rec-toggle"><span class="dot"></span><span id="rec-label">RECORD</span></button>
   <span id="rec-time" hidden>0:00</span>
   <span id="rec-take" hidden>

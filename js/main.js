@@ -1356,6 +1356,7 @@ function enterRoom(msg) {
   seedOnWelcome = false;
   overlay.remove();
   badge.hidden = false;
+  revealRecorder();
   updateBadge();
   lastSent = null; // announce our position to the room we just (re)entered
   showHud(`BAKERY ${msg.code} — invite with the code (top right)`);
@@ -1666,7 +1667,9 @@ const recBin = document.getElementById('rec-bin');
 let take = null;     // the last finished recording: { blob, url, name }
 let recTicker = null;
 
-if (!audio.canRecord()) recPanel.hidden = true; // no MediaRecorder, no button
+// the lobby owns the screen until you're in a bakery, so the tape waits its
+// turn — and never appears at all where MediaRecorder doesn't exist
+function revealRecorder() { recPanel.hidden = !audio.canRecord(); }
 
 function clockText(seconds) {
   const s = Math.max(0, Math.floor(seconds));
@@ -1763,6 +1766,7 @@ if (params.get('solo')) {
   // headless/offline path: straight to a playable board, no lobby, no room.
   // net.sendOp() is a no-op while disconnected, so everything just works.
   overlay.remove();
+  revealRecorder();
   spawnSource();
   spawnAmp();
   canvas.addEventListener('pointerdown', () => { // sound still needs a gesture

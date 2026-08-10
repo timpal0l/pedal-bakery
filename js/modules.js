@@ -42,10 +42,25 @@ function createDrive(ctx) {
   const cut = ctx.createBiquadFilter(); cut.type = 'highpass'; cut.Q.value = 0.7;
   const hump = ctx.createBiquadFilter(); hump.type = 'peaking'; hump.Q.value = 0.8;
   const pre = ctx.createGain();
+  // Band-split: clipping the whole spectrum together turns low notes to mud
+  // and high ones to fizz, because the bass intermodulates everything else.
+  // Real high-gain rigs keep the low end far cleaner than the mids.
+  const lowSplit = ctx.createBiquadFilter();
+  lowSplit.type = 'lowpass'; lowSplit.frequency.value = 220; lowSplit.Q.value = 0.7;
+  const highSplit = ctx.createBiquadFilter();
+  highSplit.type = 'highpass'; highSplit.frequency.value = 220; highSplit.Q.value = 0.7;
+  const lowShaper = ctx.createWaveShaper(); lowShaper.oversample = '2x';
   const shaper = ctx.createWaveShaper(); shaper.oversample = '4x';
+  const lowTrim = ctx.createGain(); lowTrim.gain.value = 0.9;
   const tone = ctx.createBiquadFilter(); tone.type = 'lowpass';
   const out = ctx.createGain();
-  input.connect(cut).connect(hump).connect(pre).connect(shaper).connect(tone).connect(out);
+  // the low band taps BEFORE the hot pre-gain: slamming the bass into the
+  // same 16x stage as the mids was clipping it harder than the mids, which
+  // is precisely the mud this split exists to avoid
+  const lowGain = ctx.createGain(); lowGain.gain.value = 1.3;
+  input.connect(cut).connect(hump);
+  hump.connect(pre).connect(highSplit).connect(shaper).connect(tone).connect(out);
+  hump.connect(lowSplit).connect(lowGain).connect(lowShaper).connect(lowTrim).connect(out);
 
   let levelGain = 1, lastAmount = 5, charac = 3;
 
@@ -75,12 +90,21 @@ function createDrive(ctx) {
       curve[i] = y;
     }
     shaper.curve = curve;
+    // the low band gets a gentler version of the same character, so the bass
+    // stays defined instead of flapping
+    const lowCurve = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const x = (i / (n - 1)) * 2 - 1;
+      const lk = Math.max(0.8, k * 0.01); // an order gentler than the high band
+      lowCurve[i] = Math.tanh(lk * x) / lk;
+    }
+    lowShaper.curve = lowCurve;
     pre.gain.setTargetAtTime(0.6 + Math.pow(v / 10, 1.5) * 18, t, 0.05);
     out.gain.setTargetAtTime(levelGain / (1 + (v / 10) * 2.2), t, 0.05);
   }
 
   const setters = {
-    _nodes: { cut, hump, pre, shaper, tone },
+    _nodes: { cut, hump, pre, shaper, lowShaper, lowSplit, highSplit, lowGain, lowTrim, tone },
     amount: (v, t) => { lastAmount = v; rebuild(t); },
     character: (v, t) => { charac = v; rebuild(t ?? ctx.currentTime); },
     tone: (v, t) => tone.frequency.setTargetAtTime(400 * Math.pow(2, (v / 10) * 4.6), t, 0.05),
@@ -362,6 +386,38 @@ function createEQ(ctx) {
   return shell(ctx, lo, hi, setters);
 }
 
+/* strings — sympathetic resonance. On a real guitar every note you play sets
+   the other strings ringing; that halo is a large part of why an acoustic
+   instrument sounds alive. Six tuned comb resonators at open-string pitches,
+   mixed in low behind the direct signal. */
+export function createStrings(ctx) {
+  const input = ctx.createGain();
+  const out = ctx.createGain();
+  const direct = ctx.createGain();
+  const bus = ctx.createGain(); bus.gain.value = 0.16; // subtle by nature
+  input.connect(direct).connect(out);
+  const OPEN = [82.41, 110.0, 146.83, 196.0, 246.94, 329.63]; // E A D G B E
+  const parts = [];
+  for (const f of OPEN) {
+    const d = ctx.createDelay(0.05);
+    d.delayTime.value = 1 / f;
+    const fb = ctx.createGain(); fb.gain.value = 0.86;   // long-ish ring
+    const damp = ctx.createBiquadFilter();               // strings lose highs
+    damp.type = 'lowpass'; damp.frequency.value = 2600; damp.Q.value = 0.5;
+    input.connect(d);
+    d.connect(damp).connect(fb).connect(d);
+    d.connect(bus);
+    parts.push(d, fb, damp);
+  }
+  bus.connect(out);
+  return {
+    in: input, out,
+    setAmount: (v) => { bus.gain.value = Math.max(0, Math.min(0.4, v)); },
+    dispose() { for (const n of [input, out, direct, bus, ...parts]) {
+      try { n.disconnect(); } catch { /* ok */ } } },
+  };
+}
+
 /* cabinet — a guitar speaker in a box. THE reason amp sims sound real:
    a 12" driver rolls off hard above ~5kHz, humps in the presence region and
    thumps around 200Hz. Without it, distortion is all fizz and no speaker. */
@@ -388,18 +444,35 @@ export function createCabinet(ctx) {
     valve.curve = curve;
     valve.oversample = '4x';
   }
-  const hp = ctx.createBiquadFilter();      // no subsonic mud
-  hp.type = 'highpass'; hp.frequency.value = 85; hp.Q.value = 0.7;
-  const body = ctx.createBiquadFilter();    // cabinet thump
-  body.type = 'peaking'; body.frequency.value = 230; body.gain.value = 3; body.Q.value = 1.1;
-  const dip = ctx.createBiquadFilter();     // cone breakup dip
-  dip.type = 'peaking'; dip.frequency.value = 950; dip.gain.value = -4; dip.Q.value = 1.4;
-  const presence = ctx.createBiquadFilter();
-  presence.type = 'peaking'; presence.frequency.value = 3000; presence.gain.value = 5; presence.Q.value = 1.3;
-  const lp1 = ctx.createBiquadFilter();     // two poles for a steep speaker rolloff
-  lp1.type = 'lowpass'; lp1.frequency.value = 5000; lp1.Q.value = 1.1;
-  const lp2 = ctx.createBiquadFilter();
-  lp2.type = 'lowpass'; lp2.frequency.value = 6200; lp2.Q.value = 0.6;
+  // Two mic positions, panned apart: on-axis close to the dust cap (bright,
+  // direct) and off-axis toward the cone edge (darker, a touch delayed).
+  // Real cab recordings are almost never a single mono capture.
+  function micChain(o) {
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 85; hp.Q.value = 0.7;
+    const body = ctx.createBiquadFilter();
+    body.type = 'peaking'; body.frequency.value = o.bodyHz; body.gain.value = o.body; body.Q.value = 1.1;
+    const dip = ctx.createBiquadFilter();
+    dip.type = 'peaking'; dip.frequency.value = 950; dip.gain.value = o.dip; dip.Q.value = 1.4;
+    const pres = ctx.createBiquadFilter();
+    pres.type = 'peaking'; pres.frequency.value = o.presHz; pres.gain.value = o.pres; pres.Q.value = 1.3;
+    const l1 = ctx.createBiquadFilter();
+    l1.type = 'lowpass'; l1.frequency.value = o.lp; l1.Q.value = 1.1;
+    const l2 = ctx.createBiquadFilter();
+    l2.type = 'lowpass'; l2.frequency.value = o.lp * 1.24; l2.Q.value = 0.6;
+    const pan = new StereoPannerNode(ctx, { pan: o.pan });
+    const delay = ctx.createDelay(0.01); delay.delayTime.value = o.delay;
+    const trim = ctx.createGain(); trim.gain.value = o.trim;
+    hp.connect(body).connect(dip).connect(pres).connect(l1).connect(l2)
+      .connect(delay).connect(trim).connect(pan);
+    return { head: hp, tail: pan };
+  }
+  const onAxis = micChain({ bodyHz: 230, body: 3, dip: -4, presHz: 3000, pres: 5,
+                            lp: 5000, pan: -0.35, delay: 0, trim: 1 });
+  const offAxis = micChain({ bodyHz: 200, body: 4, dip: -6, presHz: 2400, pres: 2,
+                             lp: 4100, pan: 0.4, delay: 0.00028, trim: 0.85 });
+  const hp = onAxis.head;   // kept for the wiring below
+  const lp2 = { connect: (n) => { onAxis.tail.connect(n); offAxis.tail.connect(n); } };
   // one short reflection gives the box some depth without a full IR
   const refl = ctx.createDelay(0.01); refl.delayTime.value = 0.0013;
   const reflG = ctx.createGain(); reflG.gain.value = 0.28;
@@ -431,9 +504,13 @@ export function createCabinet(ctx) {
     }
     room.buffer = buf;
   }
-  input.connect(valve).connect(hp).connect(body).connect(dip).connect(presence)
-       .connect(lp1).connect(lp2).connect(sag).connect(out);
-  lp2.connect(refl).connect(reflG).connect(sag);
+  input.connect(valve);
+  valve.connect(onAxis.head);
+  valve.connect(offAxis.head);
+  lp2.connect(sag);
+  sag.connect(out);
+  onAxis.tail.connect(refl);
+  refl.connect(reflG).connect(sag);
   sag.connect(roomSend).connect(room).connect(out);
   return { in: input, out, dispose() { try { input.disconnect(); out.disconnect(); } catch { /* ok */ } } };
 }
