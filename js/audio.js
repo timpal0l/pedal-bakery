@@ -42,7 +42,7 @@ export function createAudio() {
     if (ctx) { ctx.resume(); return; }
     ctx = new (window.AudioContext || window.webkitAudioContext)();
     master = ctx.createGain();
-    master.gain.value = 0.75;
+    master.gain.value = 0.62;
     // Safety net: a fast limiter then a soft knee, so however many pedals get
     // stacked the output never hard-clips against the sound card.
     const limiter = ctx.createDynamicsCompressor();
@@ -54,9 +54,16 @@ export function createAudio() {
     const softClip = ctx.createWaveShaper();
     {
       const n = 2048, curve = new Float32Array(n);
+      // unity below the knee, rounding off above it. Normalising a tanh by
+      // tanh(k) would give this stage 1.6x gain — the same mistake the valve
+      // stage had, and it was quietly adding 4dB to everything.
+      const knee = 0.7;
       for (let i = 0; i < n; i++) {
         const x = (i / (n - 1)) * 2 - 1;
-        curve[i] = Math.tanh(1.35 * x) / Math.tanh(1.35); // gentle ceiling
+        const a = Math.abs(x);
+        curve[i] = a <= knee
+          ? x
+          : Math.sign(x) * (knee + (1 - knee) * Math.tanh((a - knee) / (1 - knee)));
       }
       softClip.curve = curve;
       softClip.oversample = '2x';
@@ -318,13 +325,22 @@ export function createAudio() {
     }
     node.connect(wet).connect(out);
     pedalIn.connect(bypass).connect(out);
-    let tail = out, cab = null;
+    // Real pedals have finite headroom. Without this, one generated chain
+    // that stacks a compressor and an EQ can hand the next pedal +20dB.
+    const guard = ctx.createDynamicsCompressor();
+    guard.threshold.value = -6;
+    guard.knee.value = 6;
+    guard.ratio.value = 8;
+    guard.attack.value = 0.004;
+    guard.release.value = 0.15;
+    out.connect(guard);
+    let tail = guard, cab = null;
     if (spec.kind === 'amp') { // a baked amp is a head AND a speaker
       cab = createCabinet(ctx);
-      out.connect(cab.in);
+      guard.connect(cab.in);
       tail = cab.out;
     }
-    rigs.set(id, { pedalIn, wet, bypass, out, tail, cab, modules });
+    rigs.set(id, { pedalIn, wet, bypass, out, guard, tail, cab, modules });
     if (spec.kind === 'amp') openTap(id, tail);
     applyRig(id, spec, state);
   }
@@ -349,7 +365,7 @@ export function createAudio() {
     if (!rig) return;
     for (const m of Object.values(rig.modules)) m.dispose();
     rig.cab?.dispose();
-    for (const n of [rig.pedalIn, rig.wet, rig.bypass, rig.out]) {
+    for (const n of [rig.pedalIn, rig.wet, rig.bypass, rig.out, rig.guard]) {
       try { n.disconnect(); } catch { /* ok */ }
     }
     closeTap(id);
@@ -380,7 +396,7 @@ export function createAudio() {
         const rig = rigs.get(pid);
         if (!rig) { ok = false; break; }
         node.connect(rig.pedalIn);
-        node = rig.out;
+        node = rig.guard ?? rig.out;
       }
       if (!ok) continue;
       const ampRig = rigs.get(chain.amp); // a baked amp: route through its tone stack

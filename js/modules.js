@@ -359,9 +359,12 @@ function createCompressor(ctx) {
   const setters = {
     _nodes: { comp },
     sustain: (v, t) => {
-      comp.threshold.setTargetAtTime(-10 - (v / 10) * 40, t, 0.05);
-      comp.ratio.setTargetAtTime(2 + (v / 10) * 14, t, 0.05);
-      makeup.gain.setTargetAtTime(Math.pow(10, ((v / 10) * 14) / 20), t, 0.05);
+      // A flat +14dB of makeup regardless of actual reduction turned this into
+      // a 5x amplifier and was slamming every chain it sat in. Gentler
+      // threshold and ratio, and makeup capped near what it takes back.
+      comp.threshold.setTargetAtTime(-6 - (v / 10) * 24, t, 0.05);
+      comp.ratio.setTargetAtTime(2 + (v / 10) * 10, t, 0.05);
+      makeup.gain.setTargetAtTime(Math.pow(10, ((v / 10) * 3) / 20), t, 0.05);
     },
     attack: (v, t) => comp.attack.setTargetAtTime(0.001 + (v / 10) * 0.1, t, 0.05),
   };
@@ -375,7 +378,7 @@ function createEQ(ctx) {
   const mid = ctx.createBiquadFilter(); mid.type = 'peaking'; mid.frequency.value = 800; mid.Q.value = 0.9;
   const hi = ctx.createBiquadFilter(); hi.type = 'highshelf'; hi.frequency.value = 3200;
   lo.connect(mid).connect(hi);
-  const db = (v) => (v - 5) * 2.4; // 0..10 -> ±12 dB, 5 = flat
+  const db = (v) => (v - 5) * 1.8; // 0..10 -> ±9 dB, 5 = flat
   const setters = {
     _nodes: { mid, hi },
     bass: (v, t) => lo.gain.setTargetAtTime(db(v), t, 0.05),
@@ -424,9 +427,10 @@ export function createStrings(ctx) {
 export function createCabinet(ctx) {
   const input = ctx.createGain();
   const out = ctx.createGain();
-  // the body and presence lifts add real gain; trim it back so a cabinet is
-  // a tone shaper, not a +18dB amplifier
-  out.gain.value = 0.55;
+  // The body and presence lifts add real gain, and the two mic chains sum on
+  // top of that, so a cabinet was arriving at the master ~9dB hot and the
+  // limiter squashed everything all the time. A cabinet is a tone shaper.
+  out.gain.value = 0.27;
   // valve stage: even a clean amp is slightly non-linear, and that gentle
   // asymmetric squash is the "warmth" people mean when they say tube
   const valve = ctx.createWaveShaper();
