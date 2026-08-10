@@ -1,0 +1,92 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Flannel Sarcasm",
+  "tagline": "whatever, nevermind",
+  "enclosure": {
+    "width": 2.4,
+    "depth": 2.5,
+    "height": 0.6,
+    "color": "#4a4f5a"
+  },
+  "artwork": {
+    "style": "plaid",
+    "palette": [
+      "#8f2b28",
+      "#1f2a34",
+      "#c9b489"
+    ],
+    "textColor": "#f2e6cf"
+  },
+  "chain": [
+    {
+      "id": "sq",
+      "type": "comp",
+      "params": {
+        "sustain": 6.0,
+        "attack": 3.0
+      }
+    },
+    {
+      "id": "dist",
+      "type": "drive",
+      "params": {
+        "amount": 8.2,
+        "tone": 4.2,
+        "level": 6.0
+      }
+    },
+    {
+      "id": "stack",
+      "type": "eq",
+      "params": {
+        "bass": 7.5,
+        "mid": 2.5,
+        "treble": 6.5,
+        "freq": 4.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "GRIT",
+      "target": "dist.amount"
+    },
+    {
+      "id": "k2",
+      "label": "TONE",
+      "target": "dist.tone"
+    },
+    {
+      "id": "k3",
+      "label": "LEVEL",
+      "target": "dist.level"
+    },
+    {
+      "id": "k4",
+      "label": "LOW",
+      "target": "stack.bass"
+    },
+    {
+      "id": "k5",
+      "label": "SCOOP",
+      "target": "stack.mid"
+    },
+    {
+      "id": "k6",
+      "label": "BITE",
+      "target": "stack.treble"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "SQUASH",
+      "target": "sq.sustain",
+      "off": 2.0,
+      "on": 7.5
+    }
+  ],
+  "bakedFrom": "a grunge plaid-flannel distortion, thick and sarcastic"
+}

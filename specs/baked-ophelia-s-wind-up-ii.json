@@ -1,0 +1,121 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Ophelia's Wind-Up II",
+  "tagline": "the tape spools the wrong way and the room follo",
+  "enclosure": {
+    "width": 3.6,
+    "depth": 2.9,
+    "height": 0.78,
+    "color": "#4b2a86"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#f4a11a",
+      "#e0357b",
+      "#2ec6c0"
+    ],
+    "textColor": "#fff3d6"
+  },
+  "chain": [
+    {
+      "id": "fz",
+      "type": "drive",
+      "params": {
+        "amount": 8.4,
+        "tone": 6.6,
+        "level": 5.4
+      }
+    },
+    {
+      "id": "ph",
+      "type": "phaser",
+      "params": {
+        "rate": 2.4,
+        "depth": 9.0,
+        "feedback": 7.2
+      }
+    },
+    {
+      "id": "ch",
+      "type": "chorus",
+      "params": {
+        "rate": 1.6,
+        "depth": 7.5,
+        "mix": 6.5
+      }
+    },
+    {
+      "id": "dl",
+      "type": "delay",
+      "params": {
+        "time": 3.2,
+        "feedback": 6.8,
+        "mix": 4.4
+      }
+    },
+    {
+      "id": "vb",
+      "type": "reverb",
+      "params": {
+        "size": 8.0,
+        "mix": 4.6
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "FUZZ",
+      "target": "fz.amount"
+    },
+    {
+      "id": "k2",
+      "label": "TONE",
+      "target": "fz.tone"
+    },
+    {
+      "id": "k3",
+      "label": "SWIRL",
+      "target": "ph.rate"
+    },
+    {
+      "id": "k4",
+      "label": "SWEEP",
+      "target": "ph.depth"
+    },
+    {
+      "id": "k5",
+      "label": "WOW",
+      "target": "ch.depth"
+    },
+    {
+      "id": "k6",
+      "label": "REPEATS",
+      "target": "dl.feedback"
+    },
+    {
+      "id": "k7",
+      "label": "SPACE",
+      "target": "vb.mix"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "REVERSE",
+      "target": "dl.mix",
+      "off": 4.4,
+      "on": 8.2
+    },
+    {
+      "id": "s2",
+      "label": "LIFTOFF",
+      "target": "ph.feedback",
+      "off": 7.2,
+      "on": 9.6
+    }
+  ],
+  "bakedFrom": "a psychedelic 60s swirl, phasey fuzzy and backwards-feeling"
+}

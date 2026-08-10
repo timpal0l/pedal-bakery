@@ -1,0 +1,122 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Kingston Steppers",
+  "tagline": "one drop into the void",
+  "enclosure": {
+    "width": 3.6,
+    "depth": 2.9,
+    "height": 0.75,
+    "color": "#0f3d2e"
+  },
+  "artwork": {
+    "style": "stripes",
+    "palette": [
+      "#f5c542",
+      "#0f6b3a",
+      "#c2211f"
+    ],
+    "textColor": "#fdf3d0"
+  },
+  "chain": [
+    {
+      "id": "sq",
+      "type": "comp",
+      "params": {
+        "sustain": 6.5,
+        "attack": 3.0
+      }
+    },
+    {
+      "id": "lp",
+      "type": "filter",
+      "params": {
+        "cutoff": 3.2,
+        "resonance": 7.0
+      }
+    },
+    {
+      "id": "ech",
+      "type": "delay",
+      "params": {
+        "time": 6.5,
+        "feedback": 8.2,
+        "mix": 6.0
+      }
+    },
+    {
+      "id": "spr",
+      "type": "reverb",
+      "params": {
+        "size": 7.5,
+        "mix": 4.0
+      }
+    },
+    {
+      "id": "out",
+      "type": "level",
+      "params": {
+        "gain": 5.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "SKANK",
+      "target": "lp.cutoff"
+    },
+    {
+      "id": "k2",
+      "label": "BITE",
+      "target": "lp.resonance"
+    },
+    {
+      "id": "k3",
+      "label": "STEPS",
+      "target": "ech.time"
+    },
+    {
+      "id": "k4",
+      "label": "REPEATS",
+      "target": "ech.feedback"
+    },
+    {
+      "id": "k5",
+      "label": "ECHO",
+      "target": "ech.mix"
+    },
+    {
+      "id": "k6",
+      "label": "CHAMBER",
+      "target": "spr.size"
+    },
+    {
+      "id": "k7",
+      "label": "SQUEEZE",
+      "target": "sq.sustain"
+    },
+    {
+      "id": "k8",
+      "label": "OUTPUT",
+      "target": "out.gain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "RUNAWAY",
+      "target": "ech.feedback",
+      "off": 8.2,
+      "on": 9.6
+    },
+    {
+      "id": "s2",
+      "label": "DUBWISE",
+      "target": "spr.mix",
+      "off": 4.0,
+      "on": 7.5
+    }
+  ],
+  "bakedFrom": "a reggae dub station with deep echoes and filtered skanks"
+}

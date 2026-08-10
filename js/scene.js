@@ -82,9 +82,11 @@ export function createScene(canvas) {
   sun.position = new BABYLON.Vector3(6, 14, -6);
   sun.intensity = 1.15;
   sun.diffuse = new BABYLON.Color3(1.0, 0.97, 0.92);       // warm key light
-  const shadows = new BABYLON.ShadowGenerator(2048, sun);
+  const shadows = new BABYLON.ShadowGenerator(1024, sun);
   shadows.useBlurExponentialShadowMap = true;
-  shadows.blurKernel = 32;
+  shadows.blurKernel = 24;
+  shadows.getShadowMap().refreshRate =
+    BABYLON.RenderTargetTexture.REFRESHRATE_RENDER_ONEVERYTWOFRAMES;
 
   scene.createDefaultEnvironment({ createSkybox: false, createGround: false });
   const glow = new BABYLON.GlowLayer('glow', scene);
@@ -104,7 +106,8 @@ export function createScene(canvas) {
   const groundMat = new BABYLON.StandardMaterial('groundMat', scene);
   groundMat.diffuseColor = BABYLON.Color3.FromHexString('#2e3036'); // dark stage floor
   groundMat.specularColor = new BABYLON.Color3(0.03, 0.03, 0.03);
-  const mirror = new BABYLON.MirrorTexture('mirror', { ratio: 0.5 }, scene, true);
+  const mirror = new BABYLON.MirrorTexture('mirror', { ratio: 0.3 }, scene, true);
+  mirror.refreshRate = BABYLON.RenderTargetTexture.REFRESHRATE_RENDER_ONEVERYTWOFRAMES;
   mirror.mirrorPlane = new BABYLON.Plane(0, -1, 0, 0);
   mirror.level = 0.3; // dark gloss shows reflections beautifully
   mirror.adaptiveBlurKernel = 24;
@@ -113,21 +116,30 @@ export function createScene(canvas) {
   ground.receiveShadows = true;
   ground.isPickable = false;
   const noReflect = new Set(['ground', 'gridOverlay', 'room']);
-  mirror.renderList = scene.meshes.filter((m) => !noReflect.has(m.name));
-  scene.onNewMeshAddedObservable.add((m) => {
-    if (!noReflect.has(m.name)) mirror.renderList.push(m);
-  });
+  const reflectable = (m) => !noReflect.has(m.name)
+    && !m.name.startsWith('selRing_')
+    && !m.__offstage; // thumbnail rigs live off-stage and never reflect
+  mirror.renderList = scene.meshes.filter(reflectable);
+  scene.onNewMeshAddedObservable.add((m) => { if (reflectable(m)) mirror.renderList.push(m); });
   scene.onMeshRemovedObservable.add((m) => {
     const i = mirror.renderList.indexOf(m);
     if (i !== -1) mirror.renderList.splice(i, 1);
   });
+  // belt and braces: drop any stale entry a dispose slipped past us
+  // rebuild from the live mesh list periodically: cheap, and immune to any
+  // dispose that slips past the observable
+  let mirrorTick = 0;
+  scene.onBeforeRenderObservable.add(() => {
+    if (++mirrorTick % 60) return;
+    mirror.renderList = scene.meshes.filter((m) => !m.isDisposed() && reflectable(m));
+  });
   try {
     const ssao = new BABYLON.SSAO2RenderingPipeline('ssao', scene,
-      { ssaoRatio: 0.75, blurRatio: 1 }, [camera]);
+      { ssaoRatio: 0.5, blurRatio: 0.5 }, [camera]);
     ssao.radius = 0.7;
-    ssao.totalStrength = 1.1;
-    ssao.samples = 16;
-    ssao.expensiveBlur = true;
+    ssao.totalStrength = 1.0;
+    ssao.samples = 8;
+    ssao.expensiveBlur = false;
   } catch (err) {
     console.warn('[scene] SSAO unavailable', err);
   }
@@ -470,8 +482,11 @@ export function createScene(canvas) {
       c.energy = moved ? 1 : c.energy * 0.965; // fresh swing, then settle
       c.lastA = a.pos.clone();
       c.lastB = b.pos.clone();
-      const path = cablePath(a, b, t, c.phase, c.slack, c.energy);
-      BABYLON.MeshBuilder.CreateTube('cable', { path, instance: c.mesh });
+      // a settled cable is geometrically static — skip the rebuild entirely
+      if (moved || c.energy > 0.02) {
+        const path = cablePath(a, b, t, c.phase, c.slack, c.energy);
+        BABYLON.MeshBuilder.CreateTube('cable', { path, instance: c.mesh });
+      }
       c.bootA.position = a.pos.add(a.dir.scale(0.18));
       c.bootA.rotation.z = Math.PI / 2;
       c.bootB.position = b.pos.add(b.dir.scale(0.18));
@@ -603,6 +618,18 @@ export function createScene(canvas) {
       m.cursor.position.x = m.cur.cx;
       m.cursor.position.z = m.cur.cz;
     }
+  });
+
+  // adaptive resolution: on a Retina panel the engine renders 4x the pixels,
+  // and SSAO + mirror + FXAA all pay for every one. If the frame budget slips,
+  // scale down; when there's headroom again, scale back up.
+  let perfTick = 0;
+  scene.onAfterRenderObservable.add(() => {
+    if (++perfTick % 90) return;
+    const fps = engine.getFps();
+    const lvl = engine.getHardwareScalingLevel();
+    if (fps < 40 && lvl < 2) engine.setHardwareScalingLevel(Math.min(2, lvl + 0.25));
+    else if (fps > 58 && lvl > 1) engine.setHardwareScalingLevel(Math.max(1, lvl - 0.25));
   });
 
   engine.runRenderLoop(() => scene.render());
@@ -881,6 +908,7 @@ export function createScene(canvas) {
     const FAR = 500;
     const W = 160, H = 110;
     const handles = buildPedal('__thumb', spec, state, { x: FAR, z: FAR });
+    for (const m of handles.root.getChildMeshes()) m.__offstage = true;
     const tall = spec.kind === 'amp'; // frame the whole cabinet, grille visible
     const cam = new BABYLON.ArcRotateCamera('thumbCam',
       -Math.PI / 2 + 0.55, tall ? 1.12 : 0.95,

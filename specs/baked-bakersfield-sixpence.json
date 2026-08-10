@@ -1,0 +1,108 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Bakersfield Sixpence",
+  "tagline": "chicken pickin' in a tin box",
+  "enclosure": {
+    "width": 2.6,
+    "depth": 2.4,
+    "height": 0.55,
+    "color": "#d9c27a"
+  },
+  "artwork": {
+    "style": "diagonal",
+    "palette": [
+      "#d9c27a",
+      "#8f2f28",
+      "#f4efe0"
+    ],
+    "textColor": "#2b1d14"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 7.5,
+        "attack": 8.5
+      }
+    },
+    {
+      "id": "eq3",
+      "type": "eq",
+      "params": {
+        "bass": 3.5,
+        "mid": 3.0,
+        "treble": 8.0,
+        "freq": 7.0
+      }
+    },
+    {
+      "id": "drv",
+      "type": "drive",
+      "params": {
+        "amount": 2.0,
+        "tone": 8.5,
+        "level": 5.5
+      }
+    },
+    {
+      "id": "slap",
+      "type": "delay",
+      "params": {
+        "time": 1.2,
+        "feedback": 1.0,
+        "mix": 2.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "SQUEEZE",
+      "target": "cmp.sustain"
+    },
+    {
+      "id": "k2",
+      "label": "SNAP",
+      "target": "cmp.attack"
+    },
+    {
+      "id": "k3",
+      "label": "TWANG",
+      "target": "eq3.treble"
+    },
+    {
+      "id": "k4",
+      "label": "BODY",
+      "target": "eq3.bass"
+    },
+    {
+      "id": "k5",
+      "label": "BITE",
+      "target": "drv.amount"
+    },
+    {
+      "id": "k6",
+      "label": "SLAP",
+      "target": "slap.mix"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "CUT",
+      "target": "eq3.mid",
+      "off": 3.0,
+      "on": 1.0
+    },
+    {
+      "id": "s2",
+      "label": "ECHO",
+      "target": "slap.time",
+      "off": 1.2,
+      "on": 2.4
+    }
+  ],
+  "bakedFrom": "a country twang box, bright compressed and snappy"
+}

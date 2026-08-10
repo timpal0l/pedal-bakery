@@ -1,0 +1,66 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Placebo",
+  "tagline": "you, but better",
+  "enclosure": {
+    "width": 2.2,
+    "depth": 2.6,
+    "height": 0.55,
+    "color": "#c9a227"
+  },
+  "artwork": {
+    "style": "gradient",
+    "palette": [
+      "#e8c95a",
+      "#c9a227",
+      "#8a6d1f"
+    ],
+    "textColor": "#2b1f0a"
+  },
+  "chain": [
+    {
+      "id": "od",
+      "type": "drive",
+      "params": {
+        "amount": 2.0,
+        "tone": 5.5,
+        "level": 6.5
+      }
+    },
+    {
+      "id": "out",
+      "type": "level",
+      "params": {
+        "gain": 5.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "GAIN",
+      "target": "od.amount"
+    },
+    {
+      "id": "k2",
+      "label": "TONE",
+      "target": "od.tone"
+    },
+    {
+      "id": "k3",
+      "label": "LEVEL",
+      "target": "od.level"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "LIFT",
+      "target": "out.gain",
+      "off": 5.0,
+      "on": 7.0
+    }
+  ],
+  "bakedFrom": "a transparent overdrive that just makes everything better"
+}

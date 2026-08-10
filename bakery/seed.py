@@ -128,22 +128,27 @@ DESCRIPTIONS = [
 ]
 
 
-def bake(desc):
-    body = json.dumps({"description": desc}).encode()
-    req = urllib.request.Request(BAKE_URL, data=body,
-                                 headers={"Content-Type": "application/json"})
-    t0 = time.time()
-    try:
-        with urllib.request.urlopen(req, timeout=300) as r:
-            data = json.loads(r.read())
-        spec = data["spec"]
-        tag = "cache" if data.get("cached") else f"{time.time() - t0:4.0f}s"
-        kind = spec.get("kind", "pedal").upper()
-        print(f"  [{tag:>5}] {kind:<5} {spec['name']:<24} <- {desc[:52]}", flush=True)
-        return True
-    except Exception as exc:
-        print(f"  [FAIL ] {desc[:52]} :: {exc}", flush=True)
-        return False
+def bake(desc, tries=3):
+    """Bake one description, retrying transient failures (auth blips, load)."""
+    for attempt in range(1, tries + 1):
+        body = json.dumps({"description": desc}).encode()
+        req = urllib.request.Request(BAKE_URL, data=body,
+                                     headers={"Content-Type": "application/json"})
+        t0 = time.time()
+        try:
+            with urllib.request.urlopen(req, timeout=300) as r:
+                data = json.loads(r.read())
+            spec = data["spec"]
+            tag = "cache" if data.get("cached") else f"{time.time() - t0:4.0f}s"
+            kind = spec.get("kind", "pedal").upper()
+            print(f"  [{tag:>5}] {kind:<5} {spec['name']:<24} <- {desc[:52]}", flush=True)
+            return True
+        except Exception as exc:
+            if attempt == tries:
+                print(f"  [FAIL ] {desc[:52]} :: {exc}", flush=True)
+                return False
+            time.sleep(4 * attempt)  # back off, then try again
+    return False
 
 
 if __name__ == "__main__":

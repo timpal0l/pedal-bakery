@@ -1,0 +1,113 @@
+{
+  "kind": "amp",
+  "shape": "box",
+  "name": "Rattletrap",
+  "tagline": "held together with tape and spite",
+  "enclosure": {
+    "width": 3.5,
+    "depth": 1.1,
+    "height": 2.0,
+    "color": "#2e2b29"
+  },
+  "artwork": {
+    "style": "diagonal",
+    "palette": [
+      "#2e2b29",
+      "#b9b0a2",
+      "#8a2f23"
+    ],
+    "textColor": "#e8e2d5"
+  },
+  "chain": [
+    {
+      "id": "dr",
+      "type": "drive",
+      "params": {
+        "amount": 7.5,
+        "tone": 6.5,
+        "level": 6.0
+      }
+    },
+    {
+      "id": "rg",
+      "type": "ring",
+      "params": {
+        "freq": 0.6,
+        "mix": 1.8
+      }
+    },
+    {
+      "id": "fl",
+      "type": "filter",
+      "params": {
+        "cutoff": 6.8,
+        "resonance": 3.2
+      }
+    },
+    {
+      "id": "rv",
+      "type": "reverb",
+      "params": {
+        "size": 3.0,
+        "mix": 2.4
+      }
+    },
+    {
+      "id": "lv",
+      "type": "level",
+      "params": {
+        "gain": 5.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "GRIT",
+      "target": "dr.amount"
+    },
+    {
+      "id": "k2",
+      "label": "TONE",
+      "target": "dr.tone"
+    },
+    {
+      "id": "k3",
+      "label": "RATTLE",
+      "target": "rg.mix"
+    },
+    {
+      "id": "k4",
+      "label": "VERB",
+      "target": "rv.mix"
+    },
+    {
+      "id": "k5",
+      "label": "VOL",
+      "target": "lv.gain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "KICK",
+      "target": "dr.level",
+      "off": 6.0,
+      "on": 8.5
+    }
+  ],
+  "cabinet": {
+    "format": "combo",
+    "speakers": 1,
+    "grille": {
+      "style": "salt",
+      "color": "#b9b0a2",
+      "accent": "#4a443c"
+    },
+    "tolex": "levant",
+    "trim": "#c9c2b4",
+    "panel": "#1c1c1c",
+    "logo": "block"
+  },
+  "bakedFrom": "a garage rock amp, raw and slightly broken sounding"
+}

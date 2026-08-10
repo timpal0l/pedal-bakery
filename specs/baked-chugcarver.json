@@ -1,0 +1,77 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Chugcarver",
+  "tagline": "scooped out and mean",
+  "enclosure": {
+    "width": 2.6,
+    "depth": 2.4,
+    "height": 0.6,
+    "color": "#14161a"
+  },
+  "artwork": {
+    "style": "diagonal",
+    "palette": [
+      "#0d0f13",
+      "#1f6f6b",
+      "#c9d4d6"
+    ],
+    "textColor": "#e8f1f2"
+  },
+  "chain": [
+    {
+      "id": "eq1",
+      "type": "eq",
+      "params": {
+        "bass": 8.0,
+        "mid": 1.0,
+        "treble": 7.5,
+        "freq": 4.0
+      }
+    },
+    {
+      "id": "lvl",
+      "type": "level",
+      "params": {
+        "gain": 6.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "lo",
+      "label": "LOW",
+      "target": "eq1.bass"
+    },
+    {
+      "id": "sc",
+      "label": "SCOOP",
+      "target": "eq1.mid"
+    },
+    {
+      "id": "hi",
+      "label": "HIGH",
+      "target": "eq1.treble"
+    },
+    {
+      "id": "ctr",
+      "label": "CENTER",
+      "target": "eq1.freq"
+    },
+    {
+      "id": "out",
+      "label": "OUT",
+      "target": "lvl.gain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "dp",
+      "label": "DEEP",
+      "target": "eq1.freq",
+      "off": 4.0,
+      "on": 2.0
+    }
+  ],
+  "bakedFrom": "a mid-scoop eq for that djent chug shape"
+}

@@ -1,0 +1,90 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Scalpel",
+  "tagline": "three bands, no mercy",
+  "enclosure": {
+    "width": 3.6,
+    "depth": 2.8,
+    "height": 0.72,
+    "color": "#d8dde2"
+  },
+  "artwork": {
+    "style": "stripes",
+    "palette": [
+      "#e6eaee",
+      "#1f2a33",
+      "#c2382c"
+    ],
+    "textColor": "#141b21"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 3.0,
+        "attack": 6.0
+      }
+    },
+    {
+      "id": "eq1",
+      "type": "eq",
+      "params": {
+        "bass": 5.5,
+        "mid": 3.5,
+        "treble": 6.5,
+        "freq": 4.5
+      }
+    },
+    {
+      "id": "out",
+      "type": "level",
+      "params": {
+        "gain": 5.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "BASS",
+      "target": "eq1.bass"
+    },
+    {
+      "id": "k2",
+      "label": "MID",
+      "target": "eq1.mid"
+    },
+    {
+      "id": "k3",
+      "label": "TREBLE",
+      "target": "eq1.treble"
+    },
+    {
+      "id": "k4",
+      "label": "FREQ",
+      "target": "eq1.freq"
+    },
+    {
+      "id": "k5",
+      "label": "OUTPUT",
+      "target": "out.gain"
+    },
+    {
+      "id": "k6",
+      "label": "SQUEEZE",
+      "target": "cmp.sustain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "SCOOP",
+      "target": "eq1.mid",
+      "off": 3.5,
+      "on": 0.8
+    }
+  ],
+  "bakedFrom": "a surgical 3-band eq pedal for sculpting the perfect tone"
+}

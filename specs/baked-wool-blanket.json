@@ -1,0 +1,90 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Wool Blanket",
+  "tagline": "takes the ice pick away",
+  "enclosure": {
+    "width": 2.4,
+    "depth": 2.5,
+    "height": 0.55,
+    "color": "#3b4a52"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#2c3940",
+      "#6f8b93",
+      "#c9bda4"
+    ],
+    "textColor": "#efe7d6"
+  },
+  "chain": [
+    {
+      "id": "eq1",
+      "type": "eq",
+      "params": {
+        "bass": 6.2,
+        "mid": 5.4,
+        "treble": 1.8,
+        "freq": 6.5
+      }
+    },
+    {
+      "id": "lp",
+      "type": "filter",
+      "params": {
+        "cutoff": 3.2,
+        "resonance": 1.0
+      }
+    },
+    {
+      "id": "out",
+      "type": "level",
+      "params": {
+        "gain": 5.4
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "TREBLE",
+      "target": "eq1.treble"
+    },
+    {
+      "id": "k2",
+      "label": "MID",
+      "target": "eq1.mid"
+    },
+    {
+      "id": "k3",
+      "label": "BASS",
+      "target": "eq1.bass"
+    },
+    {
+      "id": "k4",
+      "label": "FREQ",
+      "target": "eq1.freq"
+    },
+    {
+      "id": "k5",
+      "label": "SMOOTH",
+      "target": "lp.cutoff"
+    },
+    {
+      "id": "k6",
+      "label": "OUTPUT",
+      "target": "out.gain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "DEEP CUT",
+      "target": "lp.resonance",
+      "off": 1.0,
+      "on": 4.5
+    }
+  ],
+  "bakedFrom": "a treble-taming eq for harsh amps, smooth and dark"
+}

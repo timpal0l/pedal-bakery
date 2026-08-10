@@ -1,0 +1,73 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Molasses",
+  "tagline": "repeats that melt like warm tape",
+  "enclosure": {
+    "width": 2.2,
+    "depth": 2.5,
+    "height": 0.55,
+    "color": "#4a2f1d"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#7a4a24",
+      "#c98a3d",
+      "#3a2416"
+    ],
+    "textColor": "#f2e3c4"
+  },
+  "chain": [
+    {
+      "id": "pre",
+      "type": "drive",
+      "params": {
+        "amount": 2.0,
+        "tone": 3.0,
+        "level": 5.5
+      }
+    },
+    {
+      "id": "dly",
+      "type": "delay",
+      "params": {
+        "time": 4.5,
+        "feedback": 6.0,
+        "mix": 4.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "TIME",
+      "target": "dly.time"
+    },
+    {
+      "id": "k2",
+      "label": "REPEATS",
+      "target": "dly.feedback"
+    },
+    {
+      "id": "k3",
+      "label": "MIX",
+      "target": "dly.mix"
+    },
+    {
+      "id": "k4",
+      "label": "WARMTH",
+      "target": "pre.tone"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "AGE",
+      "target": "pre.amount",
+      "off": 2.0,
+      "on": 4.0
+    }
+  ],
+  "bakedFrom": "a warm analog delay with dark decaying repeats"
+}

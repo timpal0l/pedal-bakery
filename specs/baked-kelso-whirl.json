@@ -1,0 +1,81 @@
+{
+  "kind": "pedal",
+  "shape": "round",
+  "name": "Kelso Whirl",
+  "tagline": "a speaker cabinet spinning in a wooden box",
+  "enclosure": {
+    "width": 2.6,
+    "depth": 2.6,
+    "height": 0.62,
+    "color": "#6b3f2a"
+  },
+  "artwork": {
+    "style": "rings",
+    "palette": [
+      "#6b3f2a",
+      "#e8c76a",
+      "#2f7f8c"
+    ],
+    "textColor": "#f6ead1"
+  },
+  "chain": [
+    {
+      "id": "ph",
+      "type": "phaser",
+      "params": {
+        "rate": 7.6,
+        "depth": 8.6,
+        "feedback": 7.2
+      }
+    },
+    {
+      "id": "ch",
+      "type": "chorus",
+      "params": {
+        "rate": 7.2,
+        "depth": 3.4,
+        "mix": 3.6
+      }
+    },
+    {
+      "id": "tr",
+      "type": "tremolo",
+      "params": {
+        "rate": 7.4,
+        "depth": 4.2
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "SPIN",
+      "target": "ph.rate"
+    },
+    {
+      "id": "k2",
+      "label": "THROB",
+      "target": "ph.depth"
+    },
+    {
+      "id": "k3",
+      "label": "RESON",
+      "target": "ph.feedback"
+    },
+    {
+      "id": "k4",
+      "label": "SWAY",
+      "target": "tr.depth"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "BRAKE",
+      "target": "ph.rate",
+      "off": 7.6,
+      "on": 2.2
+    }
+  ],
+  "bakedFrom": "a fast bubbly phaser like a leslie cabinet spinning"
+}

@@ -1,0 +1,106 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Mal de Mer",
+  "tagline": "the tape deck is drowning",
+  "enclosure": {
+    "width": 2.4,
+    "depth": 2.6,
+    "height": 0.62,
+    "color": "#2f5d55"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#2f5d55",
+      "#7fbfa8",
+      "#c9d98a"
+    ],
+    "textColor": "#f2f6e8"
+  },
+  "chain": [
+    {
+      "id": "warp",
+      "type": "chorus",
+      "params": {
+        "rate": 2.6,
+        "depth": 8.4,
+        "mix": 10
+      }
+    },
+    {
+      "id": "lurch",
+      "type": "tremolo",
+      "params": {
+        "rate": 1.8,
+        "depth": 3.2
+      }
+    },
+    {
+      "id": "tape",
+      "type": "filter",
+      "params": {
+        "cutoff": 3.4,
+        "resonance": 2.2
+      }
+    },
+    {
+      "id": "echo",
+      "type": "delay",
+      "params": {
+        "time": 1.4,
+        "feedback": 2.8,
+        "mix": 2.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "WARBLE",
+      "target": "warp.rate"
+    },
+    {
+      "id": "k2",
+      "label": "SEASICK",
+      "target": "warp.depth"
+    },
+    {
+      "id": "k3",
+      "label": "LURCH",
+      "target": "lurch.depth"
+    },
+    {
+      "id": "k4",
+      "label": "OXIDE",
+      "target": "tape.cutoff"
+    },
+    {
+      "id": "k5",
+      "label": "SLOP",
+      "target": "echo.feedback"
+    },
+    {
+      "id": "k6",
+      "label": "HISS",
+      "target": "tape.resonance"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "CAPSTAN",
+      "target": "lurch.rate",
+      "off": 1.8,
+      "on": 5.6
+    },
+    {
+      "id": "s2",
+      "label": "SPOOL",
+      "target": "echo.mix",
+      "off": 2.0,
+      "on": 5.5
+    }
+  ],
+  "bakedFrom": "a seasick vibrato that warbles like a broken tape deck"
+}

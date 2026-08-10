@@ -1,0 +1,124 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Phil Collins Airlock",
+  "tagline": "huge for a moment, then nothing",
+  "enclosure": {
+    "width": 3.0,
+    "depth": 2.4,
+    "height": 0.62,
+    "color": "#1b1d26"
+  },
+  "artwork": {
+    "style": "stripes",
+    "palette": [
+      "#f2f0e6",
+      "#e8324a",
+      "#2c3350"
+    ],
+    "textColor": "#f2f0e6"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 8.2,
+        "attack": 1.2
+      }
+    },
+    {
+      "id": "vrb",
+      "type": "reverb",
+      "params": {
+        "size": 9.4,
+        "mix": 8.6
+      }
+    },
+    {
+      "id": "gat",
+      "type": "filter",
+      "params": {
+        "cutoff": 7.6,
+        "resonance": 2.4
+      }
+    },
+    {
+      "id": "trm",
+      "type": "tremolo",
+      "params": {
+        "rate": 8.8,
+        "depth": 9.6
+      }
+    },
+    {
+      "id": "eq3",
+      "type": "eq",
+      "params": {
+        "bass": 6.4,
+        "mid": 3.2,
+        "treble": 7.4,
+        "freq": 4.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "ROOM",
+      "target": "vrb.size"
+    },
+    {
+      "id": "k2",
+      "label": "BLOOM",
+      "target": "vrb.mix"
+    },
+    {
+      "id": "k3",
+      "label": "GATE",
+      "target": "trm.rate"
+    },
+    {
+      "id": "k4",
+      "label": "CHOP",
+      "target": "trm.depth"
+    },
+    {
+      "id": "k5",
+      "label": "SQUEEZE",
+      "target": "cmp.sustain"
+    },
+    {
+      "id": "k6",
+      "label": "SNAP",
+      "target": "cmp.attack"
+    },
+    {
+      "id": "k7",
+      "label": "AIR",
+      "target": "eq3.treble"
+    },
+    {
+      "id": "k8",
+      "label": "TONE",
+      "target": "gat.cutoff"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "SLAM",
+      "target": "eq3.bass",
+      "off": 6.4,
+      "on": 9.2
+    },
+    {
+      "id": "s2",
+      "label": "SCOOP",
+      "target": "eq3.mid",
+      "off": 3.2,
+      "on": 0.8
+    }
+  ],
+  "bakedFrom": "a gated reverb, huge then suddenly gone, very 80s drums energy"
+}

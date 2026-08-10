@@ -1,0 +1,118 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Sodium Vapour",
+  "tagline": "wet asphalt hum under a flickering sign",
+  "enclosure": {
+    "width": 3.4,
+    "depth": 2.9,
+    "height": 0.82,
+    "color": "#141a22"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#0e131a",
+      "#ff2d95",
+      "#22e0ff"
+    ],
+    "textColor": "#e9f6ff"
+  },
+  "chain": [
+    {
+      "id": "rng",
+      "type": "ring",
+      "params": {
+        "freq": 1.4,
+        "mix": 3.6
+      }
+    },
+    {
+      "id": "trm",
+      "type": "tremolo",
+      "params": {
+        "rate": 7.6,
+        "depth": 6.2
+      }
+    },
+    {
+      "id": "flt",
+      "type": "filter",
+      "params": {
+        "cutoff": 6.3,
+        "resonance": 6.8
+      }
+    },
+    {
+      "id": "dly",
+      "type": "delay",
+      "params": {
+        "time": 2.2,
+        "feedback": 4.4,
+        "mix": 3.2
+      }
+    },
+    {
+      "id": "rvb",
+      "type": "reverb",
+      "params": {
+        "size": 6.6,
+        "mix": 5.4
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "c1",
+      "label": "HUM",
+      "target": "rng.freq"
+    },
+    {
+      "id": "c2",
+      "label": "BUZZ",
+      "target": "rng.mix"
+    },
+    {
+      "id": "c3",
+      "label": "FLICKER",
+      "target": "trm.rate"
+    },
+    {
+      "id": "c4",
+      "label": "GLASS",
+      "target": "flt.cutoff"
+    },
+    {
+      "id": "c5",
+      "label": "RESO",
+      "target": "flt.resonance"
+    },
+    {
+      "id": "c6",
+      "label": "DRIZZLE",
+      "target": "dly.mix"
+    },
+    {
+      "id": "c7",
+      "label": "WASH",
+      "target": "rvb.mix"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "DOWNPOUR",
+      "target": "rvb.size",
+      "off": 6.6,
+      "on": 9.6
+    },
+    {
+      "id": "s2",
+      "label": "SHORTOUT",
+      "target": "trm.depth",
+      "off": 6.2,
+      "on": 10
+    }
+  ],
+  "bakedFrom": "a pedal that sounds like neon lights buzzing in the rain"
+}

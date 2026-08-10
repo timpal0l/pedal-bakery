@@ -1,0 +1,74 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Rotorwash",
+  "tagline": "blades over the treeline",
+  "enclosure": {
+    "width": 2.3,
+    "depth": 2.5,
+    "height": 0.6,
+    "color": "#2f3a33"
+  },
+  "artwork": {
+    "style": "stripes",
+    "palette": [
+      "#2f3a33",
+      "#d8c14a",
+      "#0f1412"
+    ],
+    "textColor": "#f2efe2"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 6.0,
+        "attack": 8.0
+      }
+    },
+    {
+      "id": "chop",
+      "type": "tremolo",
+      "params": {
+        "rate": 7.5,
+        "depth": 10
+      }
+    },
+    {
+      "id": "tail",
+      "type": "reverb",
+      "params": {
+        "size": 3.0,
+        "mix": 2.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "BLADES",
+      "target": "chop.rate"
+    },
+    {
+      "id": "k2",
+      "label": "PITCH",
+      "target": "chop.depth"
+    },
+    {
+      "id": "k3",
+      "label": "SQUEEZE",
+      "target": "cmp.sustain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "HOVER",
+      "target": "chop.rate",
+      "off": 7.5,
+      "on": 3.5
+    }
+  ],
+  "bakedFrom": "a hard chopping helicopter tremolo"
+}

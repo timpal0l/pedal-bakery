@@ -1,0 +1,88 @@
+{
+  "kind": "pedal",
+  "shape": "round",
+  "name": "Ophelia's Wind-Up",
+  "tagline": "the little dancer keeps turning after midnight",
+  "enclosure": {
+    "width": 2.0,
+    "depth": 2.0,
+    "height": 0.55,
+    "color": "#2b2338"
+  },
+  "artwork": {
+    "style": "rings",
+    "palette": [
+      "#2b2338",
+      "#7d6ba8",
+      "#e8dcc8"
+    ],
+    "textColor": "#f2ead9"
+  },
+  "chain": [
+    {
+      "id": "bell",
+      "type": "ring",
+      "params": {
+        "freq": 7.4,
+        "mix": 3.2
+      }
+    },
+    {
+      "id": "warp",
+      "type": "chorus",
+      "params": {
+        "rate": 1.4,
+        "depth": 8.6,
+        "mix": 7.0
+      }
+    },
+    {
+      "id": "veil",
+      "type": "filter",
+      "params": {
+        "cutoff": 6.2,
+        "resonance": 3.0
+      }
+    },
+    {
+      "id": "hall",
+      "type": "reverb",
+      "params": {
+        "size": 8.2,
+        "mix": 6.4
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "CHIME",
+      "target": "bell.freq"
+    },
+    {
+      "id": "k2",
+      "label": "WARP",
+      "target": "warp.depth"
+    },
+    {
+      "id": "k3",
+      "label": "CRANK",
+      "target": "warp.rate"
+    },
+    {
+      "id": "k4",
+      "label": "DUST",
+      "target": "hall.mix"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "SEANCE",
+      "target": "bell.mix",
+      "off": 3.2,
+      "on": 7.5
+    }
+  ],
+  "bakedFrom": "a haunted music box, delicate and detuned"
+}

@@ -1,0 +1,100 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Dictaphone",
+  "tagline": "echoes off a dying tape",
+  "enclosure": {
+    "width": 2.9,
+    "depth": 2.7,
+    "height": 0.6,
+    "color": "#c9a86b"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#8a6f4d",
+      "#e2d3ab",
+      "#3d2f1e"
+    ],
+    "textColor": "#2b2114"
+  },
+  "chain": [
+    {
+      "id": "crush",
+      "type": "drive",
+      "params": {
+        "amount": 5.5,
+        "tone": 2.5,
+        "level": 5.0
+      }
+    },
+    {
+      "id": "filt",
+      "type": "filter",
+      "params": {
+        "cutoff": 3.0,
+        "resonance": 3.5
+      }
+    },
+    {
+      "id": "dly",
+      "type": "delay",
+      "params": {
+        "time": 5.5,
+        "feedback": 6.5,
+        "mix": 5.5
+      }
+    },
+    {
+      "id": "warb",
+      "type": "chorus",
+      "params": {
+        "rate": 2.5,
+        "depth": 3.0,
+        "mix": 2.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "TIME",
+      "target": "dly.time"
+    },
+    {
+      "id": "k2",
+      "label": "REGEN",
+      "target": "dly.feedback"
+    },
+    {
+      "id": "k3",
+      "label": "MIX",
+      "target": "dly.mix"
+    },
+    {
+      "id": "k4",
+      "label": "CRUSH",
+      "target": "crush.amount"
+    },
+    {
+      "id": "k5",
+      "label": "MURK",
+      "target": "filt.cutoff"
+    },
+    {
+      "id": "k6",
+      "label": "WOW",
+      "target": "warb.depth"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "FLUTTER",
+      "target": "warb.rate",
+      "off": 2.0,
+      "on": 7.0
+    }
+  ],
+  "bakedFrom": "a lofi delay with crushed and filtered repeats"
+}

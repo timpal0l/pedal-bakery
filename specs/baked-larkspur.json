@@ -1,0 +1,123 @@
+{
+  "kind": "amp",
+  "shape": "box",
+  "name": "Larkspur",
+  "tagline": "cathode-biased chime that breathes with your pic",
+  "enclosure": {
+    "width": 3.5,
+    "depth": 1.1,
+    "height": 2.1,
+    "color": "#ecdfc4"
+  },
+  "artwork": {
+    "style": "rings",
+    "palette": [
+      "#ecdfc4",
+      "#5a2328",
+      "#c9a44a"
+    ],
+    "textColor": "#f2e8d5"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 2.5,
+        "attack": 7.0
+      }
+    },
+    {
+      "id": "od",
+      "type": "drive",
+      "params": {
+        "amount": 3.5,
+        "tone": 7.5,
+        "level": 6.5
+      }
+    },
+    {
+      "id": "eq1",
+      "type": "eq",
+      "params": {
+        "bass": 4.5,
+        "mid": 5.5,
+        "treble": 7.5,
+        "freq": 6.5
+      }
+    },
+    {
+      "id": "flt",
+      "type": "filter",
+      "params": {
+        "cutoff": 8.5,
+        "resonance": 1.5
+      }
+    },
+    {
+      "id": "rev",
+      "type": "reverb",
+      "params": {
+        "size": 3.5,
+        "mix": 2.0
+      }
+    },
+    {
+      "id": "out",
+      "type": "level",
+      "params": {
+        "gain": 5.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "GAIN",
+      "target": "od.amount"
+    },
+    {
+      "id": "k2",
+      "label": "TREBLE",
+      "target": "eq1.treble"
+    },
+    {
+      "id": "k3",
+      "label": "CUT",
+      "target": "flt.cutoff"
+    },
+    {
+      "id": "k4",
+      "label": "SPRING",
+      "target": "rev.mix"
+    },
+    {
+      "id": "k5",
+      "label": "VOLUME",
+      "target": "out.gain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "sw1",
+      "label": "BRIGHT",
+      "target": "od.tone",
+      "off": 6.5,
+      "on": 8.5
+    }
+  ],
+  "cabinet": {
+    "format": "combo",
+    "speakers": 2,
+    "grille": {
+      "style": "oxblood",
+      "color": "#5a2328",
+      "accent": "#c9a44a"
+    },
+    "tolex": "levant",
+    "trim": "#c9a44a",
+    "panel": "#3a2420",
+    "logo": "script"
+  },
+  "bakedFrom": "a boutique class-A amp with harmonic sparkle and touch sensitivity"
+}

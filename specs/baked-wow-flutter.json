@@ -1,0 +1,100 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Wow & Flutter",
+  "tagline": "every repeat forgets a little more",
+  "enclosure": {
+    "width": 3.3,
+    "depth": 2.8,
+    "height": 0.75,
+    "color": "#d8c9a3"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#8a5a3b",
+      "#c96f2e",
+      "#3f3128"
+    ],
+    "textColor": "#3f3128"
+  },
+  "chain": [
+    {
+      "id": "sat",
+      "type": "drive",
+      "params": {
+        "amount": 2.5,
+        "tone": 3.0,
+        "level": 5.5
+      }
+    },
+    {
+      "id": "dl",
+      "type": "delay",
+      "params": {
+        "time": 5.5,
+        "feedback": 6.5,
+        "mix": 5.5
+      }
+    },
+    {
+      "id": "wob",
+      "type": "chorus",
+      "params": {
+        "rate": 2.5,
+        "depth": 3.5,
+        "mix": 2.5
+      }
+    },
+    {
+      "id": "age",
+      "type": "filter",
+      "params": {
+        "cutoff": 3.5,
+        "resonance": 1.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "TIME",
+      "target": "dl.time"
+    },
+    {
+      "id": "k2",
+      "label": "REPEATS",
+      "target": "dl.feedback"
+    },
+    {
+      "id": "k3",
+      "label": "BLEND",
+      "target": "dl.mix"
+    },
+    {
+      "id": "k4",
+      "label": "WOBBLE",
+      "target": "wob.depth"
+    },
+    {
+      "id": "k5",
+      "label": "AGE",
+      "target": "age.cutoff"
+    },
+    {
+      "id": "k6",
+      "label": "SAT",
+      "target": "sat.amount"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "FLUTTER",
+      "target": "wob.rate",
+      "off": 2.5,
+      "on": 7.0
+    }
+  ],
+  "bakedFrom": "a tape echo with wobbly worn-out repeats that get darker as they fade"
+}

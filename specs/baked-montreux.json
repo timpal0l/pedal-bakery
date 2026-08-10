@@ -1,0 +1,114 @@
+{
+  "kind": "amp",
+  "shape": "box",
+  "name": "Montreux",
+  "tagline": "smoky-club clean, brushed velvet",
+  "enclosure": {
+    "width": 3.5,
+    "depth": 1.2,
+    "height": 1.7,
+    "color": "#2b1f1a"
+  },
+  "artwork": {
+    "style": "gradient",
+    "palette": [
+      "#2b1f1a",
+      "#4a1f1e",
+      "#c9a96a"
+    ],
+    "textColor": "#e8dcc3"
+  },
+  "chain": [
+    {
+      "id": "cp",
+      "type": "comp",
+      "params": {
+        "sustain": 4.0,
+        "attack": 3.0
+      }
+    },
+    {
+      "id": "eq",
+      "type": "eq",
+      "params": {
+        "bass": 6.0,
+        "mid": 6.0,
+        "treble": 3.0,
+        "freq": 3.0
+      }
+    },
+    {
+      "id": "fl",
+      "type": "filter",
+      "params": {
+        "cutoff": 4.0,
+        "resonance": 1.0
+      }
+    },
+    {
+      "id": "rv",
+      "type": "reverb",
+      "params": {
+        "size": 4.0,
+        "mix": 2.0
+      }
+    },
+    {
+      "id": "lv",
+      "type": "level",
+      "params": {
+        "gain": 5.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "vol",
+      "label": "VOLUME",
+      "target": "lv.gain"
+    },
+    {
+      "id": "bas",
+      "label": "BASS",
+      "target": "eq.bass"
+    },
+    {
+      "id": "mid",
+      "label": "MID",
+      "target": "eq.mid"
+    },
+    {
+      "id": "trb",
+      "label": "TREBLE",
+      "target": "eq.treble"
+    },
+    {
+      "id": "rev",
+      "label": "REVERB",
+      "target": "rv.mix"
+    }
+  ],
+  "switches": [
+    {
+      "id": "air",
+      "label": "AIR",
+      "target": "fl.cutoff",
+      "off": 4.0,
+      "on": 7.0
+    }
+  ],
+  "cabinet": {
+    "format": "combo",
+    "speakers": 1,
+    "grille": {
+      "style": "oxblood",
+      "color": "#4a1f1e",
+      "accent": "#c9a96a"
+    },
+    "tolex": "smooth",
+    "trim": "#c9a96a",
+    "panel": "#1a1512",
+    "logo": "script"
+  },
+  "bakedFrom": "a jazz combo amp, dark round and utterly clean"
+}

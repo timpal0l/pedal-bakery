@@ -1,0 +1,82 @@
+{
+  "kind": "pedal",
+  "shape": "round",
+  "name": "Molasses Tide",
+  "tagline": "slow honey swirling through old tape",
+  "enclosure": {
+    "width": 2.6,
+    "depth": 2.6,
+    "height": 0.62,
+    "color": "#8a5a2b"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#7a4a1e",
+      "#c98b3c",
+      "#e8cf9a"
+    ],
+    "textColor": "#f6ecd6"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 4.0,
+        "attack": 6.0
+      }
+    },
+    {
+      "id": "ph",
+      "type": "phaser",
+      "params": {
+        "rate": 1.4,
+        "depth": 7.5,
+        "feedback": 5.5
+      }
+    },
+    {
+      "id": "eq",
+      "type": "eq",
+      "params": {
+        "bass": 6.5,
+        "mid": 6.0,
+        "treble": 3.5,
+        "freq": 3.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "SPEED",
+      "target": "ph.rate"
+    },
+    {
+      "id": "k2",
+      "label": "SWEEP",
+      "target": "ph.depth"
+    },
+    {
+      "id": "k3",
+      "label": "RESO",
+      "target": "ph.feedback"
+    },
+    {
+      "id": "k4",
+      "label": "WARMTH",
+      "target": "eq.treble"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "SYRUP",
+      "target": "ph.rate",
+      "off": 1.4,
+      "on": 0.5
+    }
+  ],
+  "bakedFrom": "a warm vintage phaser with a slow syrupy swirl"
+}

@@ -1,0 +1,97 @@
+{
+  "kind": "pedal",
+  "shape": "round",
+  "name": "Blorp",
+  "tagline": "slow wax, warm oil, no hurry",
+  "enclosure": {
+    "width": 2.6,
+    "depth": 2.6,
+    "height": 0.7,
+    "color": "#ff5a1f"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#ff5a1f",
+      "#ffb03a",
+      "#7b1fa2"
+    ],
+    "textColor": "#fff3d6"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 6.5,
+        "attack": 7.5
+      }
+    },
+    {
+      "id": "phs",
+      "type": "phaser",
+      "params": {
+        "rate": 0.8,
+        "depth": 8.5,
+        "feedback": 6.0
+      }
+    },
+    {
+      "id": "cho",
+      "type": "chorus",
+      "params": {
+        "rate": 1.0,
+        "depth": 7.0,
+        "mix": 6.0
+      }
+    },
+    {
+      "id": "flt",
+      "type": "filter",
+      "params": {
+        "cutoff": 3.2,
+        "resonance": 6.5
+      }
+    },
+    {
+      "id": "rev",
+      "type": "reverb",
+      "params": {
+        "size": 7.0,
+        "mix": 4.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "OOZE",
+      "target": "phs.rate"
+    },
+    {
+      "id": "k2",
+      "label": "BLOB",
+      "target": "phs.depth"
+    },
+    {
+      "id": "k3",
+      "label": "WAX",
+      "target": "flt.cutoff"
+    },
+    {
+      "id": "k4",
+      "label": "GLOW",
+      "target": "rev.mix"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "MELT",
+      "target": "cho.mix",
+      "off": 6.0,
+      "on": 9.5
+    }
+  ],
+  "bakedFrom": "a lava lamp in pedal form, slow blobby and warm"
+}

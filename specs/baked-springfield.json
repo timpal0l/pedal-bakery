@@ -1,0 +1,66 @@
+{
+  "kind": "pedal",
+  "shape": "round",
+  "name": "Springfield",
+  "tagline": "drip drip from the old tank",
+  "enclosure": {
+    "width": 2.4,
+    "depth": 2.4,
+    "height": 0.6,
+    "color": "#8FB9A8"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#0E4F5C",
+      "#2E8C8C",
+      "#F2E8C9"
+    ],
+    "textColor": "#0B2E33"
+  },
+  "chain": [
+    {
+      "id": "tank",
+      "type": "reverb",
+      "params": {
+        "size": 7.0,
+        "mix": 7.0
+      }
+    },
+    {
+      "id": "pan",
+      "type": "filter",
+      "params": {
+        "cutoff": 5.5,
+        "resonance": 3.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "dwell",
+      "label": "DWELL",
+      "target": "tank.size"
+    },
+    {
+      "id": "drip",
+      "label": "DRIP",
+      "target": "tank.mix"
+    },
+    {
+      "id": "tone",
+      "label": "TONE",
+      "target": "pan.cutoff"
+    }
+  ],
+  "switches": [
+    {
+      "id": "boing",
+      "label": "BOING",
+      "target": "pan.resonance",
+      "off": 3.0,
+      "on": 7.5
+    }
+  ],
+  "bakedFrom": "a drippy spring reverb like an old amp tank"
+}

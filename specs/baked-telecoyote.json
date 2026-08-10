@@ -1,0 +1,85 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Telecoyote",
+  "tagline": "squish now, snap later",
+  "enclosure": {
+    "width": 2.4,
+    "depth": 2.4,
+    "height": 0.55,
+    "color": "#e8dfc4"
+  },
+  "artwork": {
+    "style": "stripes",
+    "palette": [
+      "#e8dfc4",
+      "#b4472c",
+      "#2f4858"
+    ],
+    "textColor": "#2f4858"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 8.0,
+        "attack": 8.5
+      }
+    },
+    {
+      "id": "tone",
+      "type": "eq",
+      "params": {
+        "bass": 4.0,
+        "mid": 3.5,
+        "treble": 7.5,
+        "freq": 6.5
+      }
+    },
+    {
+      "id": "out",
+      "type": "level",
+      "params": {
+        "gain": 6.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "SQUISH",
+      "target": "cmp.sustain"
+    },
+    {
+      "id": "k2",
+      "label": "SNAP",
+      "target": "cmp.attack"
+    },
+    {
+      "id": "k3",
+      "label": "TWANG",
+      "target": "tone.treble"
+    },
+    {
+      "id": "k4",
+      "label": "BODY",
+      "target": "tone.bass"
+    },
+    {
+      "id": "k5",
+      "label": "OUTPUT",
+      "target": "out.gain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "SPANK",
+      "target": "tone.mid",
+      "off": 3.5,
+      "on": 1.5
+    }
+  ],
+  "bakedFrom": "a squishy chicken-pickin compressor with sharp attack"
+}

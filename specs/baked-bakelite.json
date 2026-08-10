@@ -1,0 +1,110 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Bakelite",
+  "tagline": "somewhere between stations",
+  "enclosure": {
+    "width": 2.4,
+    "depth": 2.4,
+    "height": 0.65,
+    "color": "#5a3323"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#5a3323",
+      "#c9a86a",
+      "#8a5a33"
+    ],
+    "textColor": "#f0e2c0"
+  },
+  "chain": [
+    {
+      "id": "eq1",
+      "type": "eq",
+      "params": {
+        "bass": 1.0,
+        "mid": 8.5,
+        "treble": 2.5,
+        "freq": 6.5
+      }
+    },
+    {
+      "id": "drv",
+      "type": "drive",
+      "params": {
+        "amount": 7.5,
+        "tone": 3.0,
+        "level": 6.0
+      }
+    },
+    {
+      "id": "flt",
+      "type": "filter",
+      "params": {
+        "cutoff": 3.5,
+        "resonance": 6.5
+      }
+    },
+    {
+      "id": "rng",
+      "type": "ring",
+      "params": {
+        "freq": 4.5,
+        "mix": 1.8
+      }
+    },
+    {
+      "id": "trm",
+      "type": "tremolo",
+      "params": {
+        "rate": 8.5,
+        "depth": 0
+      }
+    },
+    {
+      "id": "lvl",
+      "type": "level",
+      "params": {
+        "gain": 5.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "CRUMBLE",
+      "target": "drv.amount"
+    },
+    {
+      "id": "k2",
+      "label": "TUNING",
+      "target": "flt.cutoff"
+    },
+    {
+      "id": "k3",
+      "label": "HONK",
+      "target": "eq1.mid"
+    },
+    {
+      "id": "k4",
+      "label": "STATIC",
+      "target": "rng.mix"
+    },
+    {
+      "id": "k5",
+      "label": "VOLUME",
+      "target": "lvl.gain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "SPUTTER",
+      "target": "trm.depth",
+      "off": 0,
+      "on": 7.0
+    }
+  ],
+  "bakedFrom": "a broken transistor radio distortion, lofi and crumbly"
+}

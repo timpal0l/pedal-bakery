@@ -1,0 +1,114 @@
+{
+  "kind": "amp",
+  "shape": "box",
+  "name": "Viceroy",
+  "tagline": "slacker jangle, cigarette warble",
+  "enclosure": {
+    "width": 3.5,
+    "depth": 1.2,
+    "height": 2.1,
+    "color": "#a7c4b0"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#a7c4b0",
+      "#e8dfc8",
+      "#d98f6b"
+    ],
+    "textColor": "#4a3b2a"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 4.0,
+        "attack": 6.0
+      }
+    },
+    {
+      "id": "drv",
+      "type": "drive",
+      "params": {
+        "amount": 1.8,
+        "tone": 6.5,
+        "level": 5.5
+      }
+    },
+    {
+      "id": "cho",
+      "type": "chorus",
+      "params": {
+        "rate": 4.5,
+        "depth": 6.5,
+        "mix": 6.0
+      }
+    },
+    {
+      "id": "rev",
+      "type": "reverb",
+      "params": {
+        "size": 3.5,
+        "mix": 3.0
+      }
+    },
+    {
+      "id": "out",
+      "type": "level",
+      "params": {
+        "gain": 5.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "vol",
+      "label": "VOLUME",
+      "target": "out.gain"
+    },
+    {
+      "id": "ton",
+      "label": "TONE",
+      "target": "drv.tone"
+    },
+    {
+      "id": "wob",
+      "label": "WOBBLE",
+      "target": "cho.depth"
+    },
+    {
+      "id": "spd",
+      "label": "SPEED",
+      "target": "cho.rate"
+    },
+    {
+      "id": "vrb",
+      "label": "VERB",
+      "target": "rev.mix"
+    }
+  ],
+  "switches": [
+    {
+      "id": "vib",
+      "label": "VIBRATO",
+      "target": "cho.mix",
+      "off": 6.0,
+      "on": 10
+    }
+  ],
+  "cabinet": {
+    "format": "combo",
+    "speakers": 2,
+    "grille": {
+      "style": "weave",
+      "color": "#e8dfc8",
+      "accent": "#c9a24b"
+    },
+    "tolex": "smooth",
+    "trim": "#f2ead6",
+    "panel": "#6b5a44",
+    "logo": "script"
+  },
+  "bakedFrom": "mac demarco amp"
+}

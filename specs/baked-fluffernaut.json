@@ -1,0 +1,95 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Fluffernaut",
+  "tagline": "sustain until the sun burns out",
+  "enclosure": {
+    "width": 2.9,
+    "depth": 3.0,
+    "height": 0.8,
+    "color": "#241633"
+  },
+  "artwork": {
+    "style": "burst",
+    "palette": [
+      "#0d0618",
+      "#5a2a8c",
+      "#ff9ecb"
+    ],
+    "textColor": "#f2e6ff"
+  },
+  "chain": [
+    {
+      "id": "sq",
+      "type": "comp",
+      "params": {
+        "sustain": 9.2,
+        "attack": 2.5
+      }
+    },
+    {
+      "id": "fz",
+      "type": "drive",
+      "params": {
+        "amount": 9.6,
+        "tone": 2.8,
+        "level": 6.5
+      }
+    },
+    {
+      "id": "eq1",
+      "type": "eq",
+      "params": {
+        "bass": 8.8,
+        "mid": 2.2,
+        "treble": 4.2,
+        "freq": 3.5
+      }
+    },
+    {
+      "id": "rv",
+      "type": "reverb",
+      "params": {
+        "size": 7.5,
+        "mix": 2.2
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "SUSTAIN",
+      "target": "sq.sustain"
+    },
+    {
+      "id": "k2",
+      "label": "FUZZ",
+      "target": "fz.amount"
+    },
+    {
+      "id": "k3",
+      "label": "SMOTHER",
+      "target": "fz.tone"
+    },
+    {
+      "id": "k4",
+      "label": "DOOM",
+      "target": "eq1.bass"
+    },
+    {
+      "id": "k5",
+      "label": "LEVEL",
+      "target": "fz.level"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "CAVERN",
+      "target": "rv.mix",
+      "off": 2.2,
+      "on": 6.5
+    }
+  ],
+  "bakedFrom": "a big fluffy fuzz with endless sustain, the wall of doom"
+}

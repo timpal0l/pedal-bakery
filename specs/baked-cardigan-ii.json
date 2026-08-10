@@ -1,0 +1,62 @@
+{
+  "kind": "pedal",
+  "shape": "round",
+  "name": "Cardigan II",
+  "tagline": "grandpa's sweater, plugged in",
+  "enclosure": {
+    "width": 2.0,
+    "depth": 2.0,
+    "height": 0.6,
+    "color": "#e8dcc3"
+  },
+  "artwork": {
+    "style": "dots",
+    "palette": [
+      "#d9c7a7",
+      "#a9835a",
+      "#6b4a2f"
+    ],
+    "textColor": "#4a3222"
+  },
+  "chain": [
+    {
+      "id": "fz",
+      "type": "drive",
+      "params": {
+        "amount": 7.2,
+        "tone": 2.2,
+        "level": 6.0
+      }
+    },
+    {
+      "id": "fl",
+      "type": "filter",
+      "params": {
+        "cutoff": 5.5,
+        "resonance": 1.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "FUZZ",
+      "target": "fz.amount"
+    },
+    {
+      "id": "k2",
+      "label": "VOL",
+      "target": "fz.level"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "WOOL",
+      "target": "fl.cutoff",
+      "off": 5.5,
+      "on": 3.2
+    }
+  ],
+  "bakedFrom": "a soft vintage germanium fuzz, warm and woolly"
+}

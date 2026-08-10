@@ -1,0 +1,75 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Surf Motel",
+  "tagline": "tank clang and wet tile",
+  "enclosure": {
+    "width": 2.4,
+    "depth": 2.6,
+    "height": 0.62,
+    "color": "#1f6f8b"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#1f6f8b",
+      "#f0e6d2",
+      "#d9a441"
+    ],
+    "textColor": "#f7f3e8"
+  },
+  "chain": [
+    {
+      "id": "tank",
+      "type": "reverb",
+      "params": {
+        "size": 6.5,
+        "mix": 7.0
+      }
+    },
+    {
+      "id": "tone",
+      "type": "eq",
+      "params": {
+        "bass": 3.5,
+        "mid": 4.0,
+        "treble": 7.5,
+        "freq": 6.5
+      }
+    },
+    {
+      "id": "out",
+      "type": "level",
+      "params": {
+        "gain": 5.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "DWELL",
+      "target": "tank.mix"
+    },
+    {
+      "id": "k2",
+      "label": "TANK",
+      "target": "tank.size"
+    },
+    {
+      "id": "k3",
+      "label": "TONE",
+      "target": "tone.treble"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "DRIP",
+      "target": "tone.bass",
+      "off": 3.5,
+      "on": 1.5
+    }
+  ],
+  "bakedFrom": "make me a 1960s reverb spring pedal"
+}

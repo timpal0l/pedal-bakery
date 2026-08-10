@@ -1,0 +1,54 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Sputnik",
+  "tagline": "dying battery, angry bees",
+  "enclosure": {
+    "width": 1.25,
+    "depth": 1.7,
+    "height": 0.5,
+    "color": "#d7a712"
+  },
+  "artwork": {
+    "style": "checker",
+    "palette": [
+      "#1a1a1a",
+      "#d7a712",
+      "#c0331b"
+    ],
+    "textColor": "#141414"
+  },
+  "chain": [
+    {
+      "id": "fz",
+      "type": "drive",
+      "params": {
+        "amount": 10,
+        "tone": 6.2,
+        "level": 5.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "SPIT",
+      "target": "fz.amount"
+    },
+    {
+      "id": "k2",
+      "label": "VOL",
+      "target": "fz.level"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "STARVE",
+      "target": "fz.tone",
+      "off": 6.2,
+      "on": 2.4
+    }
+  ],
+  "bakedFrom": "a spitty velcro fuzz that gates and sputters"
+}

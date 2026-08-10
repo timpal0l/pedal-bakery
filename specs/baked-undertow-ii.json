@@ -1,0 +1,74 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Undertow II",
+  "tagline": "the floor stays, the ceiling burns",
+  "enclosure": {
+    "width": 2.3,
+    "depth": 2.8,
+    "height": 0.6,
+    "color": "#1b2f2b"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#0d1f1c",
+      "#2e6f5e",
+      "#e8c547"
+    ],
+    "textColor": "#f2ede4"
+  },
+  "chain": [
+    {
+      "id": "fz",
+      "type": "drive",
+      "params": {
+        "amount": 8.5,
+        "tone": 7.5,
+        "level": 6.0
+      }
+    },
+    {
+      "id": "eq1",
+      "type": "eq",
+      "params": {
+        "bass": 8.0,
+        "mid": 4.5,
+        "treble": 7.0,
+        "freq": 4.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "FUZZ",
+      "target": "fz.amount"
+    },
+    {
+      "id": "k2",
+      "label": "SHRED",
+      "target": "fz.tone"
+    },
+    {
+      "id": "k3",
+      "label": "LOW",
+      "target": "eq1.bass"
+    },
+    {
+      "id": "k4",
+      "label": "LEVEL",
+      "target": "fz.level"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "SCOOP",
+      "target": "eq1.mid",
+      "off": 4.5,
+      "on": 1.5
+    }
+  ],
+  "bakedFrom": "a bass fuzz that keeps the low end intact while shredding the top"
+}

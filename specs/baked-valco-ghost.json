@@ -1,0 +1,110 @@
+{
+  "kind": "amp",
+  "shape": "box",
+  "name": "Valco Ghost",
+  "tagline": "sixty years of torn paper",
+  "enclosure": {
+    "width": 3.0,
+    "depth": 1.1,
+    "height": 1.7,
+    "color": "#4d5a66"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#4d5a66",
+      "#d9cfb2",
+      "#8a7d5f"
+    ],
+    "textColor": "#efe6cc"
+  },
+  "chain": [
+    {
+      "id": "dr",
+      "type": "drive",
+      "params": {
+        "amount": 7.0,
+        "tone": 3.5,
+        "level": 6.0
+      }
+    },
+    {
+      "id": "eq",
+      "type": "eq",
+      "params": {
+        "bass": 3.5,
+        "mid": 7.5,
+        "treble": 3.0,
+        "freq": 5.5
+      }
+    },
+    {
+      "id": "rm",
+      "type": "ring",
+      "params": {
+        "freq": 1.5,
+        "mix": 2.5
+      }
+    },
+    {
+      "id": "tr",
+      "type": "tremolo",
+      "params": {
+        "rate": 4.5,
+        "depth": 0
+      }
+    },
+    {
+      "id": "lv",
+      "type": "level",
+      "params": {
+        "gain": 5.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "VOLUME",
+      "target": "dr.amount"
+    },
+    {
+      "id": "k2",
+      "label": "TONE",
+      "target": "dr.tone"
+    },
+    {
+      "id": "k3",
+      "label": "RASP",
+      "target": "rm.mix"
+    },
+    {
+      "id": "k4",
+      "label": "HONK",
+      "target": "eq.mid"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "THROB",
+      "target": "tr.depth",
+      "off": 0,
+      "on": 6.0
+    }
+  ],
+  "cabinet": {
+    "format": "combo",
+    "speakers": 1,
+    "grille": {
+      "style": "weave",
+      "color": "#d9cfb2",
+      "accent": "#8a7d5f"
+    },
+    "tolex": "levant",
+    "trim": "#cfc4a6",
+    "panel": "#333c45",
+    "logo": "script"
+  },
+  "bakedFrom": "an ancient supro-style amp with a torn speaker rasp"
+}

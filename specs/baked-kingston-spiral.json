@@ -1,0 +1,106 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Kingston Spiral",
+  "tagline": "the echo that eats itself",
+  "enclosure": {
+    "width": 3.6,
+    "depth": 3.0,
+    "height": 0.75,
+    "color": "#123524"
+  },
+  "artwork": {
+    "style": "rings",
+    "palette": [
+      "#0b2417",
+      "#f5c518",
+      "#cf3b1e"
+    ],
+    "textColor": "#f4e9c8"
+  },
+  "chain": [
+    {
+      "id": "drv",
+      "type": "drive",
+      "params": {
+        "amount": 2.5,
+        "tone": 3.5,
+        "level": 5.5
+      }
+    },
+    {
+      "id": "dly",
+      "type": "delay",
+      "params": {
+        "time": 6.5,
+        "feedback": 9.3,
+        "mix": 6.5
+      }
+    },
+    {
+      "id": "flt",
+      "type": "filter",
+      "params": {
+        "cutoff": 4.5,
+        "resonance": 7.5
+      }
+    },
+    {
+      "id": "rvb",
+      "type": "reverb",
+      "params": {
+        "size": 7.0,
+        "mix": 3.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "TIME",
+      "target": "dly.time"
+    },
+    {
+      "id": "k2",
+      "label": "REGEN",
+      "target": "dly.feedback"
+    },
+    {
+      "id": "k3",
+      "label": "MIX",
+      "target": "dly.mix"
+    },
+    {
+      "id": "k4",
+      "label": "CUTOFF",
+      "target": "flt.cutoff"
+    },
+    {
+      "id": "k5",
+      "label": "SCREAM",
+      "target": "flt.resonance"
+    },
+    {
+      "id": "k6",
+      "label": "SPACE",
+      "target": "rvb.size"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "DIRT",
+      "target": "drv.amount",
+      "off": 2.5,
+      "on": 7.0
+    },
+    {
+      "id": "s2",
+      "label": "WASH",
+      "target": "rvb.mix",
+      "off": 3.5,
+      "on": 8.0
+    }
+  ],
+  "bakedFrom": "a self-oscillating dub delay that spirals into chaos"
+}

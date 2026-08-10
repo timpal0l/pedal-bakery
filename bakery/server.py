@@ -54,6 +54,7 @@ AMP_FORMATS = ("practice", "combo", "stack")
 LOGO_STYLES = ("script", "block", "badge", "none")
 AMP_KNOB_CAP = {"practice": 3, "combo": 5, "stack": 6}
 AMP_MAX_W = {"practice": 2.4, "combo": 3.6, "stack": 4.6}
+MIN_KNOB_PITCH = 0.5  # world units; the 3D knob bezel is 0.36 wide
 
 PROMPT = """You are the Pedal Bakery: you turn a description of a guitar sound into a JSON spec for a virtual effect pedal. Reply with ONLY one JSON object — no markdown fences, no commentary.
 
@@ -93,6 +94,8 @@ Rules:
   * "stack": amp head on a big straight cab — width 2.6-3.8, height 3.0-4.5, 4 speakers, 4-6 knobs
   SIZE WORDS ARE LAW: "big/huge/massive/wall of sound" means a stack near the top of its ranges; "tiny/small/little/bedroom" means practice near the bottom; unstated usually means combo.
 - AMP LOOKS (the 3D matters as much as the sound): enclosure.color is the tolex vinyl color — COLOR WORDS ARE LAW ("BIG ORANGE AMP" = a stack wrapped in loud orange tolex). Fill the cabinet block boldly and make every amp look like it came from a different builder: cream tolex + oxblood grille, surf-blue sparkle + silver weave, tweed + brown diagonal, black levant + basketweave + gold trim, industrial grey + metal grille + chrome trim... "trim" is the piping color, "panel" the control-plate color, "logo" the lettering style used on the grille and panel.
+- DO NOT DEFAULT THE FINISH. "levant" (pebbled black-amp vinyl) is the boring safe pick — reach for smooth, tweed, western or sparkle whenever the vibe allows, and pick the grille cloth from the whole list rather than always "weave". Vintage/country/jazz -> tweed or smooth cream; surf/60s -> sparkle; modern/metal/industrial -> metal or oxblood; only genuinely black-box amps get levant.
+- AMP SIZE IS NOT KNOB COUNT: a small cabinet simply carries fewer knobs (a 1.5-wide practice amp fits 2). Never widen a cabinet just to hold more controls — pick the size the description implies, then choose knobs that fit.
 - chain: 1-6 modules in signal order that genuinely produce the described sound.
 - params are the default knob positions: choose musical values that already sound like the description.
 - controls: 1-8 knobs (amps: cap at the format's knob count above) targeting the most expressive params, each target must be an existing "moduleId.param". Do not give a knob and a switch the same target.
@@ -115,7 +118,8 @@ def run_claude(description: str) -> dict:
         capture_output=True, text=True, timeout=240,
     )
     if r.returncode != 0:
-        raise RuntimeError(f"claude CLI failed: {r.stderr.strip()[:300]}")
+        detail = (r.stderr.strip() or r.stdout.strip() or "no output — is `claude` logged in?")
+        raise RuntimeError(f"claude CLI failed (exit {r.returncode}): {detail[:300]}")
     payload = json.loads(r.stdout)
     text = payload.get("result", "")
     match = re.search(r"\{.*\}", text, re.S)  # tolerate fences or stray prose
@@ -268,9 +272,14 @@ def validate_cabinet(raw: dict, spec: dict):
     if speakers == 4:
         e["width"] = max(e["width"], 2.6)
 
-    # the control strip runs along the face — knobs need room there
-    spec["controls"] = spec["controls"][:AMP_KNOB_CAP[fmt]]
-    e["width"] = min(max(e["width"], 0.5 * len(spec["controls"]) + 1.0), AMP_MAX_W[fmt])
+    # The described SIZE wins: never inflate a cabinet to make room for knobs —
+    # that flattened every 3-knob practice amp to the same width. Instead the
+    # panel takes what fits at a minimum pitch (js/layout.js squeezes and falls
+    # back to two rows), and surplus knobs are dropped. A little amp with two
+    # knobs is the honest outcome.
+    e["width"] = min(e["width"], AMP_MAX_W[fmt])
+    fits = max(1, int(0.86 * e["width"] / MIN_KNOB_PITCH))
+    spec["controls"] = spec["controls"][:min(AMP_KNOB_CAP[fmt], fits)]
 
     spec["cabinet"] = {
         "format": fmt,

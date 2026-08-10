@@ -1,0 +1,132 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Fathom Bloom",
+  "tagline": "guitars melting into weather",
+  "enclosure": {
+    "width": 3.6,
+    "depth": 2.9,
+    "height": 0.8,
+    "color": "#4a4f5a"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#2b1a4d",
+      "#c05a9e",
+      "#7fd9e8"
+    ],
+    "textColor": "#ffe9f7"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 6.5,
+        "attack": 3.0
+      }
+    },
+    {
+      "id": "fz",
+      "type": "drive",
+      "params": {
+        "amount": 8.8,
+        "tone": 6.5,
+        "level": 5.5
+      }
+    },
+    {
+      "id": "mod",
+      "type": "chorus",
+      "params": {
+        "rate": 2.0,
+        "depth": 6.5,
+        "mix": 6.0
+      }
+    },
+    {
+      "id": "vrb",
+      "type": "reverb",
+      "params": {
+        "size": 9.5,
+        "mix": 8.2
+      }
+    },
+    {
+      "id": "tail",
+      "type": "delay",
+      "params": {
+        "time": 5.5,
+        "feedback": 6.5,
+        "mix": 3.5
+      }
+    },
+    {
+      "id": "out",
+      "type": "level",
+      "params": {
+        "gain": 5.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "FUZZ",
+      "target": "fz.amount"
+    },
+    {
+      "id": "k2",
+      "label": "TONE",
+      "target": "fz.tone"
+    },
+    {
+      "id": "k3",
+      "label": "DROWN",
+      "target": "vrb.mix"
+    },
+    {
+      "id": "k4",
+      "label": "CAVERN",
+      "target": "vrb.size"
+    },
+    {
+      "id": "k5",
+      "label": "SWIM",
+      "target": "mod.depth"
+    },
+    {
+      "id": "k6",
+      "label": "TRAILS",
+      "target": "tail.feedback"
+    },
+    {
+      "id": "k7",
+      "label": "SQUEEZE",
+      "target": "cmp.sustain"
+    },
+    {
+      "id": "k8",
+      "label": "OUTPUT",
+      "target": "out.gain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "BLOOM",
+      "target": "tail.mix",
+      "off": 3.5,
+      "on": 6.5
+    },
+    {
+      "id": "s2",
+      "label": "VIBE",
+      "target": "mod.rate",
+      "off": 2.0,
+      "on": 5.5
+    }
+  ],
+  "bakedFrom": "a shoegaze dream machine, fuzz drowned in reverb"
+}

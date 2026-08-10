@@ -1,0 +1,131 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Cathedral Held",
+  "tagline": "one breath, forever",
+  "enclosure": {
+    "width": 3.6,
+    "depth": 2.9,
+    "height": 0.8,
+    "color": "#1b2440"
+  },
+  "artwork": {
+    "style": "rings",
+    "palette": [
+      "#1b2440",
+      "#6f7fd6",
+      "#e8dfc0"
+    ],
+    "textColor": "#f2eede"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 8.5,
+        "attack": 2.0
+      }
+    },
+    {
+      "id": "flt",
+      "type": "filter",
+      "params": {
+        "cutoff": 5.5,
+        "resonance": 2.0
+      }
+    },
+    {
+      "id": "vrb",
+      "type": "reverb",
+      "params": {
+        "size": 10,
+        "mix": 8.5
+      }
+    },
+    {
+      "id": "dly",
+      "type": "delay",
+      "params": {
+        "time": 7.0,
+        "feedback": 9.2,
+        "mix": 6.0
+      }
+    },
+    {
+      "id": "chr",
+      "type": "chorus",
+      "params": {
+        "rate": 1.2,
+        "depth": 3.0,
+        "mix": 4.0
+      }
+    },
+    {
+      "id": "out",
+      "type": "level",
+      "params": {
+        "gain": 5.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "FREEZE",
+      "target": "dly.feedback"
+    },
+    {
+      "id": "k2",
+      "label": "DECAY",
+      "target": "vrb.size"
+    },
+    {
+      "id": "k3",
+      "label": "BLOOM",
+      "target": "vrb.mix"
+    },
+    {
+      "id": "k4",
+      "label": "DRIFT",
+      "target": "chr.depth"
+    },
+    {
+      "id": "k5",
+      "label": "TONE",
+      "target": "flt.cutoff"
+    },
+    {
+      "id": "k6",
+      "label": "SUSTAIN",
+      "target": "cmp.sustain"
+    },
+    {
+      "id": "k7",
+      "label": "SPACING",
+      "target": "dly.time"
+    },
+    {
+      "id": "k8",
+      "label": "OUTPUT",
+      "target": "out.gain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "INFINITE",
+      "target": "dly.feedback",
+      "off": 9.2,
+      "on": 10
+    },
+    {
+      "id": "s2",
+      "label": "AIR",
+      "target": "flt.resonance",
+      "off": 2.0,
+      "on": 6.5
+    }
+  ],
+  "bakedFrom": "an infinite freeze reverb that sustains like an organ pad"
+}

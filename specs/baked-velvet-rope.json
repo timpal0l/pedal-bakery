@@ -1,0 +1,82 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Velvet Rope",
+  "tagline": "warm sustain that never bites",
+  "enclosure": {
+    "width": 2.3,
+    "depth": 2.7,
+    "height": 0.55,
+    "color": "#3b2a4d"
+  },
+  "artwork": {
+    "style": "gradient",
+    "palette": [
+      "#3b2a4d",
+      "#8f6ab5",
+      "#e8d6b0"
+    ],
+    "textColor": "#f4ecdf"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 6.0,
+        "attack": 4.0
+      }
+    },
+    {
+      "id": "dr",
+      "type": "drive",
+      "params": {
+        "amount": 6.2,
+        "tone": 4.6,
+        "level": 6.0
+      }
+    },
+    {
+      "id": "eq",
+      "type": "eq",
+      "params": {
+        "bass": 5.4,
+        "mid": 6.2,
+        "treble": 4.2,
+        "freq": 4.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "DRIVE",
+      "target": "dr.amount"
+    },
+    {
+      "id": "k2",
+      "label": "TONE",
+      "target": "dr.tone"
+    },
+    {
+      "id": "k3",
+      "label": "LEVEL",
+      "target": "dr.level"
+    },
+    {
+      "id": "k4",
+      "label": "BODY",
+      "target": "eq.mid"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "SQUEEZE",
+      "target": "cmp.sustain",
+      "off": 3.0,
+      "on": 8.0
+    }
+  ],
+  "bakedFrom": "smooth dist"
+}

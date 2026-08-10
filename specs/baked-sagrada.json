@@ -1,0 +1,106 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Sagrada",
+  "tagline": "stone walls that never stop singing",
+  "enclosure": {
+    "width": 3.4,
+    "depth": 2.9,
+    "height": 0.75,
+    "color": "#232a3d"
+  },
+  "artwork": {
+    "style": "rings",
+    "palette": [
+      "#1b2340",
+      "#41618f",
+      "#d9b96c"
+    ],
+    "textColor": "#ece6d4"
+  },
+  "chain": [
+    {
+      "id": "flt",
+      "type": "filter",
+      "params": {
+        "cutoff": 6.5,
+        "resonance": 0.5
+      }
+    },
+    {
+      "id": "cho",
+      "type": "chorus",
+      "params": {
+        "rate": 1.2,
+        "depth": 2.5,
+        "mix": 0
+      }
+    },
+    {
+      "id": "dly",
+      "type": "delay",
+      "params": {
+        "time": 7.5,
+        "feedback": 7.5,
+        "mix": 2.5
+      }
+    },
+    {
+      "id": "rev",
+      "type": "reverb",
+      "params": {
+        "size": 10,
+        "mix": 8.0
+      }
+    },
+    {
+      "id": "lvl",
+      "type": "level",
+      "params": {
+        "gain": 5.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "SIZE",
+      "target": "rev.size"
+    },
+    {
+      "id": "k2",
+      "label": "MIX",
+      "target": "rev.mix"
+    },
+    {
+      "id": "k3",
+      "label": "TAIL",
+      "target": "dly.feedback"
+    },
+    {
+      "id": "k4",
+      "label": "ECHO",
+      "target": "dly.mix"
+    },
+    {
+      "id": "k5",
+      "label": "AIR",
+      "target": "flt.cutoff"
+    },
+    {
+      "id": "k6",
+      "label": "LEVEL",
+      "target": "lvl.gain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "CHOIR",
+      "target": "cho.mix",
+      "off": 0,
+      "on": 3.5
+    }
+  ],
+  "bakedFrom": "a huge cathedral reverb with a tail that lasts forever"
+}

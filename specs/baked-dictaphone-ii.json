@@ -1,0 +1,81 @@
+{
+  "kind": "pedal",
+  "shape": "round",
+  "name": "Dictaphone II",
+  "tagline": "batteries going, tape going with them",
+  "enclosure": {
+    "width": 2.3,
+    "depth": 2.3,
+    "height": 0.6,
+    "color": "#4a4f5a"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#6b6152",
+      "#c9b48a",
+      "#3a3128"
+    ],
+    "textColor": "#f2e7d2"
+  },
+  "chain": [
+    {
+      "id": "warp",
+      "type": "chorus",
+      "params": {
+        "rate": 2.1,
+        "depth": 8.6,
+        "mix": 10
+      }
+    },
+    {
+      "id": "drift",
+      "type": "phaser",
+      "params": {
+        "rate": 0.9,
+        "depth": 4.0,
+        "feedback": 2.0
+      }
+    },
+    {
+      "id": "lid",
+      "type": "filter",
+      "params": {
+        "cutoff": 3.6,
+        "resonance": 2.4
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "WOBBLE",
+      "target": "warp.rate"
+    },
+    {
+      "id": "k2",
+      "label": "SLIP",
+      "target": "warp.depth"
+    },
+    {
+      "id": "k3",
+      "label": "DRIFT",
+      "target": "drift.rate"
+    },
+    {
+      "id": "k4",
+      "label": "LID",
+      "target": "lid.cutoff"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "DYING",
+      "target": "warp.rate",
+      "off": 2.1,
+      "on": 0.6
+    }
+  ],
+  "bakedFrom": "a random warbling pitch wobble like a dying walkman"
+}

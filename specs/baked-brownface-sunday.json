@@ -1,0 +1,76 @@
+{
+  "kind": "pedal",
+  "shape": "round",
+  "name": "Brownface Sunday",
+  "tagline": "lazy optical throb, warm as a valve",
+  "enclosure": {
+    "width": 2.6,
+    "depth": 2.6,
+    "height": 0.62,
+    "color": "#6b4a2c"
+  },
+  "artwork": {
+    "style": "rings",
+    "palette": [
+      "#7d5630",
+      "#c9a06a",
+      "#2f1d10"
+    ],
+    "textColor": "#f3e2c6"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 3.0,
+        "attack": 6.0
+      }
+    },
+    {
+      "id": "trm",
+      "type": "tremolo",
+      "params": {
+        "rate": 3.4,
+        "depth": 5.5
+      }
+    },
+    {
+      "id": "eq",
+      "type": "eq",
+      "params": {
+        "bass": 5.5,
+        "mid": 6.0,
+        "treble": 4.0,
+        "freq": 3.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "SPEED",
+      "target": "trm.rate"
+    },
+    {
+      "id": "k2",
+      "label": "DEPTH",
+      "target": "trm.depth"
+    },
+    {
+      "id": "k3",
+      "label": "WARMTH",
+      "target": "eq.treble"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "HARDER",
+      "target": "trm.depth",
+      "off": 5.5,
+      "on": 9.0
+    }
+  ],
+  "bakedFrom": "a smooth optical tremolo like an old brownface amp"
+}

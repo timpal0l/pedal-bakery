@@ -1,0 +1,132 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Contact Deneb",
+  "tagline": "something is answering on the wrong band",
+  "enclosure": {
+    "width": 3.6,
+    "depth": 2.9,
+    "height": 0.8,
+    "color": "#1b2733"
+  },
+  "artwork": {
+    "style": "rings",
+    "palette": [
+      "#0d151f",
+      "#39d7c4",
+      "#c0c6cc"
+    ],
+    "textColor": "#e6fbf6"
+  },
+  "chain": [
+    {
+      "id": "sq",
+      "type": "comp",
+      "params": {
+        "sustain": 7.0,
+        "attack": 2.0
+      }
+    },
+    {
+      "id": "rng",
+      "type": "ring",
+      "params": {
+        "freq": 6.4,
+        "mix": 7.5
+      }
+    },
+    {
+      "id": "stat",
+      "type": "drive",
+      "params": {
+        "amount": 7.0,
+        "tone": 8.5,
+        "level": 5.0
+      }
+    },
+    {
+      "id": "bp",
+      "type": "filter",
+      "params": {
+        "cutoff": 7.2,
+        "resonance": 8.0
+      }
+    },
+    {
+      "id": "ech",
+      "type": "delay",
+      "params": {
+        "time": 2.6,
+        "feedback": 6.5,
+        "mix": 5.0
+      }
+    },
+    {
+      "id": "sp",
+      "type": "reverb",
+      "params": {
+        "size": 7.0,
+        "mix": 4.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "CARRIER",
+      "target": "rng.freq"
+    },
+    {
+      "id": "k2",
+      "label": "SIGNAL",
+      "target": "rng.mix"
+    },
+    {
+      "id": "k3",
+      "label": "STATIC",
+      "target": "stat.amount"
+    },
+    {
+      "id": "k4",
+      "label": "BAND",
+      "target": "bp.cutoff"
+    },
+    {
+      "id": "k5",
+      "label": "PEAK",
+      "target": "bp.resonance"
+    },
+    {
+      "id": "k6",
+      "label": "REPEAT",
+      "target": "ech.feedback"
+    },
+    {
+      "id": "k7",
+      "label": "ECHO",
+      "target": "ech.mix"
+    },
+    {
+      "id": "k8",
+      "label": "VOID",
+      "target": "sp.mix"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "UPLINK",
+      "target": "rng.freq",
+      "off": 6.4,
+      "on": 9.2
+    },
+    {
+      "id": "s2",
+      "label": "DEEP SPA",
+      "target": "ech.time",
+      "off": 2.6,
+      "on": 8.0
+    }
+  ],
+  "bakedFrom": "an alien transmission pedal, metallic sidebands and static"
+}

@@ -11,16 +11,37 @@
 // facing the grille (v high -> low): name, knobs, toggles, pilot LED, power.
 // ---------------------------------------------------------------------------
 
-// natural widths of panel items in world units (amps only)
-const AMP_W = { knob: 0.62, toggle: 0.4, led: 0.24, power: 0.52, name: 1.05 };
+// natural widths of panel items in world units (amps only). Amps wear a small
+// power rocker rather than a pedal's stomp switch, so it claims little room.
+const AMP_W = { knob: 0.62, toggle: 0.4, led: 0.2, power: 0.4, name: 1.05 };
+// panel geometry in WORLD units — paintAmpTop paints to these same numbers.
+// Everything here is measured, never a fraction of the face: a fraction means
+// something different on a 0.9-deep cube than on a 2.4-deep stack, which is
+// how lettering used to end up printed off the panel and into the tolex.
+const KNOB_R = 0.19;          // tick-ring radius
+const TICKS = 1.45 * KNOB_R;  // outermost tick
+const LABEL_H = 0.12;         // lettering height
+const PAD = 0.06;             // plate edge beyond its content
+const EDGE = 0.04;            // cabinet top still showing past the plate
 
 function ampLayout(spec) {
-  const face = spec.enclosure.width; // across the front
+  const face = spec.enclosure.width; // across the front (v axis)
+  const du = spec.enclosure.depth;   // front-to-back (u axis)
   const span = 0.86 * face;          // usable strip, centered on the face
-  const rowU = 0.66, frontU = 0.72, backU = 0.34;
   const knobs = [];
   const switches = [];
   let led, power, nameV = null, twoRow = false;
+
+  // The knob row rides as far forward as it can while still leaving room to
+  // letter it. A shallow cabinet letters tighter; one too shallow to letter
+  // honestly gets no silkscreen at all (the inspector still names each knob).
+  const rowU = Math.max(0.5, Math.min(0.72,
+    1 - (1.95 * KNOB_R + LABEL_H / 2 + PAD + EDGE) / du));
+  const front = du * (1 - rowU) - LABEL_H / 2 - PAD - EDGE;
+  const labelD = front >= 1.5 * KNOB_R ? Math.min(1.95 * KNOB_R, front) : 0;
+  // a second row only fits on a cabinet deep enough to keep it off the knobs
+  const backU = Math.max((EDGE + PAD + 0.16) / du, rowU - 0.52 / du);
+  const canTwoRow = du >= 1.15 && rowU - backU > 0.3 / du;
 
   const items = [
     ...spec.controls.map((c) => ({ kind: 'knob', ref: c, w: AMP_W.knob })),

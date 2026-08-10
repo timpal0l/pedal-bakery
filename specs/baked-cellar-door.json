@@ -1,0 +1,60 @@
+{
+  "kind": "pedal",
+  "shape": "round",
+  "name": "Cellar Door",
+  "tagline": "the sound of a small quiet room",
+  "enclosure": {
+    "width": 2.0,
+    "depth": 2.0,
+    "height": 0.55,
+    "color": "#8d9a8f"
+  },
+  "artwork": {
+    "style": "rings",
+    "palette": [
+      "#8d9a8f",
+      "#d9d4c5",
+      "#4a5450"
+    ],
+    "textColor": "#2b312e"
+  },
+  "chain": [
+    {
+      "id": "rm",
+      "type": "reverb",
+      "params": {
+        "size": 2.4,
+        "mix": 2.8
+      }
+    },
+    {
+      "id": "eq",
+      "type": "eq",
+      "params": {
+        "bass": 4.2,
+        "mid": 5.0,
+        "treble": 4.4,
+        "freq": 5.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "ROOM",
+      "target": "rm.size"
+    },
+    {
+      "id": "k2",
+      "label": "BLEND",
+      "target": "rm.mix"
+    },
+    {
+      "id": "k3",
+      "label": "AIR",
+      "target": "eq.treble"
+    }
+  ],
+  "switches": [],
+  "bakedFrom": "a small room reverb, subtle and natural"
+}

@@ -1,0 +1,118 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Vapor Trail",
+  "tagline": "runway zero, throttle wide open",
+  "enclosure": {
+    "width": 3.0,
+    "depth": 2.4,
+    "height": 0.6,
+    "color": "#1b2a3c"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#0d1b2a",
+      "#3aa8d8",
+      "#e8f4ff"
+    ],
+    "textColor": "#e8f4ff"
+  },
+  "chain": [
+    {
+      "id": "sq",
+      "type": "comp",
+      "params": {
+        "sustain": 6.0,
+        "attack": 3.0
+      }
+    },
+    {
+      "id": "jet",
+      "type": "phaser",
+      "params": {
+        "rate": 2.0,
+        "depth": 10,
+        "feedback": 9.0
+      }
+    },
+    {
+      "id": "dbl",
+      "type": "chorus",
+      "params": {
+        "rate": 1.5,
+        "depth": 7.0,
+        "mix": 6.0
+      }
+    },
+    {
+      "id": "air",
+      "type": "filter",
+      "params": {
+        "cutoff": 8.0,
+        "resonance": 6.0
+      }
+    },
+    {
+      "id": "out",
+      "type": "level",
+      "params": {
+        "gain": 6.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "SWEEP",
+      "target": "jet.rate"
+    },
+    {
+      "id": "k2",
+      "label": "DEPTH",
+      "target": "jet.depth"
+    },
+    {
+      "id": "k3",
+      "label": "REGEN",
+      "target": "jet.feedback"
+    },
+    {
+      "id": "k4",
+      "label": "WIDTH",
+      "target": "dbl.mix"
+    },
+    {
+      "id": "k5",
+      "label": "MANUAL",
+      "target": "air.cutoff"
+    },
+    {
+      "id": "k6",
+      "label": "RES",
+      "target": "air.resonance"
+    },
+    {
+      "id": "k7",
+      "label": "OUTPUT",
+      "target": "out.gain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "AFTERBUR",
+      "target": "jet.rate",
+      "off": 2.0,
+      "on": 6.0
+    },
+    {
+      "id": "s2",
+      "label": "SQUEEZE",
+      "target": "sq.sustain",
+      "off": 2.0,
+      "on": 8.0
+    }
+  ],
+  "bakedFrom": "a jet plane flanger, dramatic and whooshy"
+}

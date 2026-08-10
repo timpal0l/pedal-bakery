@@ -1,0 +1,89 @@
+{
+  "kind": "amp",
+  "shape": "box",
+  "name": "Crumpet",
+  "tagline": "toasty breakup in a lunchbox",
+  "enclosure": {
+    "width": 2.4,
+    "depth": 1.0,
+    "height": 1.05,
+    "color": "#E3B96B"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#E3B96B",
+      "#5A2B26",
+      "#F1E3C0"
+    ],
+    "textColor": "#3B2A1A"
+  },
+  "chain": [
+    {
+      "id": "drv",
+      "type": "drive",
+      "params": {
+        "amount": 3.5,
+        "tone": 3.0,
+        "level": 5.5
+      }
+    },
+    {
+      "id": "eq",
+      "type": "eq",
+      "params": {
+        "bass": 4.5,
+        "mid": 6.5,
+        "treble": 3.0,
+        "freq": 3.5
+      }
+    },
+    {
+      "id": "out",
+      "type": "level",
+      "params": {
+        "gain": 4.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "grit",
+      "label": "GRIT",
+      "target": "drv.amount"
+    },
+    {
+      "id": "tone",
+      "label": "TONE",
+      "target": "drv.tone"
+    },
+    {
+      "id": "vol",
+      "label": "VOL",
+      "target": "out.gain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "brt",
+      "label": "BRIGHT",
+      "target": "eq.treble",
+      "off": 3.0,
+      "on": 5.5
+    }
+  ],
+  "cabinet": {
+    "format": "practice",
+    "speakers": 1,
+    "grille": {
+      "style": "oxblood",
+      "color": "#5A2B26",
+      "accent": "#C9A15E"
+    },
+    "tolex": "smooth",
+    "trim": "#F1E3C0",
+    "panel": "#3B2A1A",
+    "logo": "script"
+  },
+  "bakedFrom": "a tiny bedroom practice amp, warm and boxy with cute breakup"
+}

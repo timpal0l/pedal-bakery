@@ -1,0 +1,80 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Anvil Ceiling",
+  "tagline": "everything hits the same wall",
+  "enclosure": {
+    "width": 2.3,
+    "depth": 2.4,
+    "height": 0.62,
+    "color": "#4a4f5a"
+  },
+  "artwork": {
+    "style": "stripes",
+    "palette": [
+      "#1b1b1e",
+      "#d6d2c4",
+      "#c02418"
+    ],
+    "textColor": "#f2efe6"
+  },
+  "chain": [
+    {
+      "id": "sq",
+      "type": "comp",
+      "params": {
+        "sustain": 10,
+        "attack": 0
+      }
+    },
+    {
+      "id": "eq1",
+      "type": "eq",
+      "params": {
+        "bass": 6.0,
+        "mid": 7.0,
+        "treble": 6.0,
+        "freq": 5.0
+      }
+    },
+    {
+      "id": "out",
+      "type": "level",
+      "params": {
+        "gain": 9.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "SLAM",
+      "target": "sq.sustain"
+    },
+    {
+      "id": "k2",
+      "label": "GRAB",
+      "target": "sq.attack"
+    },
+    {
+      "id": "k3",
+      "label": "OUTPUT",
+      "target": "out.gain"
+    },
+    {
+      "id": "k4",
+      "label": "MIDS",
+      "target": "eq1.mid"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "BRICK",
+      "target": "eq1.treble",
+      "off": 5.0,
+      "on": 8.0
+    }
+  ],
+  "bakedFrom": "a limiter that slams everything flat, brutal and loud"
+}

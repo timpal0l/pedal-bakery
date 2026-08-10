@@ -1,0 +1,94 @@
+{
+  "kind": "amp",
+  "shape": "box",
+  "name": "Fullerton II",
+  "tagline": "turn it up and lean in",
+  "enclosure": {
+    "width": 3.0,
+    "depth": 1.05,
+    "height": 1.9,
+    "color": "#d4b06a"
+  },
+  "artwork": {
+    "style": "plaid",
+    "palette": [
+      "#d4b06a",
+      "#8a6a3e",
+      "#5c4326"
+    ],
+    "textColor": "#3a2a18"
+  },
+  "chain": [
+    {
+      "id": "drv",
+      "type": "drive",
+      "params": {
+        "amount": 4.0,
+        "tone": 4.5,
+        "level": 6.5
+      }
+    },
+    {
+      "id": "eq",
+      "type": "eq",
+      "params": {
+        "bass": 6.0,
+        "mid": 6.5,
+        "treble": 4.5,
+        "freq": 3.5
+      }
+    },
+    {
+      "id": "out",
+      "type": "level",
+      "params": {
+        "gain": 6.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "vol",
+      "label": "VOLUME",
+      "target": "drv.amount"
+    },
+    {
+      "id": "ton",
+      "label": "TONE",
+      "target": "drv.tone"
+    },
+    {
+      "id": "bdy",
+      "label": "BODY",
+      "target": "eq.mid"
+    },
+    {
+      "id": "lvl",
+      "label": "LEVEL",
+      "target": "out.gain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "brt",
+      "label": "BRIGHT",
+      "target": "eq.treble",
+      "off": 4.5,
+      "on": 7.0
+    }
+  ],
+  "cabinet": {
+    "format": "combo",
+    "speakers": 1,
+    "grille": {
+      "style": "diagonal",
+      "color": "#5c4326",
+      "accent": "#8a6a3e"
+    },
+    "tolex": "tweed",
+    "trim": "#6e4f2e",
+    "panel": "#2b1f14",
+    "logo": "script"
+  },
+  "bakedFrom": "a vintage tweed amp that breaks up sweetly when you dig in"
+}

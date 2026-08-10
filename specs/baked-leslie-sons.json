@@ -1,0 +1,118 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Leslie & Sons",
+  "tagline": "the cabinet is spinning, you are not",
+  "enclosure": {
+    "width": 3.0,
+    "depth": 2.6,
+    "height": 0.72,
+    "color": "#3a2a1c"
+  },
+  "artwork": {
+    "style": "rings",
+    "palette": [
+      "#c9a227",
+      "#7d4f2a",
+      "#f2e3c4"
+    ],
+    "textColor": "#f2e3c4"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 4.0,
+        "attack": 6.0
+      }
+    },
+    {
+      "id": "chr",
+      "type": "chorus",
+      "params": {
+        "rate": 6.5,
+        "depth": 8.5,
+        "mix": 9.0
+      }
+    },
+    {
+      "id": "trm",
+      "type": "tremolo",
+      "params": {
+        "rate": 6.5,
+        "depth": 6.0
+      }
+    },
+    {
+      "id": "flt",
+      "type": "filter",
+      "params": {
+        "cutoff": 6.0,
+        "resonance": 3.5
+      }
+    },
+    {
+      "id": "vrb",
+      "type": "reverb",
+      "params": {
+        "size": 4.0,
+        "mix": 2.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "spd",
+      "label": "SPEED",
+      "target": "chr.rate"
+    },
+    {
+      "id": "thr",
+      "label": "THROB",
+      "target": "trm.rate"
+    },
+    {
+      "id": "dop",
+      "label": "DOPPLER",
+      "target": "chr.depth"
+    },
+    {
+      "id": "swl",
+      "label": "SWELL",
+      "target": "trm.depth"
+    },
+    {
+      "id": "hrn",
+      "label": "HORN",
+      "target": "flt.cutoff"
+    },
+    {
+      "id": "bit",
+      "label": "BITE",
+      "target": "flt.resonance"
+    },
+    {
+      "id": "rm",
+      "label": "ROOM",
+      "target": "vrb.mix"
+    }
+  ],
+  "switches": [
+    {
+      "id": "brk",
+      "label": "BRAKE",
+      "target": "chr.mix",
+      "off": 9.0,
+      "on": 0.5
+    },
+    {
+      "id": "fst",
+      "label": "FAST",
+      "target": "cmp.sustain",
+      "off": 4.0,
+      "on": 7.5
+    }
+  ],
+  "bakedFrom": "a rotary speaker swirl, doppler and all"
+}

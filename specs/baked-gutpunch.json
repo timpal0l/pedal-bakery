@@ -1,0 +1,101 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Gutpunch",
+  "tagline": "chugs that hit like a piston",
+  "enclosure": {
+    "width": 2.8,
+    "depth": 2.6,
+    "height": 0.65,
+    "color": "#14161a"
+  },
+  "artwork": {
+    "style": "diagonal",
+    "palette": [
+      "#14161a",
+      "#2b2f36",
+      "#b6ff2e"
+    ],
+    "textColor": "#b6ff2e"
+  },
+  "chain": [
+    {
+      "id": "tight",
+      "type": "eq",
+      "params": {
+        "bass": 2.5,
+        "mid": 5.5,
+        "treble": 5.5,
+        "freq": 6.5
+      }
+    },
+    {
+      "id": "dist",
+      "type": "drive",
+      "params": {
+        "amount": 8.7,
+        "tone": 6.8,
+        "level": 5.5
+      }
+    },
+    {
+      "id": "shape",
+      "type": "eq",
+      "params": {
+        "bass": 6.5,
+        "mid": 3.5,
+        "treble": 7.2,
+        "freq": 5.5
+      }
+    },
+    {
+      "id": "out",
+      "type": "level",
+      "params": {
+        "gain": 5.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "g",
+      "label": "GAIN",
+      "target": "dist.amount"
+    },
+    {
+      "id": "tg",
+      "label": "TIGHT",
+      "target": "tight.bass"
+    },
+    {
+      "id": "b",
+      "label": "BASS",
+      "target": "shape.bass"
+    },
+    {
+      "id": "m",
+      "label": "MID",
+      "target": "shape.mid"
+    },
+    {
+      "id": "t",
+      "label": "TREB",
+      "target": "shape.treble"
+    },
+    {
+      "id": "v",
+      "label": "LEVEL",
+      "target": "out.gain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "vc",
+      "label": "VOICE",
+      "target": "shape.freq",
+      "off": 4.0,
+      "on": 7.5
+    }
+  ],
+  "bakedFrom": "a modern high gain metal distortion, tight and percussive"
+}

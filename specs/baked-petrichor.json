@@ -1,0 +1,91 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Petrichor",
+  "tagline": "echoes bloom into rainlight",
+  "enclosure": {
+    "width": 3.4,
+    "depth": 2.8,
+    "height": 0.65,
+    "color": "#bfe0da"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#8fd0c6",
+      "#e3c6e8",
+      "#f6f2e7"
+    ],
+    "textColor": "#23413d"
+  },
+  "chain": [
+    {
+      "id": "ch",
+      "type": "chorus",
+      "params": {
+        "rate": 3.0,
+        "depth": 3.0,
+        "mix": 3.5
+      }
+    },
+    {
+      "id": "dly",
+      "type": "delay",
+      "params": {
+        "time": 6.5,
+        "feedback": 7.5,
+        "mix": 6.0
+      }
+    },
+    {
+      "id": "rev",
+      "type": "reverb",
+      "params": {
+        "size": 8.0,
+        "mix": 5.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "TIME",
+      "target": "dly.time"
+    },
+    {
+      "id": "k2",
+      "label": "REGEN",
+      "target": "dly.feedback"
+    },
+    {
+      "id": "k3",
+      "label": "ECHO",
+      "target": "dly.mix"
+    },
+    {
+      "id": "k4",
+      "label": "SHIMMER",
+      "target": "ch.mix"
+    },
+    {
+      "id": "k5",
+      "label": "RATE",
+      "target": "ch.rate"
+    },
+    {
+      "id": "k6",
+      "label": "WASH",
+      "target": "rev.mix"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "BLOOM",
+      "target": "rev.size",
+      "off": 6.0,
+      "on": 9.5
+    }
+  ],
+  "bakedFrom": "a shimmering delay that blooms into a wash of echoes"
+}

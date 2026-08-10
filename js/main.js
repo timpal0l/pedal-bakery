@@ -487,17 +487,34 @@ function addShelfItem(spec) {
   if (thumbCache.has(spec.name)) {
     img.src = thumbCache.get(spec.name);
   } else {
+    // a big library must not render 100 previews at boot: each thumbnail is
+    // rendered the first time its row scrolls into view, then cached forever
+    item.dataset.thumb = 'pending';
+    thumbObserver.observe(item);
+    thumbJobs.set(item, { spec, img });
+  }
+}
+
+const thumbJobs = new Map(); // shelf row -> { spec, img } awaiting a render
+const thumbObserver = new IntersectionObserver((entries) => {
+  for (const e of entries) {
+    if (!e.isIntersecting) continue;
+    const job = thumbJobs.get(e.target);
+    thumbObserver.unobserve(e.target);
+    thumbJobs.delete(e.target);
+    if (!job) continue;
     thumbQueue = thumbQueue.then(async () => {
+      if (thumbCache.has(job.spec.name)) { job.img.src = thumbCache.get(job.spec.name); return; }
       try {
-        const url = await view.snapshotPedal(spec, makeState(spec));
-        thumbCache.set(spec.name, url);
-        img.src = url;
+        const url = await view.snapshotPedal(job.spec, makeState(job.spec));
+        thumbCache.set(job.spec.name, url);
+        job.img.src = url;
       } catch (err) {
-        console.warn('[shelf] thumbnail failed for', spec.name, err);
+        console.warn('[shelf] thumbnail failed for', job.spec.name, err);
       }
     });
   }
-}
+}, { root: shelfList, rootMargin: '300px' });
 
 /* ---------------------------------------------------------- interaction -- */
 
@@ -509,6 +526,7 @@ let patching = null;     // { from: nodeId } — cable dangling from an output j
 let selected = null;     // pedal id highlighted for the Delete key
 let menuTarget = null;   // which source post the chord menu applies to
 let cursorGround = new BABYLON.Vector3(0, 0, 0);
+let lastHoverPick = 0;
 
 function selectPedal(id) { // pedals, amps and tone posts all select the same way
   if (selected === id) return;
@@ -717,7 +735,8 @@ view.scene.onPointerObservable.add((pi) => {
         net.sendOpThrottled(`move:${dragEndpoint.id}`,
           { type: 'move', id: dragEndpoint.id, x, z });
         dragEndpoint.moved += Math.abs(pi.event.movementX || 0) + Math.abs(pi.event.movementY || 0);
-      } else {
+      } else if (performance.now() - lastHoverPick > 60) {
+        lastHoverPick = performance.now(); // hover cursor doesn't need every frame
         const pick = scene.pick(scene.pointerX, scene.pointerY);
         canvas.style.cursor = pick.hit && pick.pickedMesh.metadata ? 'pointer' : 'default';
       }

@@ -1,0 +1,118 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Kelp Cathedral",
+  "tagline": "jet trails through green water",
+  "enclosure": {
+    "width": 3.4,
+    "depth": 2.9,
+    "height": 0.75,
+    "color": "#0d3b45"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#0a2e38",
+      "#1f8f9c",
+      "#8fe3d2"
+    ],
+    "textColor": "#d8fff4"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 6.0,
+        "attack": 3.0
+      }
+    },
+    {
+      "id": "flg",
+      "type": "phaser",
+      "params": {
+        "rate": 1.0,
+        "depth": 9.0,
+        "feedback": 8.0
+      }
+    },
+    {
+      "id": "met",
+      "type": "ring",
+      "params": {
+        "freq": 2.0,
+        "mix": 1.5
+      }
+    },
+    {
+      "id": "lp",
+      "type": "filter",
+      "params": {
+        "cutoff": 4.0,
+        "resonance": 6.0
+      }
+    },
+    {
+      "id": "vrb",
+      "type": "reverb",
+      "params": {
+        "size": 7.0,
+        "mix": 4.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "SWEEP",
+      "target": "flg.rate"
+    },
+    {
+      "id": "k2",
+      "label": "DEPTH",
+      "target": "flg.depth"
+    },
+    {
+      "id": "k3",
+      "label": "REGEN",
+      "target": "flg.feedback"
+    },
+    {
+      "id": "k4",
+      "label": "METAL",
+      "target": "met.mix"
+    },
+    {
+      "id": "k5",
+      "label": "DEPTHS",
+      "target": "lp.cutoff"
+    },
+    {
+      "id": "k6",
+      "label": "RES",
+      "target": "lp.resonance"
+    },
+    {
+      "id": "k7",
+      "label": "FATHOM",
+      "target": "vrb.mix"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "TIDE",
+      "target": "flg.rate",
+      "off": 1.0,
+      "on": 3.5
+    },
+    {
+      "id": "s2",
+      "label": "SQUEEZE",
+      "target": "cmp.sustain",
+      "off": 6.0,
+      "on": 9.0
+    }
+  ],
+  "bakedFrom": "a slow underwater flanger with deep metallic sweeps"
+}

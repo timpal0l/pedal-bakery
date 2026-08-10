@@ -1,0 +1,114 @@
+{
+  "kind": "amp",
+  "shape": "box",
+  "name": "Point Panic",
+  "tagline": "wet as the pacific, twice as bright",
+  "enclosure": {
+    "width": 3.5,
+    "depth": 1.1,
+    "height": 2.1,
+    "color": "#2e9bb5"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#2e9bb5",
+      "#7fd4e6",
+      "#f2efe4"
+    ],
+    "textColor": "#f2efe4"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 4.0,
+        "attack": 3.0
+      }
+    },
+    {
+      "id": "eq",
+      "type": "eq",
+      "params": {
+        "bass": 4.0,
+        "mid": 3.5,
+        "treble": 7.5,
+        "freq": 6.0
+      }
+    },
+    {
+      "id": "trm",
+      "type": "tremolo",
+      "params": {
+        "rate": 4.5,
+        "depth": 0
+      }
+    },
+    {
+      "id": "rv",
+      "type": "reverb",
+      "params": {
+        "size": 7.0,
+        "mix": 7.5
+      }
+    },
+    {
+      "id": "lvl",
+      "type": "level",
+      "params": {
+        "gain": 5.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "DWELL",
+      "target": "rv.size"
+    },
+    {
+      "id": "k2",
+      "label": "DRIP",
+      "target": "rv.mix"
+    },
+    {
+      "id": "k3",
+      "label": "TREB",
+      "target": "eq.treble"
+    },
+    {
+      "id": "k4",
+      "label": "BASS",
+      "target": "eq.bass"
+    },
+    {
+      "id": "k5",
+      "label": "VOL",
+      "target": "lvl.gain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "TREM",
+      "target": "trm.depth",
+      "off": 0,
+      "on": 5.5
+    }
+  ],
+  "cabinet": {
+    "format": "combo",
+    "speakers": 2,
+    "grille": {
+      "style": "weave",
+      "color": "#cfc9ba",
+      "accent": "#8fa8ad"
+    },
+    "tolex": "sparkle",
+    "trim": "#d9dde0",
+    "panel": "#1b3a44",
+    "logo": "script"
+  },
+  "bakedFrom": "a surf amp with drippy spring reverb built in and shimmering cleans"
+}
