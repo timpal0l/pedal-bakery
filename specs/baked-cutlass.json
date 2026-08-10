@@ -1,0 +1,98 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Cutlass",
+  "tagline": "solos step forward, mix steps aside",
+  "enclosure": {
+    "width": 2.4,
+    "depth": 2.4,
+    "height": 0.55,
+    "color": "#c8ccd2"
+  },
+  "artwork": {
+    "style": "diagonal",
+    "palette": [
+      "#c8ccd2",
+      "#1d2733",
+      "#e0492f"
+    ],
+    "textColor": "#12181f"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 4.0,
+        "attack": 7.0
+      }
+    },
+    {
+      "id": "pre",
+      "type": "eq",
+      "params": {
+        "bass": 3.5,
+        "mid": 7.0,
+        "treble": 7.5,
+        "freq": 7.0
+      }
+    },
+    {
+      "id": "lft",
+      "type": "filter",
+      "params": {
+        "cutoff": 9.0,
+        "resonance": 3.0
+      }
+    },
+    {
+      "id": "out",
+      "type": "level",
+      "params": {
+        "gain": 7.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "PRESNC",
+      "target": "pre.treble"
+    },
+    {
+      "id": "k2",
+      "label": "FOCUS",
+      "target": "pre.freq"
+    },
+    {
+      "id": "k3",
+      "label": "MIDS",
+      "target": "pre.mid"
+    },
+    {
+      "id": "k4",
+      "label": "BODY",
+      "target": "pre.bass"
+    },
+    {
+      "id": "k5",
+      "label": "SQUEEZE",
+      "target": "cmp.sustain"
+    },
+    {
+      "id": "k6",
+      "label": "OUTPUT",
+      "target": "out.gain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "AIR",
+      "target": "lft.cutoff",
+      "off": 6.0,
+      "on": 10
+    }
+  ],
+  "bakedFrom": "a presence lifter that helps solos cut through the mix"
+}

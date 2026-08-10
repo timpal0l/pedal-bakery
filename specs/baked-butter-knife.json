@@ -1,0 +1,63 @@
+{
+  "kind": "pedal",
+  "shape": "round",
+  "name": "Butter Knife",
+  "tagline": "barely there, always on",
+  "enclosure": {
+    "width": 1.8,
+    "depth": 1.8,
+    "height": 0.45,
+    "color": "#e8dcc0"
+  },
+  "artwork": {
+    "style": "rings",
+    "palette": [
+      "#e8dcc0",
+      "#c9a86a",
+      "#8a6d3b"
+    ],
+    "textColor": "#4a3418"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 3.0,
+        "attack": 6.0
+      }
+    },
+    {
+      "id": "eqx",
+      "type": "eq",
+      "params": {
+        "bass": 5.5,
+        "mid": 4.2,
+        "treble": 6.2,
+        "freq": 6.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "SHEEN",
+      "target": "eqx.treble"
+    },
+    {
+      "id": "k2",
+      "label": "GLUE",
+      "target": "cmp.sustain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "SCOOP",
+      "target": "eqx.mid",
+      "off": 4.2,
+      "on": 2.5
+    }
+  ],
+  "bakedFrom": "a subtle always-on tone sweetener"
+}

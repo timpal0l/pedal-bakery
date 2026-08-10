@@ -1,0 +1,100 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Ferrograph",
+  "tagline": "warm oxide glue, softly grippy",
+  "enclosure": {
+    "width": 2.4,
+    "depth": 2.5,
+    "height": 0.62,
+    "color": "#8a6a45"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#c9a06a",
+      "#6b4a2c",
+      "#e8d3ae"
+    ],
+    "textColor": "#3a2616"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 6.2,
+        "attack": 3.5
+      }
+    },
+    {
+      "id": "drv",
+      "type": "drive",
+      "params": {
+        "amount": 2.6,
+        "tone": 3.4,
+        "level": 5.4
+      }
+    },
+    {
+      "id": "eq",
+      "type": "eq",
+      "params": {
+        "bass": 6.2,
+        "mid": 5.8,
+        "treble": 3.6,
+        "freq": 3.2
+      }
+    },
+    {
+      "id": "flt",
+      "type": "filter",
+      "params": {
+        "cutoff": 5.8,
+        "resonance": 1.2
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "GLUE",
+      "target": "cmp.sustain"
+    },
+    {
+      "id": "k2",
+      "label": "OXIDE",
+      "target": "drv.amount"
+    },
+    {
+      "id": "k3",
+      "label": "WARMTH",
+      "target": "flt.cutoff"
+    },
+    {
+      "id": "k4",
+      "label": "LOW",
+      "target": "eq.bass"
+    },
+    {
+      "id": "k5",
+      "label": "HISS",
+      "target": "eq.treble"
+    },
+    {
+      "id": "k6",
+      "label": "OUTPUT",
+      "target": "drv.level"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "HOT BIAS",
+      "target": "drv.tone",
+      "off": 3.4,
+      "on": 6.5
+    }
+  ],
+  "bakedFrom": "a warm tape saturation box, gentle glue and grit"
+}

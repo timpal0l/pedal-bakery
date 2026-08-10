@@ -75,23 +75,30 @@ function ampLayout(spec) {
     nameV = edge - AMP_W.name / face / 2;
   } else if (total <= span) {
     place(items, rowU, 1);
-  } else if (total * 0.74 <= span) {
-    place(items, rowU, span / total); // squeeze a little before giving up
+  } else if (total * 0.74 <= span || !canTwoRow) {
+    place(items, rowU, span / total); // squeeze before splitting the panel
   } else {
     // narrow face, busy panel: knobs up front, everything else on a back row
     twoRow = true;
-    const front = items.filter((i) => i.kind === 'knob');
+    const knobItems = items.filter((i) => i.kind === 'knob');
     const back = items.filter((i) => i.kind !== 'knob');
-    place(front, frontU, Math.min(1, span / front.reduce((a, i) => a + i.w, 0)));
+    place(knobItems, rowU, Math.min(1, span / knobItems.reduce((a, i) => a + i.w, 0)));
     place(back, backU, Math.min(1, span / back.reduce((a, i) => a + i.w, 0)));
   }
 
+  // the plate wraps whatever the rows actually need, in world units
+  const plateFront = labelD ? labelD + LABEL_H / 2 + PAD : TICKS + PAD;
+  const plateBack = twoRow ? 0.16 + PAD : TICKS + PAD;
   return {
     knobs, switches,
     footswitch: power,
     led,
     titleV: 0.1, // unused by the amp painter; kept for shape parity
-    amp: { nameV, rowU: twoRow ? frontU : rowU, backU, twoRow },
+    amp: {
+      nameV, rowU, backU, twoRow, labelD,
+      plateU0: Math.max(EDGE / du, (twoRow ? backU : rowU) - plateBack / du),
+      plateU1: Math.min(1 - EDGE / du, rowU + plateFront / du),
+    },
   };
 }
 

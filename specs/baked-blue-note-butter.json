@@ -1,0 +1,100 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Blue Note Butter",
+  "tagline": "seven chords and a rhodes hum",
+  "enclosure": {
+    "width": 2.8,
+    "depth": 2.6,
+    "height": 0.6,
+    "color": "#1c3a63"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#12294a",
+      "#3f7fb5",
+      "#d9c48a"
+    ],
+    "textColor": "#f2ead6"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 7.0,
+        "attack": 3.5
+      }
+    },
+    {
+      "id": "eq1",
+      "type": "eq",
+      "params": {
+        "bass": 5.5,
+        "mid": 3.5,
+        "treble": 6.5,
+        "freq": 4.0
+      }
+    },
+    {
+      "id": "chr",
+      "type": "chorus",
+      "params": {
+        "rate": 2.5,
+        "depth": 2.0,
+        "mix": 3.0
+      }
+    },
+    {
+      "id": "rev",
+      "type": "reverb",
+      "params": {
+        "size": 4.0,
+        "mix": 2.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "SQUEEZE",
+      "target": "cmp.sustain"
+    },
+    {
+      "id": "k2",
+      "label": "ATTACK",
+      "target": "cmp.attack"
+    },
+    {
+      "id": "k3",
+      "label": "MID",
+      "target": "eq1.mid"
+    },
+    {
+      "id": "k4",
+      "label": "AIR",
+      "target": "eq1.treble"
+    },
+    {
+      "id": "k5",
+      "label": "SWIRL",
+      "target": "chr.depth"
+    },
+    {
+      "id": "k6",
+      "label": "ROOM",
+      "target": "rev.mix"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "LUSH",
+      "target": "chr.rate",
+      "off": 2.5,
+      "on": 5.5
+    }
+  ],
+  "bakedFrom": "a jazz fusion smooth machine, clean compression and subtle chorus"
+}

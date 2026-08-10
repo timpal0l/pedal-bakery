@@ -438,7 +438,7 @@ export function paintAmpTop(c2d, W, H, spec, layout) {
   const s = H / face;                 // px per world unit (uniform on both axes)
   const text = (spec.artwork && spec.artwork.textColor) || '#f2ead8';
   const trim = cab.trim || '#c8b37e';
-  const a = layout.amp || { rowU: 0.66, backU: 0.34, nameV: null, twoRow: false };
+  const a = layout.amp;
 
   paintTolex(c2d, W, H, spec.enclosure.color || '#232326', cab.tolex || 'levant');
 
@@ -447,9 +447,9 @@ export function paintAmpTop(c2d, W, H, spec, layout) {
   c2d.lineWidth = Math.max(2, 0.03 * s);
   c2d.strokeRect(0.05 * s, 0.05 * s, W - 0.1 * s, H - 0.1 * s);
 
-  /* the control panel plate */
-  const x0 = (a.twoRow ? a.backU : a.rowU) * W - 0.3 * s;
-  const x1 = a.rowU * W + 0.3 * s;
+  /* the control panel plate — layout.js sized it around the real rows */
+  const x0 = a.plateU0 * W;
+  const x1 = a.plateU1 * W;
   const y0 = 0.04 * H, y1 = 0.96 * H;
   const plate = () => {
     c2d.beginPath();
@@ -487,16 +487,15 @@ export function paintAmpTop(c2d, W, H, spec, layout) {
     });
   }
 
-  // A two-row panel (narrow face, busy amp) has no room to letter below every
-  // control: labels would land on the other row or run off the plate. There
-  // the knobs are lettered tight against their ticks and the self-evident
-  // power/toggle silkscreen is dropped, like a real little amp.
+  // Lettering sits at the distance layout.js reserved room for, so it always
+  // lands on the plate. A cabinet too shallow to letter honestly (labelD 0)
+  // wears none — the inspector still names every knob. On a two-row panel only
+  // the knobs are lettered: the back row's silkscreen would print under them.
   const knobR = 0.19 * s;
-  const labelGap = a.twoRow ? knobR * 1.2 : knobR * 1.95;
   c2d.strokeStyle = withAlpha(text, 0.9);
   c2d.lineWidth = Math.max(1.5, 0.013 * s);
   c2d.fillStyle = text;
-  c2d.font = `800 ${Math.round((a.twoRow ? 0.1 : 0.12) * s)}px Futura, Arial, sans-serif`;
+  c2d.font = `800 ${Math.round(0.12 * s)}px Futura, Arial, sans-serif`;
   for (const k of layout.knobs) {
     rot(k.u, k.v, () => {
       for (let i = 0; i <= 10; i++) {
@@ -507,16 +506,17 @@ export function paintAmpTop(c2d, W, H, spec, layout) {
         c2d.lineTo(Math.sin(ang) * r1, -Math.cos(ang) * r1);
         c2d.stroke();
       }
-      c2d.fillText(k.label, 0, labelGap, 0.44 * s); // clamp to the knob pitch
+      if (a.labelD) c2d.fillText(k.label, 0, a.labelD * s, 0.44 * s);
     });
   }
 
-  if (!a.twoRow) {
+  if (!a.twoRow && a.labelD) {
     c2d.font = `700 ${Math.round(0.115 * s)}px Futura, Arial, sans-serif`;
     for (const t of layout.switches) {
-      rot(t.u, t.v, () => c2d.fillText(t.label, 0, 0.27 * s));
+      rot(t.u, t.v, () => c2d.fillText(t.label, 0, a.labelD * s, 0.38 * s));
     }
-    rot(layout.footswitch.u, layout.footswitch.v, () => c2d.fillText('POWER', 0, 0.34 * s));
+    rot(layout.footswitch.u, layout.footswitch.v,
+      () => c2d.fillText('POWER', 0, a.labelD * s, 0.38 * s));
   }
 
   if (layout.led) { // pilot-light bezel ring

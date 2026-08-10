@@ -1,0 +1,124 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Neve Butter",
+  "tagline": "the desk warms up before you do",
+  "enclosure": {
+    "width": 3.6,
+    "depth": 2.8,
+    "height": 0.72,
+    "color": "#2b3d4f"
+  },
+  "artwork": {
+    "style": "stripes",
+    "palette": [
+      "#2b3d4f",
+      "#d8c9a3",
+      "#b0392c"
+    ],
+    "textColor": "#f2ead8"
+  },
+  "chain": [
+    {
+      "id": "pre",
+      "type": "drive",
+      "params": {
+        "amount": 2.2,
+        "tone": 6.4,
+        "level": 5.4
+      }
+    },
+    {
+      "id": "sq",
+      "type": "comp",
+      "params": {
+        "sustain": 3.6,
+        "attack": 6.5
+      }
+    },
+    {
+      "id": "desk",
+      "type": "eq",
+      "params": {
+        "bass": 6.2,
+        "mid": 4.2,
+        "treble": 6.6,
+        "freq": 3.8
+      }
+    },
+    {
+      "id": "air",
+      "type": "filter",
+      "params": {
+        "cutoff": 8.6,
+        "resonance": 1.2
+      }
+    },
+    {
+      "id": "trim",
+      "type": "level",
+      "params": {
+        "gain": 5.6
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "IRON",
+      "target": "pre.amount"
+    },
+    {
+      "id": "k2",
+      "label": "GLUE",
+      "target": "sq.sustain"
+    },
+    {
+      "id": "k3",
+      "label": "LOW",
+      "target": "desk.bass"
+    },
+    {
+      "id": "k4",
+      "label": "PRES",
+      "target": "desk.mid"
+    },
+    {
+      "id": "k5",
+      "label": "HIGH",
+      "target": "desk.treble"
+    },
+    {
+      "id": "k6",
+      "label": "MIDFRQ",
+      "target": "desk.freq"
+    },
+    {
+      "id": "k7",
+      "label": "AIR",
+      "target": "air.cutoff"
+    },
+    {
+      "id": "k8",
+      "label": "OUTPUT",
+      "target": "trim.gain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "TRAFO",
+      "target": "pre.tone",
+      "off": 6.4,
+      "on": 3.2
+    },
+    {
+      "id": "s2",
+      "label": "FAST",
+      "target": "sq.attack",
+      "off": 6.5,
+      "on": 1.5
+    }
+  ],
+  "bakedFrom": "a vintage console preamp color box"
+}

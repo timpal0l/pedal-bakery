@@ -1,0 +1,97 @@
+{
+  "kind": "pedal",
+  "shape": "round",
+  "name": "Ghardaia",
+  "tagline": "sand in the reverb tank",
+  "enclosure": {
+    "width": 2.6,
+    "depth": 2.6,
+    "height": 0.62,
+    "color": "#4a4f5a"
+  },
+  "artwork": {
+    "style": "rings",
+    "palette": [
+      "#c8712c",
+      "#e8c48a",
+      "#5a3a22"
+    ],
+    "textColor": "#2a1a10"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 6.5,
+        "attack": 3.0
+      }
+    },
+    {
+      "id": "drv",
+      "type": "drive",
+      "params": {
+        "amount": 5.5,
+        "tone": 3.0,
+        "level": 5.5
+      }
+    },
+    {
+      "id": "trm",
+      "type": "tremolo",
+      "params": {
+        "rate": 3.2,
+        "depth": 6.5
+      }
+    },
+    {
+      "id": "dly",
+      "type": "delay",
+      "params": {
+        "time": 4.0,
+        "feedback": 5.5,
+        "mix": 3.5
+      }
+    },
+    {
+      "id": "rvb",
+      "type": "reverb",
+      "params": {
+        "size": 6.0,
+        "mix": 3.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "GRIT",
+      "target": "drv.amount"
+    },
+    {
+      "id": "k2",
+      "label": "DUST",
+      "target": "drv.tone"
+    },
+    {
+      "id": "k3",
+      "label": "SWAY",
+      "target": "trm.rate"
+    },
+    {
+      "id": "k4",
+      "label": "HAZE",
+      "target": "dly.feedback"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "MIRAGE",
+      "target": "rvb.mix",
+      "off": 3.0,
+      "on": 7.0
+    }
+  ],
+  "bakedFrom": "a desert blues pedal, dusty hypnotic and warm"
+}

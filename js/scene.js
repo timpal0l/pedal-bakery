@@ -784,18 +784,22 @@ export function createScene(canvas) {
       toggles[s.id] = { lever };
     }
 
+    // a pedal wears a stomp switch you hit with a boot; an amp wears a small
+    // power button you press with a finger, sized to its slot on the panel
     const swPos = uvToWorld(layout.footswitch.u, layout.footswitch.v);
+    const swScale = isAmp ? 0.62 : 1;
+    const swTop = TOP_Y + 0.14 * swScale;
     const swBase = BABYLON.MeshBuilder.CreateCylinder('fsb',
-      { diameter: 0.46, height: 0.09, tessellation: 6 }, scene);
+      { diameter: 0.46 * swScale, height: 0.09 * swScale, tessellation: 6 }, scene);
     swBase.parent = root;
-    swBase.position.set(swPos.x, TOP_Y + 0.045, swPos.z);
+    swBase.position.set(swPos.x, TOP_Y + 0.045 * swScale, swPos.z);
     swBase.material = matBezel;
     swBase.metadata = { pedal: id, switch: true };
     shadows.addShadowCaster(swBase);
     const swButton = BABYLON.MeshBuilder.CreateCylinder('fsbtn',
-      { diameter: 0.3, height: 0.14, tessellation: 32 }, scene);
+      { diameter: 0.3 * swScale, height: 0.14 * swScale, tessellation: 32 }, scene);
     swButton.parent = root;
-    swButton.position.set(swPos.x, TOP_Y + 0.14, swPos.z);
+    swButton.position.set(swPos.x, swTop, swPos.z);
     swButton.material = matButton;
     swButton.metadata = { pedal: id, switch: true };
     shadows.addShadowCaster(swButton);
@@ -865,8 +869,8 @@ export function createScene(canvas) {
           : new BABYLON.Color3(0.06, 0.01, 0.01);
       },
       pressFootswitch() {
-        swButton.position.y = TOP_Y + 0.1;
-        setTimeout(() => { swButton.position.y = TOP_Y + 0.14; }, 120);
+        swButton.position.y = swTop - 0.04 * swScale;
+        setTimeout(() => { swButton.position.y = swTop; }, 120);
       },
 
       setSelected(on) {

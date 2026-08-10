@@ -1,0 +1,106 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Basement Weight",
+  "tagline": "the floor drops out underneath you",
+  "enclosure": {
+    "width": 2.4,
+    "depth": 2.5,
+    "height": 0.55,
+    "color": "#4a4f5a"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#1b2a3a",
+      "#3f6f8f",
+      "#c8a54b"
+    ],
+    "textColor": "#f2e9d8"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 6.5,
+        "attack": 3.0
+      }
+    },
+    {
+      "id": "sub",
+      "type": "ring",
+      "params": {
+        "freq": 0.4,
+        "mix": 3.2
+      }
+    },
+    {
+      "id": "lp",
+      "type": "filter",
+      "params": {
+        "cutoff": 3.2,
+        "resonance": 2.0
+      }
+    },
+    {
+      "id": "eq1",
+      "type": "eq",
+      "params": {
+        "bass": 8.5,
+        "mid": 4.0,
+        "treble": 4.5,
+        "freq": 2.5
+      }
+    },
+    {
+      "id": "out",
+      "type": "level",
+      "params": {
+        "gain": 6.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "WEIGHT",
+      "target": "eq1.bass"
+    },
+    {
+      "id": "k2",
+      "label": "OCTAVE",
+      "target": "sub.mix"
+    },
+    {
+      "id": "k3",
+      "label": "GIRTH",
+      "target": "sub.freq"
+    },
+    {
+      "id": "k4",
+      "label": "SQUEEZE",
+      "target": "cmp.sustain"
+    },
+    {
+      "id": "k5",
+      "label": "ROLLOFF",
+      "target": "lp.cutoff"
+    },
+    {
+      "id": "k6",
+      "label": "OUTPUT",
+      "target": "out.gain"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "DEEP",
+      "target": "eq1.freq",
+      "off": 2.5,
+      "on": 0.5
+    }
+  ],
+  "bakedFrom": "a low end fattener that adds octave weight"
+}

@@ -1,0 +1,134 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Panorama Bloom",
+  "tagline": "one guitar, two horizons",
+  "enclosure": {
+    "width": 3.6,
+    "depth": 2.9,
+    "height": 0.78,
+    "color": "#12324a"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#0d2438",
+      "#2e9fc4",
+      "#f2e6c8"
+    ],
+    "textColor": "#f2e6c8"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 5.5,
+        "attack": 3.0
+      }
+    },
+    {
+      "id": "chr",
+      "type": "chorus",
+      "params": {
+        "rate": 2.2,
+        "depth": 6.5,
+        "mix": 6.0
+      }
+    },
+    {
+      "id": "trm",
+      "type": "tremolo",
+      "params": {
+        "rate": 1.4,
+        "depth": 8.5
+      }
+    },
+    {
+      "id": "dly",
+      "type": "delay",
+      "params": {
+        "time": 1.6,
+        "feedback": 2.5,
+        "mix": 3.5
+      }
+    },
+    {
+      "id": "rev",
+      "type": "reverb",
+      "params": {
+        "size": 8.5,
+        "mix": 5.5
+      }
+    },
+    {
+      "id": "eq",
+      "type": "eq",
+      "params": {
+        "bass": 6.0,
+        "mid": 3.5,
+        "treble": 6.5,
+        "freq": 5.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "WIDTH",
+      "target": "trm.depth"
+    },
+    {
+      "id": "k2",
+      "label": "DRIFT",
+      "target": "trm.rate"
+    },
+    {
+      "id": "k3",
+      "label": "SWIRL",
+      "target": "chr.depth"
+    },
+    {
+      "id": "k4",
+      "label": "SPACE",
+      "target": "rev.size"
+    },
+    {
+      "id": "k5",
+      "label": "BLOOM",
+      "target": "rev.mix"
+    },
+    {
+      "id": "k6",
+      "label": "SPREAD",
+      "target": "dly.mix"
+    },
+    {
+      "id": "k7",
+      "label": "AIR",
+      "target": "eq.treble"
+    },
+    {
+      "id": "k8",
+      "label": "BODY",
+      "target": "eq.bass"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "HALO",
+      "target": "chr.mix",
+      "off": 6.0,
+      "on": 9.5
+    },
+    {
+      "id": "s2",
+      "label": "LIFT",
+      "target": "cmp.sustain",
+      "off": 5.5,
+      "on": 8.5
+    }
+  ],
+  "bakedFrom": "a stereo widener that makes everything huge"
+}

@@ -1,0 +1,82 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Downstroke",
+  "tagline": "three chords and the truth",
+  "enclosure": {
+    "width": 2.1,
+    "depth": 2.4,
+    "height": 0.55,
+    "color": "#e8e2d4"
+  },
+  "artwork": {
+    "style": "stripes",
+    "palette": [
+      "#e8e2d4",
+      "#111111",
+      "#d81f26"
+    ],
+    "textColor": "#111111"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 6.0,
+        "attack": 1.5
+      }
+    },
+    {
+      "id": "buzz",
+      "type": "drive",
+      "params": {
+        "amount": 9.0,
+        "tone": 8.5,
+        "level": 6.0
+      }
+    },
+    {
+      "id": "cut",
+      "type": "eq",
+      "params": {
+        "bass": 3.5,
+        "mid": 7.0,
+        "treble": 8.0,
+        "freq": 6.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "BUZZ",
+      "target": "buzz.amount"
+    },
+    {
+      "id": "k2",
+      "label": "BITE",
+      "target": "buzz.tone"
+    },
+    {
+      "id": "k3",
+      "label": "SNARL",
+      "target": "cut.mid"
+    },
+    {
+      "id": "k4",
+      "label": "LEVEL",
+      "target": "buzz.level"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "SLAM",
+      "target": "cmp.sustain",
+      "off": 6.0,
+      "on": 9.5
+    }
+  ],
+  "bakedFrom": "a punk rock buzzsaw, all downstrokes and attitude"
+}

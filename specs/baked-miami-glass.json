@@ -1,0 +1,108 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Miami Glass",
+  "tagline": "neon on wet asphalt, forever 1984",
+  "enclosure": {
+    "width": 3.0,
+    "depth": 2.6,
+    "height": 0.72,
+    "color": "#1b0b3c"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#ff2d95",
+      "#00e9ff",
+      "#2c0a52"
+    ],
+    "textColor": "#f4f9ff"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 7.5,
+        "attack": 2.5
+      }
+    },
+    {
+      "id": "chr",
+      "type": "chorus",
+      "params": {
+        "rate": 3.2,
+        "depth": 7.5,
+        "mix": 6.5
+      }
+    },
+    {
+      "id": "eq1",
+      "type": "eq",
+      "params": {
+        "bass": 4.0,
+        "mid": 3.5,
+        "treble": 7.5,
+        "freq": 6.0
+      }
+    },
+    {
+      "id": "dly",
+      "type": "delay",
+      "params": {
+        "time": 4.5,
+        "feedback": 3.5,
+        "mix": 3.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "SQUEEZE",
+      "target": "cmp.sustain"
+    },
+    {
+      "id": "k2",
+      "label": "SNAP",
+      "target": "cmp.attack"
+    },
+    {
+      "id": "k3",
+      "label": "RATE",
+      "target": "chr.rate"
+    },
+    {
+      "id": "k4",
+      "label": "WIDTH",
+      "target": "chr.depth"
+    },
+    {
+      "id": "k5",
+      "label": "GLASS",
+      "target": "eq1.treble"
+    },
+    {
+      "id": "k6",
+      "label": "NEON",
+      "target": "dly.mix"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "VIBRATO",
+      "target": "chr.mix",
+      "off": 6.5,
+      "on": 10
+    },
+    {
+      "id": "s2",
+      "label": "SKYLINE",
+      "target": "dly.feedback",
+      "off": 3.5,
+      "on": 7.0
+    }
+  ],
+  "bakedFrom": "a synthwave pedal, neon chorus over glassy compression"
+}
