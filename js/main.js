@@ -563,10 +563,18 @@ function pendingEndpoint() {
                   dir: new BABYLON.Vector3(0, 0, 0) });
 }
 
-function startPatch(fromNode) {
-  patching = { from: fromNode };
-  view.setCable('__pending', endpointOf(fromNode, 'out'), pendingEndpoint(), 0.15);
-  showHud('cable out — click an INPUT jack (amps count)', true);
+// A patch can start at either end of the cable: from an OUTPUT you're
+// looking for an input to land in, from an INPUT you're looking for a source.
+function startPatch(node, kind) {
+  patching = { node, kind };
+  const held = endpointOf(node, kind);
+  const loose = pendingEndpoint();
+  // the dangling end always trails the cursor, whichever end you grabbed
+  view.setCable('__pending', kind === 'out' ? held : loose,
+    kind === 'out' ? loose : held, 0.15);
+  showHud(kind === 'out'
+    ? 'cable out — drop it on an INPUT jack'
+    : 'cable in — drop it on an OUTPUT jack', true);
 }
 
 function cancelPatch() {
@@ -577,21 +585,24 @@ function cancelPatch() {
   showHud('cable dropped');
 }
 
-function completePatch(toNode) {
-  const from = patching.from;
-  board.connect(from, toNode);
+function completePatch(otherNode) {
+  // whichever end was grabbed, the connection is always out -> in
+  const from = patching.kind === 'out' ? patching.node : otherNode;
+  const to = patching.kind === 'out' ? otherNode : patching.node;
+  board.connect(from, to);
   patching = null;
   view.removeCable('__pending');
   freeCamera();
   refreshBoard();
-  net.sendOp({ type: 'connect', from, to: toNode });
+  net.sendOp({ type: 'connect', from, to });
   showHud(boardChains().length ? 'connected — signal flows' : 'connected — no complete chain yet');
 }
 
 function jackClicked(jack) {
   const { node, kind } = jack;
   if (patching) {
-    if (kind === 'in' && node !== patching.from) completePatch(node);
+    // land it on the complementary jack kind; anything else drops the cable
+    if (kind !== patching.kind && node !== patching.node) completePatch(node);
     else cancelPatch();
     return;
   }
@@ -600,10 +611,8 @@ function jackClicked(jack) {
     refreshBoard();
     net.sendOp({ type: 'disconnect', node, kind });
     showHud('cable pulled');
-  } else if (kind === 'out') {
-    startPatch(node);
   } else {
-    showHud('start from an OUTPUT jack');
+    startPatch(node, kind);
   }
 }
 
@@ -766,7 +775,9 @@ view.scene.onPointerObservable.add((pi) => {
       if (patching) {
         const pick = scene.pick(scene.pointerX, scene.pointerY);
         const jack = pick.hit ? pick.pickedMesh.metadata?.jack : null;
-        if (jack && jack.kind === 'in' && jack.node !== patching.from) completePatch(jack.node);
+        if (jack && jack.kind !== patching.kind && jack.node !== patching.node) {
+          completePatch(jack.node);
+        }
       }
       freeCamera();
       break;
@@ -1446,7 +1457,8 @@ window.__pedal = {
   select: selectPedal,
   selected: () => selected,
   audio: audio.contextState,
-  screenPos: (id, name) => instances.get(id)?.view.screenPos(name),
+  screenPos: (id, name) =>
+    (instances.get(id) ?? posts.get(id))?.view.screenPos(name),
   camera: () => ({
     alpha: view.camera.alpha, beta: view.camera.beta,
     radius: view.camera.radius, target: view.camera.target.asArray(),

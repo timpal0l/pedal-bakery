@@ -180,6 +180,28 @@ export function createScene(canvas) {
   // Signal flows right -> left (pedal inputs face right, like the artwork),
   // so the amp lives on the left and the player's source post on the right.
   // endpoint jacks (chrome socket + short barrel), parented so they move along
+  // Jacks are small on purpose, but clicking them shouldn't be a test of aim:
+  // every jack gets an invisible sphere collider roughly a hand's width across.
+  // world point -> CSS pixels (used by the panel logic and browser tests)
+  function projectToScreen(position) {
+    const p = BABYLON.Vector3.Project(position, BABYLON.Matrix.Identity(),
+      scene.getTransformMatrix(),
+      camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight()));
+    const s = engine.getRenderWidth() / canvas.clientWidth;
+    return { x: p.x / s, y: p.y / s };
+  }
+
+  function jackCollider(root, name, meta, x, y, z) {
+    const hit = BABYLON.MeshBuilder.CreateSphere('jackHit_' + name, { diameter: 0.62 }, scene);
+    hit.parent = root;
+    hit.position.set(x, y, z);
+    hit.isVisible = false;
+    hit.isPickable = true;
+    hit.metadata = meta;
+    hit.__offstage = true; // invisible, and never wanted in the reflection
+    return hit;
+  }
+
   function buildEndpointJack(root, node, kind, offX, y, dirX) {
     const dir = new BABYLON.Vector3(dirX, 0, 0);
     const meta = { jack: { node, kind } };
@@ -195,6 +217,7 @@ export function createScene(canvas) {
     barrel.position.set(offX + dirX * 0.24, y, 0);
     barrel.material = matJack;
     barrel.metadata = meta;
+    jackCollider(root, node + kind, meta, offX + dirX * 0.18, y, 0);
     const tip = new BABYLON.Vector3(offX + dirX * 0.34, y, 0);
     return { node, kind, pos: () => root.position.add(tip), dir };
   }
@@ -225,13 +248,30 @@ export function createScene(canvas) {
   }
 
   function endpointHandles(id, root, jack, knob, extraDispose) {
+    // amps and tone posts select and project exactly like pedals do
+    const selMat = new BABYLON.StandardMaterial('selp_' + id, scene);
+    selMat.emissiveColor = BABYLON.Color3.FromHexString('#3a7bd5');
+    selMat.disableLighting = true;
+    selMat.alpha = 0.3;
+    const selRing = BABYLON.MeshBuilder.CreateGround('selRing_' + id,
+      { width: 2.0, height: 2.6 }, scene);
+    selRing.parent = root;
+    selRing.position.y = 0.004;
+    selRing.material = selMat;
+    selRing.isPickable = false;
+    selRing.setEnabled(false);
+    glow.addExcludedMesh(selRing);
     return {
       id, root, jack,
       setKnobValue: knob.setValue,
+      setSelected: (on) => selRing.setEnabled(on),
+      screenPos: (name) => projectToScreen(
+        name === 'body' ? root.position.add(new BABYLON.Vector3(0, 0.3, 0)) : jack.pos()),
       position: () => root.position,
       setPosition: (x, z) => root.position.set(x, 0, z),
       dispose: () => {
         root.dispose(false, false);
+        selMat.dispose();
         if (typeof extraDispose === 'function') extraDispose();
       },
     };
@@ -847,6 +887,7 @@ export function createScene(canvas) {
       barrel.position.set(side * (W / 2 + 0.24), jackY, 0);
       barrel.material = matJack;
       barrel.metadata = meta;
+      jackCollider(root, id + kind, meta, side * (W / 2 + 0.18), jackY, 0);
       jackDefs[kind] = {
         node: id, kind,
         dir: new BABYLON.Vector3(side, 0, 0),
@@ -883,12 +924,7 @@ export function createScene(canvas) {
           : name === 'jack-out' ? jackDefs.out.pos()
           : knobs[name] ? knobs[name].base.absolutePosition.add(new BABYLON.Vector3(0, 0.15, 0))
           : null;
-        if (!position) return null;
-        const p = BABYLON.Vector3.Project(position, BABYLON.Matrix.Identity(),
-          scene.getTransformMatrix(),
-          camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight()));
-        const s = engine.getRenderWidth() / canvas.clientWidth;
-        return { x: p.x / s, y: p.y / s };
+        return position ? projectToScreen(position) : null;
       },
       dispose() {
         // never pass disposeMaterialAndTextures here — the knob/jack/cable
