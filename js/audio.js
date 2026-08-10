@@ -610,9 +610,13 @@ function pluckInto(out, sr, len, f, startSec, ringSec, damp, gain) {
   const C = (1 - frac) / (1 + frac);
   const ring = new Float32Array(N);
   const seed = new Float32Array(N);
-  // harder picking is brighter, not merely louder — that link is most of what
-  // makes a line sound played rather than sequenced
-  const bright = Math.min(0.85, 0.45 + velocity * 0.5);
+  // Harder picking is brighter, not merely louder — that link is most of what
+  // makes a line sound played rather than sequenced. Pitch matters too: the
+  // low strings on a guitar are wound and comparatively dull with a metallic
+  // zing, the top strings are plain steel and bright.
+  const wound = Math.min(1, Math.max(0, (330 - f) / 250)); // 1 = low E, 0 above E4
+  const bright = Math.max(0.3, Math.min(0.88,
+    0.35 + velocity * 0.35 + (1 - wound) * 0.2));
   let prev = 0;
   for (let j = 0; j < N; j++) {
     const white = Math.random() * 2 - 1;
@@ -621,6 +625,12 @@ function pluckInto(out, sr, len, f, startSec, ringSec, damp, gain) {
   }
   const comb = Math.max(1, Math.round(N * 0.16)); // pickup-position comb -> quack
   for (let j = 0; j < N; j++) ring[j] = seed[j] - 0.9 * seed[(j - comb + N) % N];
+  // wound strings ring with a fine metallic zing over the fundamental
+  if (wound > 0.05) {
+    for (let j = 0; j < N; j++) {
+      ring[j] += wound * 0.16 * (Math.random() * 2 - 1) * (j % 2 ? 1 : -1);
+    }
+  }
   // pick attack: a short bright click before the string settles, which is
   // most of what the ear uses to identify a plucked instrument
   const clickLen = Math.min(Math.floor(sr * 0.004), len);

@@ -51,6 +51,14 @@ function createDrive(ctx) {
   highSplit.type = 'highpass'; highSplit.frequency.value = 220; highSplit.Q.value = 0.7;
   const lowShaper = ctx.createWaveShaper(); lowShaper.oversample = '2x';
   const shaper = ctx.createWaveShaper(); shaper.oversample = '4x';
+  // Clipping ultrasonics only generates harmonics that fold back as aliasing,
+  // and no real amp distorts them either. Band-limiting first buys ~15dB.
+  const antiAlias = ctx.createBiquadFilter();
+  antiAlias.type = 'lowpass'; antiAlias.frequency.value = 7000; antiAlias.Q.value = 0.6;
+  // Asymmetric clipping shifts the waveform off zero. Valve amps put a
+  // coupling capacitor after every stage for exactly this reason.
+  const dcBlock = ctx.createBiquadFilter();
+  dcBlock.type = 'highpass'; dcBlock.frequency.value = 24; dcBlock.Q.value = 0.7;
   const lowTrim = ctx.createGain(); lowTrim.gain.value = 0.9;
   const tone = ctx.createBiquadFilter(); tone.type = 'lowpass';
   const out = ctx.createGain();
@@ -59,7 +67,8 @@ function createDrive(ctx) {
   // is precisely the mud this split exists to avoid
   const lowGain = ctx.createGain(); lowGain.gain.value = 1.3;
   input.connect(cut).connect(hump);
-  hump.connect(pre).connect(highSplit).connect(shaper).connect(tone).connect(out);
+  hump.connect(pre).connect(highSplit).connect(antiAlias).connect(shaper)
+      .connect(dcBlock).connect(tone).connect(out);
   hump.connect(lowSplit).connect(lowGain).connect(lowShaper).connect(lowTrim).connect(out);
 
   let levelGain = 1, lastAmount = 5, charac = 3;
@@ -79,11 +88,13 @@ function createDrive(ctx) {
       if (c.knee === 'soft') {
         y = ceil * Math.tanh(k * 0.11 * x);
       } else if (c.knee === 'hard') {
-        y = Math.max(-ceil, Math.min(ceil, k * 0.35 * x));
-      } else if (c.knee === 'gate') {       // fuzz: dead zone then a hard wall
+        // A true hard clip has infinite-order corners, which alias badly at
+        // 44.1kHz. A very steep tanh is audibly the same and far cleaner.
+        y = ceil * Math.tanh(k * 0.55 * x);
+      } else if (c.knee === 'gate') {       // fuzz: dead zone then a steep wall
         const dead = 0.012;
         const xs = Math.abs(x) < dead ? 0 : Math.sign(x) * (Math.abs(x) - dead);
-        y = Math.max(-ceil, Math.min(ceil, k * 0.6 * xs));
+        y = ceil * Math.tanh(k * 0.9 * xs);
       } else {                              // fold: reflect back on itself
         y = Math.sin(x * (1 + k * 0.05) * Math.PI * 0.5);
       }
@@ -104,7 +115,8 @@ function createDrive(ctx) {
   }
 
   const setters = {
-    _nodes: { cut, hump, pre, shaper, lowShaper, lowSplit, highSplit, lowGain, lowTrim, tone },
+    _nodes: { cut, hump, pre, shaper, lowShaper, lowSplit, highSplit, lowGain,
+              lowTrim, antiAlias, dcBlock, tone },
     amount: (v, t) => { lastAmount = v; rebuild(t); },
     character: (v, t) => { charac = v; rebuild(t ?? ctx.currentTime); },
     tone: (v, t) => tone.frequency.setTargetAtTime(400 * Math.pow(2, (v / 10) * 4.6), t, 0.05),
@@ -133,13 +145,25 @@ function createDelay(ctx) {
   const wowAmt = ctx.createGain(); wowAmt.gain.value = 0.0016;
   wow.connect(wowAmt).connect(d.delayTime);
   wow.start();
+  // Analog delays saturate in the feedback loop, which is why they smear into
+  // mush instead of screaming. It also keeps the loop stable at high repeats.
+  const fbSat = ctx.createWaveShaper();
+  {
+    const n = 1024, curve = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const x = (i / (n - 1)) * 2 - 1;
+      curve[i] = Math.tanh(1.6 * x) / 1.6;
+    }
+    fbSat.curve = curve;
+    fbSat.oversample = '2x';
+  }
   input.connect(dry).connect(out);
   input.connect(d);
-  d.connect(fbTone).connect(fbCut).connect(fb).connect(d);
+  d.connect(fbTone).connect(fbCut).connect(fbSat).connect(fb).connect(d);
   d.connect(wet).connect(out);
   d.delayTime.value = 0.3; fb.gain.value = 0.35;
   const setters = {
-    _nodes: { d, fb, fbTone, fbCut, dry, wet },
+    _nodes: { d, fb, fbTone, fbCut, fbSat, dry, wet },
     time: (v, t) => d.delayTime.setTargetAtTime(0.06 * Math.pow(20, v / 10), t, 0.1),
     feedback: (v, t) => fb.gain.setTargetAtTime((v / 10) * 0.95, t, 0.05),
     // equal-power crossfade: at 10 the dry signal is gone, not merely buried
@@ -278,8 +302,12 @@ function createReverb(ctx) {
   const conv = ctx.createConvolver();
   const dry = ctx.createGain();
   const wet = ctx.createGain();
+  // Pre-delay keeps the direct sound distinct from the tail. Without it the
+  // reverb starts on top of the note and everything turns to soup.
+  const pre = ctx.createDelay(0.2);
+  pre.delayTime.value = 0.022;
   input.connect(dry).connect(out);
-  input.connect(conv);
+  input.connect(pre).connect(conv);
   conv.connect(wet).connect(out);
   // A plain noise burst sounds like hiss, not a room. Real spaces have
   // discrete early reflections, a diffuse tail, and highs that die first.
@@ -313,8 +341,9 @@ function createReverb(ctx) {
   }
   buildIR(5);
   const setters = {
-    _nodes: { conv, dry, wet },
-    size: (v) => buildIR(v),
+    _nodes: { conv, pre, dry, wet },
+    // bigger spaces have later first reflections
+    size: (v, t) => { buildIR(v); pre.delayTime.setTargetAtTime(0.012 + (v / 10) * 0.05, t ?? 0, 0.05); },
     mix: (v, t) => { // full wet at 10 means drowned, which is the point
       const m = (v / 10) * (Math.PI / 2);
       dry.gain.setTargetAtTime(Math.cos(m), t, 0.05);
@@ -508,9 +537,11 @@ export function createCabinet(ctx) {
     }
     room.buffer = buf;
   }
-  input.connect(valve);
-  valve.connect(onAxis.head);
-  valve.connect(offAxis.head);
+  const valveDC = ctx.createBiquadFilter(); // coupling cap after the valve
+  valveDC.type = 'highpass'; valveDC.frequency.value = 24; valveDC.Q.value = 0.7;
+  input.connect(valve).connect(valveDC);
+  valveDC.connect(onAxis.head);
+  valveDC.connect(offAxis.head);
   lp2.connect(sag);
   sag.connect(out);
   onAxis.tail.connect(refl);
