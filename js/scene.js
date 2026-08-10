@@ -277,6 +277,114 @@ export function createScene(canvas) {
     };
   }
 
+  /* ------------------------------------------------- the sound coming out --
+     A halo of wave rings rolling off the speaker, drawn from the amp's own
+     waveform. The rings live on one billboarded plane that runs through the
+     middle of the cabinet, so the cabinet masks the near half by depth alone
+     and the floor swallows the bottom: what's left is waves breaking out
+     from behind the amp. Nothing here knows what a signal is — main.js pumps
+     the numbers in every frame. */
+
+  const WAVE_TEX = 256;   // canvas the rings are drawn on, per amp
+  const WAVE_SEG = 88;    // points around one ring
+  const WAVE_MAX = 7;     // rings alive at once, oldest dropped
+
+  function buildSoundWaves(root, id, W, H, D, own) {
+    const R = WAVE_TEX / 2;
+    const back = Math.hypot(W, D) * 0.6; // clears the cabinet's far corner
+    const tex = own(new BABYLON.DynamicTexture('waves_' + id,
+      { width: WAVE_TEX, height: WAVE_TEX }, scene, false));
+    tex.hasAlpha = true;
+    const g = tex.getContext();
+    const mat = own(new BABYLON.StandardMaterial('waves_' + id, scene));
+    mat.diffuseColor = new BABYLON.Color3(0, 0, 0);
+    mat.specularColor = new BABYLON.Color3(0, 0, 0);
+    mat.emissiveTexture = tex;
+    mat.opacityTexture = tex;      // additive, so the canvas alpha is the fade
+    mat.disableLighting = true;
+    mat.alphaMode = BABYLON.Engine.ALPHA_ADD;
+    mat.disableDepthWrite = true;  // never let the halo hide the gear
+    mat.backFaceCulling = false;
+    const plane = BABYLON.MeshBuilder.CreatePlane('waves_' + id,
+      { size: Math.max(H, D) * 2.0 }, scene);
+    plane.parent = root;
+    plane.position.y = H * 0.44;   // roughly the middle of the grille
+    plane.material = mat;
+    plane.billboardMode = BABYLON.Mesh.BILLBOARDMODE_Y; // always edge-on to you
+    plane.isPickable = false;
+    plane.__offstage = true;       // a billboard in the floor mirror only lies
+    plane.setEnabled(false);
+
+    let rings = [];   // { r: 0..1 out from the speaker, a: how loud it was born }
+    let since = 0;    // seconds since the last ring left the cone
+    let quiet = 0;    // seconds of silence, before the halo switches itself off
+
+    function paintRing(ring, wave) {
+      // young rings fade up, old ones fade out — no popping at either end
+      const fade = Math.pow(1 - ring.r, 1.6) * Math.min(1, ring.r * 9);
+      const alpha = fade * (0.3 + 0.9 * ring.a);
+      if (alpha < 0.012) return;
+      const base = (0.17 + 0.83 * ring.r) * (R - 7);
+      // the waveform IS the ring's shape; it smooths as the wave travels out
+      const wob = wave ? R * 0.15 * ring.a * (1 - 0.55 * ring.r) : 0;
+      g.beginPath();
+      for (let i = 0; i <= WAVE_SEG; i++) {
+        // i === WAVE_SEG reuses sample 0, so the ring closes without a seam
+        const step = i % WAVE_SEG;
+        const ang = (i / WAVE_SEG) * Math.PI * 2;
+        const s = wave ? wave[(step * ring.stride + ring.seed) % wave.length] : 0;
+        const rr = base + s * wob;
+        const x = R + Math.cos(ang) * rr, y = R + Math.sin(ang) * rr;
+        if (i) g.lineTo(x, y); else g.moveTo(x, y);
+      }
+      g.closePath();
+      // amber, running hotter toward white as the ring is born louder
+      g.strokeStyle = `rgba(255, ${Math.round(150 + 72 * ring.a)}, ${Math.round(58 + 94 * ring.a)}, ${alpha})`;
+      g.lineWidth = 1.8 + 3.2 * ring.a * (1 - ring.r);
+      g.stroke();
+    }
+
+    // scope: { wave, rms } from the amp's tap, or null when it isn't wired up
+    function pushWave(scope) {
+      const dt = Math.min(0.05, engine.getDeltaTime() / 1000);
+      const wave = scope ? scope.wave : null;
+      // a hard-strummed chord sits near rms 0.3, so that's where the halo
+      // maxes out — quieter playing has to look quieter
+      const amp = Math.min(1, (scope ? scope.rms : 0) * 3.2);
+
+      if (amp > 0.02) quiet = 0; else quiet += dt;
+      if (quiet > 1 && !rings.length) { plane.setEnabled(false); return; }
+      plane.setEnabled(true);
+
+      // slide the halo along the line of sight until the whole cabinet is in
+      // front of it — otherwise the rings paint over the amp's far half
+      // instead of breaking out from behind it
+      const away = root.getAbsolutePosition().subtract(camera.globalPosition);
+      away.y = 0;
+      if (away.lengthSquared() > 1e-4) {
+        away.normalize();
+        plane.position.set(away.x * back, H * 0.44, away.z * back);
+      }
+
+      since += dt;
+      const gap = 0.34 - 0.15 * amp; // louder playing crowds the waves together
+      if (amp > 0.03 && since >= gap) {
+        since = 0;
+        rings.push({ r: 0, a: amp, seed: rings.length * 37,
+          stride: 1 + (rings.length % 3) });
+        if (rings.length > WAVE_MAX) rings.shift();
+      }
+      for (const ring of rings) ring.r += dt * (0.4 + 0.3 * ring.a);
+      rings = rings.filter((ring) => ring.r < 1);
+
+      g.clearRect(0, 0, WAVE_TEX, WAVE_TEX);
+      for (const ring of rings) paintRing(ring, wave);
+      tex.update(false);
+    }
+
+    return pushWave;
+  }
+
   /* ------------------------------------------------------- amp cabinets -- */
   // One builder for every amp in the app — baked amp specs and the default
   // endpoint amp. World units: W front-to-back (x), D across the face (z),
@@ -416,6 +524,7 @@ export function createScene(canvas) {
     return {
       body,
       jackY: stack ? cabH + headH * 0.5 : Math.min(H * 0.86, gy1 + (H - gy1) * 0.55),
+      pushWave: buildSoundWaves(root, id, W, H, D, own),
       dispose: () => disposables.forEach((d) => d.dispose()),
     };
   }
@@ -436,8 +545,10 @@ export function createScene(canvas) {
       handle: true,
     });
     const knob = buildVolumeKnob(root, id, 0.22, H, D * 0.34, 0.3, -Math.PI / 2);
-    return endpointHandles(id, root,
+    const handles = endpointHandles(id, root,
       buildEndpointJack(root, id, 'in', W / 2 + 0.01, parts.jackY, +1), knob, parts.dispose);
+    handles.pushWave = parts.pushWave;
+    return handles;
   }
 
   /* a source post — one tone generator, output jack toward the pedals (-x) */
@@ -929,6 +1040,7 @@ export function createScene(canvas) {
       position: () => root.position,
       setPosition(x, z) { root.position.set(x, 0, z); },
       jack: (kind) => jackDefs[kind],
+      pushWave: cabParts ? cabParts.pushWave : null, // only amps make waves
       setKnobValue(cid, value) { knobs[cid].spin.rotation.y = knobYaw + valueToAngle(value); },
       setToggle(sid, on) { toggles[sid].lever.rotation.x = on ? -0.45 : 0.45; },
       setLed(on) {

@@ -726,18 +726,31 @@ view.scene.onPointerObservable.add((pi) => {
         selectPedal(null);
         break;
       }
-      // a body/cabinet surface overlaps its own jacks near the edges, and the
-      // body mesh usually wins the raycast — so a click close to a jack is
-      // treated as a jack click, never as the start of a drag
-      if ((meta.body || meta.endpoint) && !patching) {
-        const near = nearestJack(pi.event.clientX, pi.event.clientY, 48);
-        if (near) { holdCamera(); jackClicked({ node: near.node, kind: near.kind }); break; }
+      // A pedal's body overlaps its own jacks near the edges and usually wins
+      // the raycast, so a click that is clearly closer to a jack than to the
+      // pedal itself counts as a jack click. Tone posts and amps are small
+      // enough that their body sits within a jack's radius, so they are
+      // excluded — clicking one must open its panel, not pull a cable.
+      if (meta.body && !patching) {
+        const px = pi.event.clientX, py = pi.event.clientY;
+        const near = nearestJack(px, py, 48);
+        const inst = instances.get(meta.pedal);
+        const centre = inst?.view.screenPos('switch');
+        const toCentre = centre ? Math.hypot(centre.x - px, centre.y - py) : Infinity;
+        const toJack = near ? Math.hypot(view.project(near.jack.pos()).x - px,
+                                         view.project(near.jack.pos()).y - py) : Infinity;
+        if (near && toJack < toCentre) {
+          holdCamera();
+          jackClicked({ node: near.node, kind: near.kind });
+          break;
+        }
       }
       if (meta.jack) {
         holdCamera(); // pulling a cable must never rotate the camera
         jackClicked(meta.jack);
       } else if (meta.postKnob) {
         const post = posts.get(meta.postKnob);
+        selectPedal(meta.postKnob); // the knob is part of the post: show its panel
         holdCamera();
         dragPostKnob = { id: meta.postKnob, startY: scene.pointerY,
           startVal: post.state.volume ?? 5 };
@@ -1635,6 +1648,113 @@ riffSearch.addEventListener('input', renderRiffShelf);
 loadRiffs();
 
 
+/* ------------------------------------------------------------- the tape --
+   A MediaRecorder on the master bus, so a take is exactly what you heard:
+   every amp, every pedal, every other player's gear, already mixed. The
+   recording never leaves this browser until you download or share it. */
+
+const recPanel = document.getElementById('recorder');
+const recToggle = document.getElementById('rec-toggle');
+const recLabel = document.getElementById('rec-label');
+const recTime = document.getElementById('rec-time');
+const recTake = document.getElementById('rec-take');
+const recAudio = document.getElementById('rec-audio');
+const recSave = document.getElementById('rec-save');
+const recShare = document.getElementById('rec-share');
+const recBin = document.getElementById('rec-bin');
+
+let take = null;     // the last finished recording: { blob, url, name }
+let recTicker = null;
+
+if (!audio.canRecord()) recPanel.hidden = true; // no MediaRecorder, no button
+
+function clockText(seconds) {
+  const s = Math.max(0, Math.floor(seconds));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function binTake() {
+  if (take) URL.revokeObjectURL(take.url);
+  take = null;
+  recAudio.removeAttribute('src');
+  recTake.hidden = true;
+}
+
+function takeName(type) {
+  const ext = type.includes('mp4') ? 'm4a' : type.includes('ogg') ? 'ogg' : 'webm';
+  const slug = (roomName || 'bakery').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  const now = new Date();
+  const stamp = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+  return `${slug || 'bakery'}-${stamp}.${ext}`;
+}
+
+async function toggleRecording() {
+  if (audio.recording()) {
+    recToggle.disabled = true;
+    clearInterval(recTicker);
+    const result = await audio.stopRecording();
+    recToggle.disabled = false;
+    recPanel.classList.remove('on');
+    recLabel.textContent = 'RECORD';
+    recTime.hidden = true;
+    if (!result || !result.blob.size) { showHud('nothing came out — no take saved'); return; }
+    binTake();
+    const name = takeName(result.type);
+    take = { blob: result.blob, url: URL.createObjectURL(result.blob), name };
+    recAudio.src = take.url;
+    // the native share sheet only exists on some browsers, and only for files
+    recShare.hidden = !navigator.canShare?.({
+      files: [new File([result.blob], name, { type: result.blob.type })],
+    });
+    recTake.hidden = false;
+    showHud(`${clockText(result.seconds)} in the can — ${name}`);
+    return;
+  }
+  if (!audio.started()) { showHud('click the board first to wake the sound up'); return; }
+  binTake();
+  if (!audio.startRecording()) { showHud('this browser will not record'); return; }
+  recPanel.classList.add('on');
+  recLabel.textContent = 'STOP';
+  recTime.hidden = false;
+  recTime.textContent = '0:00';
+  recTicker = setInterval(() => {
+    recTime.textContent = clockText(audio.recordedSeconds());
+  }, 500);
+}
+
+recToggle.addEventListener('click', toggleRecording);
+recBin.addEventListener('click', binTake);
+recSave.addEventListener('click', () => {
+  if (!take) return;
+  const a = document.createElement('a');
+  a.href = take.url;
+  a.download = take.name;
+  a.click();
+});
+recShare.addEventListener('click', async () => {
+  if (!take) return;
+  const file = new File([take.blob], take.name, { type: take.blob.type });
+  try {
+    await navigator.share({ files: [file], title: 'a take from the pedal bakery' });
+  } catch { /* the sheet was dismissed, or the browser said no */ }
+});
+
+/* ------------------------------------------------- sound you can look at --
+   Once a frame, every amp's live waveform is handed to its own wave halo.
+   Purely local: it reads what THIS client hears, so it needs no op and no
+   round trip — everyone's screen animates from their own audio graph. */
+
+view.scene.onBeforeRenderObservable.add(() => {
+  if (!audio.started()) return;
+  for (const post of posts.values()) {
+    if (post.type === 'amp') post.view.pushWave?.(audio.ampScope(post.id));
+  }
+  for (const inst of instances.values()) {
+    if (inst.spec.kind === 'amp') inst.view.pushWave?.(audio.ampScope(inst.id));
+  }
+});
+
 /* ----------------------------------------------------------------- boot -- */
 
 loadShelf();
@@ -1702,6 +1822,7 @@ window.__pedal = {
   select: selectPedal,
   selected: () => selected,
   audio: audio.contextState,
+  ampLevel: (id) => audio.ampScope(id)?.rms ?? null,
   jacks: () => allJacks().map((j) => ({ node: j.node, kind: j.kind, at: view.project(j.jack.pos()) })),
   patching: () => patching && { node: patching.node, kind: patching.kind },
   screenPos: (id, name) =>

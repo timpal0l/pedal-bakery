@@ -299,6 +299,36 @@
     background: rgba(32, 33, 39, 0.85); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 999px;
     padding: 8px 18px; pointer-events: none; white-space: nowrap;
   }
+  /* the tape machine: record the room, then keep the take or bin it */
+  #recorder {
+    position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 7;
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(32, 33, 39, 0.85); border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px; padding: 7px 10px 7px 8px; color: #e8e8ec;
+    font-size: 12px; letter-spacing: 0.1em;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  }
+  #rec-toggle {
+    font: inherit; font-size: 12px; letter-spacing: 0.14em; cursor: pointer; color: #e8e8ec;
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255, 255, 255, 0.1); border: none; border-radius: 999px; padding: 7px 15px;
+  }
+  #rec-toggle:hover { background: rgba(255, 255, 255, 0.18); }
+  #rec-toggle .dot {
+    width: 9px; height: 9px; border-radius: 50%; background: #e0503c; display: inline-block;
+  }
+  #recorder.on #rec-toggle { background: #c0392b; color: #fff; }
+  #recorder.on #rec-toggle .dot { background: #fff; animation: recblink 1.1s infinite; }
+  @keyframes recblink { 50% { opacity: 0.15; } }
+  #rec-time { font-variant-numeric: tabular-nums; opacity: 0.75; min-width: 40px; }
+  #rec-take { display: flex; align-items: center; gap: 8px; }
+  #rec-take audio { height: 30px; width: 190px; }
+  #recorder button.rec-act {
+    font: inherit; font-size: 11px; letter-spacing: 0.1em; cursor: pointer; color: #e8e8ec;
+    background: rgba(255, 255, 255, 0.12); border: none; border-radius: 999px; padding: 6px 13px;
+  }
+  #recorder button.rec-act:hover { background: rgba(255, 255, 255, 0.2); }
+  #recorder [hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -357,6 +387,16 @@
   <div id="riff-status"></div>
 </div>
 <div id="source-menu"></div>
+<div id="recorder">
+  <button id="rec-toggle"><span class="dot"></span><span id="rec-label">RECORD</span></button>
+  <span id="rec-time" hidden>0:00</span>
+  <span id="rec-take" hidden>
+    <audio id="rec-audio" controls></audio>
+    <button id="rec-save" class="rec-act">DOWNLOAD</button>
+    <button id="rec-share" class="rec-act" hidden>SHARE</button>
+    <button id="rec-bin" class="rec-act">BIN</button>
+  </span>
+</div>
 <div id="hud"></div>
 <script>
   window.__errors = [];

@@ -301,6 +301,7 @@ export function createAudio() {
       tail = cab.out;
     }
     rigs.set(id, { pedalIn, wet, bypass, out, tail, cab, modules });
+    if (spec.kind === 'amp') openTap(id, tail);
     applyRig(id, spec, state);
   }
 
@@ -327,6 +328,7 @@ export function createAudio() {
     for (const n of [rig.pedalIn, rig.wet, rig.bypass, rig.out]) {
       try { n.disconnect(); } catch { /* ok */ }
     }
+    closeTap(id);
     rigs.delete(id);
   }
 
@@ -337,10 +339,11 @@ export function createAudio() {
   function setChain(chains) {
     if (!ctx) return;
     for (const s of sources.values()) { try { s.bus.disconnect(); } catch { /* ok */ } }
-    for (const rig of rigs.values()) {
+    for (const [id, rig] of rigs) {
       try { rig.out.disconnect(); } catch { /* ok */ }
       try { rig.cab?.out.disconnect(); } catch { /* ok */ }
       if (rig.cab) rig.out.connect(rig.cab.in); // re-arm the speaker path
+      armTap(id);                               // …and the scope behind it
     }
     // internal source wiring survives disconnect() of the bus outputs only —
     // reconnect generators to their bus is not needed (they feed INTO bus)
@@ -373,12 +376,60 @@ export function createAudio() {
     transport.bpm = Math.max(40, Math.min(220, bpm));
   }
 
+  /* -------------------------------------------------------- the recorder --
+     Taps the master bus into a MediaStreamDestination and lets MediaRecorder
+     encode it. Recording captures exactly what the room hears — every amp,
+     every player's gear — because everything already meets at master. */
+
+  let recorder = null, recDest = null, recChunks = [], recStarted = 0;
+
+  const REC_TYPES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'];
+
+  function canRecord() {
+    return typeof MediaRecorder !== 'undefined'
+      && REC_TYPES.some((t) => MediaRecorder.isTypeSupported(t));
+  }
+
+  function startRecording() {
+    if (!ctx || recorder) return false;
+    recDest = ctx.createMediaStreamDestination();
+    master.connect(recDest);
+    const mimeType = REC_TYPES.find((t) => MediaRecorder.isTypeSupported(t));
+    recorder = new MediaRecorder(recDest.stream, mimeType ? { mimeType } : undefined);
+    recChunks = [];
+    recorder.ondataavailable = (e) => { if (e.data && e.data.size) recChunks.push(e.data); };
+    recorder.start(1000); // flush every second so a long take can't be lost whole
+    recStarted = ctx.currentTime;
+    return true;
+  }
+
+  // resolves to { blob, type, seconds }, or null if nothing was recording
+  function stopRecording() {
+    return new Promise((resolve) => {
+      if (!recorder) { resolve(null); return; }
+      const r = recorder;
+      const seconds = ctx.currentTime - recStarted;
+      r.onstop = () => {
+        try { master.disconnect(recDest); } catch { /* ok */ }
+        recDest = null;
+        recorder = null;
+        const type = r.mimeType || 'audio/webm';
+        resolve({ blob: new Blob(recChunks, { type }), type, seconds });
+        recChunks = [];
+      };
+      r.stop();
+    });
+  }
+
   return {
     start, createSource, disposeSource, createAmp, disposeAmp,
     setSourceMode, refreshTone, setPostVolume,
     registerRiff: (id, riff) => EXTRA_RIFFS.set(id, riff), setTransportBpm,
     transportBpm: () => transport.bpm,
-    createRig, applyRig, disposeRig, setChain,
+    createRig, applyRig, disposeRig, setChain, ampScope,
+    canRecord, startRecording, stopRecording,
+    recording: () => !!recorder,
+    recordedSeconds: () => (recorder ? ctx.currentTime - recStarted : 0),
     started: () => !!ctx,
     contextState: () => (ctx ? ctx.state : 'uninitialized'),
   };
