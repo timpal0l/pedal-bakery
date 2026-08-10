@@ -118,8 +118,7 @@ Description of the wanted sound:
 {description}"""
 
 
-def run_claude(description: str) -> dict:
-    prompt = PROMPT.format(description=description)
+def run_claude(prompt: str) -> dict:
     r = subprocess.run(
         ["claude", "-p", prompt, "--output-format", "json"],
         capture_output=True, text=True, timeout=240,
@@ -359,6 +358,93 @@ def save_spec(spec):
         path, n = ROOT / "specs" / f"{base}-{n}.json", n + 1
     path.write_text(json.dumps(spec, indent=2))
     return path.name
+
+
+
+# --- riff bakery: the LLM writes note data, never audio --------------------
+
+RIFFS_DIR = ROOT / "riffs"
+
+RIFF_PROMPT = """You are the Riff Bakery: you turn a description of a guitar part into JSON note data for a looping riff. Reply with ONLY one JSON object — no markdown fences, no commentary.
+
+{{
+  "name": "2-3 words naming the riff",
+  "genre": "one lowercase word",
+  "beats": 2-16,          // loop length in beats; 4 = one bar of 4/4
+  "ring": 0.15-6.0,       // seconds each note sustains (short = muted/staccato)
+  "damp": 0.97-0.999,     // string damping; low = dull thud, high = long ring
+  "notes": [ {{ "t": 0, "s": 0, "g": 1.0 }} ]
+}}
+
+Each note: t = start position in BEATS (may be fractional: 0.5 = eighth, 0.25 = sixteenth, 0.66 = swung), s = SEMITONES above the key root (0 = low root, 12 = octave, 19 = fifth above that, 24 = two octaves; negative allowed down to -5), g = pick strength 0.2-1.2.
+
+s MAY BE FRACTIONAL for microtonal music: 3.5 is a neutral third, 10.5 a neutral seventh, 1.5 a three-quarter-tone. Use them freely for maqam, blues quarter-tone bends, gamelan, Turkish, Persian and Saharan desert styles — that is a feature, not an error.
+
+Rules:
+- 4 to 32 notes. REAL PHRASES: rests, repetition with variation, a shape that resolves. Never a single note hammered at one pitch.
+- Match the description's rhythm: metal gallops in sixteenths, reggae plays offbeats, doom leaves bars empty, funk uses ghost notes (g around 0.3).
+- Stacked notes at the same t make a chord stab; use sparingly.
+- ring and damp must fit: palm-muted chug = ring 0.2 damp 0.98; ambient swell = ring 4 damp 0.999.
+- Keep every t strictly less than beats.
+
+Description of the wanted riff:
+{description}"""
+
+
+def validate_riff(raw: dict) -> dict:
+    """Clamp whatever the LLM invented into something the engine can play."""
+    beats = clamp(raw.get("beats"), 1, 16, 4)
+    notes = []
+    for n in (raw.get("notes") or [])[:48]:
+        try:
+            t = float(n.get("t"))
+            semi = float(n.get("s"))
+        except (TypeError, ValueError):
+            continue
+        if not (0 <= t < beats) or not (-12 <= semi <= 36):
+            continue
+        notes.append({"t": round(t, 3), "s": round(semi, 2),
+                      "g": round(clamp(n.get("g"), 0.15, 1.3, 0.9), 2)})
+    if len(notes) < 3:
+        raise ValueError("the riff came back with too few playable notes")
+    notes.sort(key=lambda n: n["t"])
+    return {
+        "name": str(raw.get("name") or "Untitled Riff")[:28],
+        "label": str(raw.get("name") or "Untitled Riff")[:22],
+        "genre": str(raw.get("genre") or "")[:16],
+        "beats": beats,
+        "ring": clamp(raw.get("ring"), 0.1, 8, 1.0),
+        "damp": clamp(raw.get("damp"), 0.9, 0.9995, 0.996),
+        "notes": notes,
+    }
+
+
+def save_riff(riff):
+    base = re.sub(r"[^a-z0-9]+", "-", riff["name"].lower()).strip("-") or "riff"
+    path, n = RIFFS_DIR / f"{base}.json", 2
+    while path.exists():
+        path, n = RIFFS_DIR / f"{base}-{n}.json", n + 1
+    RIFFS_DIR.mkdir(exist_ok=True)
+    path.write_text(json.dumps(riff, indent=1))
+    return path.name
+
+
+def find_cached_riff(description):
+    n = norm_desc(description)
+    if not n or not RIFFS_DIR.exists():
+        return None, 0.0
+    best, best_score = None, 0.0
+    for f in RIFFS_DIR.glob("*.json"):
+        try:
+            riff = json.loads(f.read_text())
+        except Exception:
+            continue
+        if not riff.get("bakedFrom"):
+            continue
+        score = similarity(n, norm_desc(riff["bakedFrom"]))
+        if score > best_score:
+            best, best_score = riff, score
+    return (best, best_score) if best_score >= SIMILAR else (None, best_score)
 
 
 # --- multiplayer: rooms, WebSocket relay, canonical state ------------------
@@ -654,6 +740,17 @@ class Handler(SimpleHTTPRequestHandler):
                 pedals = len(room.state["pedals"])
             return self._json(200, {"code": room.code, "name": room.name,
                                     "players": players, "pedals": pedals})
+        if route == "/riffs":
+            out = []
+            if RIFFS_DIR.exists():
+                for f in sorted(RIFFS_DIR.glob("*.json")):
+                    try:
+                        r = json.loads(f.read_text())
+                        r["id"] = f.stem
+                        out.append(r)
+                    except Exception as exc:
+                        print(f"[riffs] skipping {f.name}: {exc}")
+            return self._json(200, out)
         if route != "/specs":
             return super().do_GET()
         specs = []
@@ -824,6 +921,24 @@ class Handler(SimpleHTTPRequestHandler):
             except Exception as exc:
                 self._json(500, {"error": str(exc)[:300]})
             return
+        if self.path == "/riff":
+            try:
+                length = int(self.headers.get("Content-Length", 0))
+                body = json.loads(self.rfile.read(length))
+                description = str(body.get("description", ""))[:400]
+                cached, score = find_cached_riff(description)
+                if cached:
+                    print(f"[riff] cache hit ({score:.2f}): {cached['name']}")
+                    return self._json(200, {"riff": cached, "cached": True})
+                print(f"[riff] baking: {description!r}")
+                riff = validate_riff(run_claude(RIFF_PROMPT.format(description=description)))
+                riff["bakedFrom"] = description
+                fname = save_riff(riff)
+                print(f"[riff] done: {riff['name']} ({len(riff['notes'])} notes, saved {fname})")
+                return self._json(200, {"riff": riff, "cached": False})
+            except Exception as exc:
+                print(f"[riff] FAILED: {exc}")
+                return self._json(500, {"error": str(exc)[:300]})
         if self.path != "/bake":
             self.send_error(404)
             return
@@ -837,7 +952,7 @@ class Handler(SimpleHTTPRequestHandler):
                 self._json(200, {"spec": cached, "cached": True, "similarity": round(score, 2)})
                 return
             print(f"[bakery] baking: {description!r}")
-            spec = validate(run_claude(description))
+            spec = validate(run_claude(PROMPT.format(description=description)))
             spec["bakedFrom"] = description
             fname = save_spec(spec)
             print(f"[bakery] done: {spec['name']} — "

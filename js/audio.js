@@ -325,7 +325,8 @@ export function createAudio() {
 
   return {
     start, createSource, disposeSource, createAmp, disposeAmp,
-    setSourceMode, refreshTone, setPostVolume, setTransportBpm,
+    setSourceMode, refreshTone, setPostVolume,
+    registerRiff: (id, riff) => EXTRA_RIFFS.set(id, riff), setTransportBpm,
     transportBpm: () => transport.bpm,
     createRig, applyRig, disposeRig, setChain,
     started: () => !!ctx,
@@ -556,8 +557,10 @@ function renderStrumSpan(out, sr, len, semis, style, spb, beatOffset, spanBeats)
 
 // A riff is note data, not a chord: each entry has its own beat position,
 // pitch and pick strength, so rests and phrasing survive into the loop.
+const EXTRA_RIFFS = new Map(); // riffs baked at runtime, by id
+
 function makeRiffBuffer(ctx, rootSemi, riffKey, spb) {
-  const riff = RIFFS[riffKey] || RIFFS.rock;
+  const riff = EXTRA_RIFFS.get(riffKey) || RIFFS[riffKey] || RIFFS.rock;
   const sr = ctx.sampleRate;
   const len = Math.floor(sr * riff.beats * spb);
   const buf = ctx.createBuffer(1, len, sr);

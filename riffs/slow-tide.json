@@ -1,0 +1,31 @@
+{
+ "name": "Slow Tide",
+ "label": "Slow Tide",
+ "genre": "ambient",
+ "beats": 16,
+ "ring": 6.0,
+ "damp": 0.999,
+ "notes": [
+  {
+   "t": 0.0,
+   "s": 0.0,
+   "g": 0.45
+  },
+  {
+   "t": 4.5,
+   "s": 7.0,
+   "g": 0.35
+  },
+  {
+   "t": 9.0,
+   "s": 14.0,
+   "g": 0.5
+  },
+  {
+   "t": 13.5,
+   "s": 12.0,
+   "g": 0.28
+  }
+ ],
+ "bakedFrom": "an ambient riff with just four notes and enormous decay"
+}

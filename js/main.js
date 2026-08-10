@@ -860,9 +860,7 @@ const sourceMenu = document.getElementById('source-menu');
 
 const SOUND_MODES = [
   { label: 'Strum', kind: 'chord' },
-  { label: 'Arpeggio', kind: 'arp' },
   { label: 'Riff', kind: 'riff' },
-  { label: 'Interval', kind: 'interval' },
   { label: 'Guitar 1', kind: 'guitar', channel: 0 },
   { label: 'Guitar 2', kind: 'guitar', channel: 1 },
   { label: 'Off', kind: 'off' },
@@ -1069,33 +1067,20 @@ function renderSourceMenu() {
   }
   if (st.mode === 'riff') {
     section('RIFF');
-    chipGrid(Object.entries(RIFFS).map(([k, v]) => [k, v.label]),
-      st.riff || 'rock', (k) => chooseToneOption('riff', k), 3);
+    const hint = document.createElement('div');
+    hint.className = 'panel-sub';
+    hint.style.padding = '0 12px 6px';
+    hint.textContent = 'pick or bake one in the riff shelf →';
+    sourceMenu.appendChild(hint);
   }
-  if (st.mode === 'arp') {
-    section('PATTERN');
-    chipGrid(Object.entries(ARP_PATTERNS).map(([k, v]) => [k, v.label]),
-      st.arpPattern || 'up', (k) => chooseToneOption('arpPattern', k), 4);
-  }
-  const dyadActive = st.mode === 'interval'
-    || (['chord', 'arp'].includes(st.mode) && st.chord === 'dyad');
-  if (dyadActive) {
-    section('INTERVAL — CENTS ABOVE ROOT');
-    chipGrid(INTERVALS.map(([name, cents, sub]) => [cents, name, sub ?? `${cents}¢`]),
-      st.interval ?? 350, (cents) => chooseToneOption('interval', cents), 3);
-  }
+
   section('KEY');
   chipGrid(KEYS.map(([name, semi]) => [semi, name]), st.root || 0,
     (semi) => chooseToneOption('root', semi), 6);
-  if (st.mode === 'chord' || st.mode === 'arp' || st.mode === 'interval') {
-    section('FINE TUNE');
-    chipGrid(DETUNES.map((c) => [c, c > 0 ? `+${c}¢` : `${c}¢`.replace('0¢', '0')]),
-      st.detune || 0, (c) => chooseToneOption('detune', c), 7);
-  }
-  if (!['interval', 'riff'].includes(st.mode)) { // riffs carry their own notes
+  if (st.mode !== 'riff') { // riffs carry their own notes
     section('CHORD');
-    chipGrid([...Object.keys(CHORDS).map((c) => [c, c.toUpperCase()]), ['dyad', 'DYAD']],
-      st.chord, (c) => chooseChord(c), 5);
+    chipGrid(Object.keys(CHORDS).map((c) => [c, c.toUpperCase()]), st.chord,
+      (c) => chooseChord(c), 5);
   }
 }
 
@@ -1510,6 +1495,133 @@ function wireLobby() {
     joinCode.value = params.get('room').toUpperCase();
   }
 }
+
+
+
+/* ------------------------------------------------------- the riff shelf -- */
+// Mirrors the pedal shelf: built-in riffs plus anything baked by the LLM,
+// clicking one plays it on the current tone post.
+
+const riffList = document.getElementById('riff-list');
+const riffSearch = document.getElementById('riff-search');
+const riffInput = document.getElementById('riff-input');
+const riffButton = document.getElementById('riff-button');
+const riffStatus = document.getElementById('riff-status');
+const bakedRiffs = new Map(); // id -> riff data from the server
+
+function currentTonePost() {
+  const chosen = posts.get(menuTarget);
+  if (chosen && chosen.type === 'source') return chosen;
+  return [...posts.values()].find((p) => p.type === 'source') || null;
+}
+
+function allRiffEntries() {
+  const out = Object.entries(RIFFS).map(([id, r]) => ({ id, label: r.label, riff: r, builtin: true }));
+  for (const [id, r] of bakedRiffs) out.push({ id, label: r.label || r.name, riff: r, builtin: false });
+  return out;
+}
+
+function renderRiffShelf() {
+  const q = riffSearch.value.trim().toLowerCase();
+  const post = currentTonePost();
+  const active = post?.state.riff;
+  riffList.innerHTML = '';
+  for (const e of allRiffEntries()) {
+    const hay = `${e.label} ${e.riff.genre || ''} ${e.riff.bakedFrom || ''}`.toLowerCase();
+    if (q && !hay.includes(q)) continue;
+    const item = document.createElement('button');
+    item.className = 'riff-item' + (active === e.id ? ' active' : '');
+    const name = document.createElement('div');
+    name.className = 'ri-name';
+    name.textContent = e.label;
+    const meta = document.createElement('div');
+    meta.className = 'ri-meta';
+    const notes = e.riff.notes?.length ?? 0;
+    const micro = (e.riff.notes || []).some((n) => Math.abs(n.s % 1) > 0.01);
+    meta.textContent = [e.riff.genre || (e.builtin ? 'built-in' : 'baked'),
+      `${notes} notes`, `${e.riff.beats} beats`, micro ? 'microtonal' : null]
+      .filter(Boolean).join(' · ');
+    item.append(name, meta);
+    item.addEventListener('click', () => playRiff(e.id));
+    riffList.appendChild(item);
+  }
+}
+
+function playRiff(id) {
+  const post = currentTonePost();
+  if (!post) { showHud('add a TONE IN first'); return; }
+  menuTarget = post.id;
+  post.state.riff = id;
+  post.state.mode = 'riff';
+  audio.setSourceMode(post.id, 'riff', post.state)
+    .then(() => { audio.refreshTone(post.id, post.state); })
+    .catch((err) => console.error('[riff] failed', err));
+  net.sendOp({ type: 'tone', id: post.id, patch: { mode: 'riff', riff: id } });
+  const label = allRiffEntries().find((e) => e.id === id)?.label || id;
+  showHud(`RIFF — ${label}`);
+  renderRiffShelf();
+  if (sourceMenu.style.display === 'flex') renderSourceMenu();
+}
+
+async function loadRiffs() {
+  try {
+    const res = await fetch('/riffs');
+    for (const r of await res.json()) {
+      bakedRiffs.set(r.id, r);
+      audio.registerRiff(r.id, r);
+    }
+  } catch (err) {
+    console.warn('[riffs] could not load baked riffs', err);
+  }
+  renderRiffShelf();
+}
+
+const RIFF_WORDS = ['Woodshedding', 'Transcribing', 'Jamming', 'Phrasing',
+  'Bending', 'Sliding', 'Comping', 'Scoring'];
+
+async function bakeRiff(description) {
+  if (!description.trim()) return;
+  riffButton.disabled = true;
+  let dots = 0;
+  const word = RIFF_WORDS[Math.floor(Math.random() * RIFF_WORDS.length)];
+  const timer = setInterval(() => {
+    dots = (dots % 3) + 1;
+    riffStatus.textContent = word + '.'.repeat(dots);
+  }, 350);
+  try {
+    const res = await fetch('/riff', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ description }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    const riff = data.riff;
+    const id = riff.id || riff.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    riff.id = id;
+    bakedRiffs.set(id, riff);
+    audio.registerRiff(id, riff);
+    renderRiffShelf();
+    playRiff(id);
+    riffStatus.textContent = data.cached ? `from the shelf: ${riff.name}` : `baked: ${riff.name}`;
+    net.sendShelf();
+  } catch (err) {
+    riffStatus.textContent = `riff failed: ${err.message}`;
+    console.error('[riff]', err);
+  } finally {
+    clearInterval(timer);
+    riffButton.disabled = false;
+  }
+}
+
+riffButton.addEventListener('click', () => bakeRiff(riffInput.value));
+riffInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') bakeRiff(riffInput.value);
+  e.stopPropagation();
+});
+riffSearch.addEventListener('keydown', (e) => e.stopPropagation());
+riffSearch.addEventListener('input', renderRiffShelf);
+loadRiffs();
+
 
 /* ----------------------------------------------------------------- boot -- */
 
