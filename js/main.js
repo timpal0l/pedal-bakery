@@ -366,7 +366,7 @@ function spawnSource(at) {
   const op = { type: 'spawnPost', id: nextId('s'), ptype: 'source',
     pos: at ?? { x: 7.6, z: [0, 3.5, -3.5, 7, -7][n % 5] },
     st: { mode: 'chord', chord: 'major', root: 0, strumStyle: 'ring',
-      arpPattern: 'up', riff: 'rock', progression: 'none', interval: 350, detune: 0, volume: 5,
+      arpPattern: 'up', riff: 'rock', progression: 'none', riffFollow: true, interval: 350, detune: 0, volume: 5,
       bpm: 100, sync: true, // inputs join the shared clock by default
       channel: n } }; // post N maps to interface input N+1
   applySpawnPost(op);
@@ -1057,10 +1057,22 @@ function renderSourceMenu() {
     chipGrid([70, 85, 100, 115, 130, 150, 170, 190].map((b) => [b, `${b}`]),
       bpmNow, (b) => chooseBpm(b), 4);
   }
-  if (st.mode === 'chord') {
+  if (st.mode === 'chord' || st.mode === 'riff') {
     section('PROGRESSION');
     chipGrid(Object.entries(PROGRESSIONS).map(([k, v]) => [k, v.label]),
       st.progression || 'none', (k) => chooseToneOption('progression', k), 2);
+    if (st.mode === 'riff' && (st.progression || 'none') !== 'none') {
+      // a riff can either move with the changes or stay put as a one-chord loop
+      const follow = st.riffFollow !== false;
+      const row = document.createElement('button');
+      row.className = 'menu-row' + (follow ? ' active' : '');
+      row.innerHTML = `<span class="check">${follow ? '✓' : ''}</span><span></span>`;
+      row.lastChild.textContent = 'Riff follows the changes';
+      row.addEventListener('click', () => chooseToneOption('riffFollow', !follow));
+      sourceMenu.appendChild(row);
+    }
+  }
+  if (st.mode === 'chord') {
     section('STRUM STYLE');
     chipGrid(Object.entries(STRUM_STYLES).map(([k, v]) => [k, v.label]),
       st.strumStyle || 'ring', (k) => chooseToneOption('strumStyle', k), 4);

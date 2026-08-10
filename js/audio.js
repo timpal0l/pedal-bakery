@@ -32,6 +32,7 @@ export function createAudio() {
   const sources = new Map();  // source post id -> { bus, loop, guitar }
   const ampGains = new Map(); // amp post id -> gain (its volume knob)
   const ampCabs = new Map();  // amp post id -> speaker cabinet
+  const ampTaps = new Map();  // amp id -> scope tap, for the wave halo
 
   function vol(v) { return Math.pow((v ?? 5) / 10, 1.5) * 2; }
 
@@ -67,6 +68,7 @@ export function createAudio() {
     cab.out.connect(master);
     ampGains.set(id, g);
     ampCabs.set(id, cab);
+    openTap(id, cab.out);
   }
 
   function disposeAmp(id) {
@@ -76,6 +78,53 @@ export function createAudio() {
     ampCabs.get(id)?.dispose();
     ampCabs.delete(id);
     ampGains.delete(id);
+    closeTap(id);
+  }
+
+  /* --------------------------------------------------------- amp scopes -- */
+  // Every amp gets a listening post on the last node before the master bus:
+  // an analyser is a pass-through with no output, so it costs one FFT window
+  // and changes nothing you hear. The scene reads it to draw the waves
+  // rolling out of the cabinet.
+
+  function openTap(id, from) {
+    closeTap(id);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 512;
+    analyser.smoothingTimeConstant = 0;
+    from.connect(analyser);
+    ampTaps.set(id, {
+      analyser, from,
+      scope: { wave: new Float32Array(analyser.fftSize), rms: 0 },
+    });
+  }
+
+  // Blanket disconnect() calls in setChain() sever the tap along with the
+  // signal path, so re-arming is part of every rewire. Reconnecting a live
+  // pair is a no-op in Web Audio, which makes this safe to call every time.
+  function armTap(id) {
+    const t = ampTaps.get(id);
+    if (t) t.from.connect(t.analyser);
+  }
+
+  function closeTap(id) {
+    const t = ampTaps.get(id);
+    if (!t) return;
+    try { t.from.disconnect(t.analyser); } catch { /* already gone */ }
+    ampTaps.delete(id);
+  }
+
+  // The live waveform at one amp, plus its RMS. The array is reused between
+  // calls — read it now, don't keep it.
+  function ampScope(id) {
+    const t = ampTaps.get(id);
+    if (!t) return null;
+    const { wave } = t.scope;
+    t.analyser.getFloatTimeDomainData(wave);
+    let sum = 0;
+    for (let i = 0; i < wave.length; i++) sum += wave[i] * wave[i];
+    t.scope.rms = Math.sqrt(sum / wave.length);
+    return t.scope;
   }
 
   // The volume knob on a tone post (input trim) or an amp (output level).
@@ -132,7 +181,8 @@ export function createAudio() {
     const src = ctx.createBufferSource();
     src.buffer = kind === 'arp' ? makeArpBuffer(ctx, semis, state.arpPattern, spb)
       : kind === 'interval' ? makeIntervalBuffer(ctx, root, state.interval ?? 350, spb)
-      : kind === 'riff' ? makeRiffBuffer(ctx, root, state.riff ?? 'rock', spb)
+      : kind === 'riff' ? makeRiffBuffer(ctx, root, state.riff ?? 'rock', spb,
+          state.riffFollow === false ? null : prog)
       : makeStrumBuffer(ctx, semis, state.strumStyle, spb, prog, root);
     src.loop = true;
     const g = ctx.createGain();
@@ -559,16 +609,32 @@ function renderStrumSpan(out, sr, len, semis, style, spb, beatOffset, spanBeats)
 // pitch and pick strength, so rests and phrasing survive into the loop.
 const EXTRA_RIFFS = new Map(); // riffs baked at runtime, by id
 
-function makeRiffBuffer(ctx, rootSemi, riffKey, spb) {
+function makeRiffBuffer(ctx, rootSemi, riffKey, spb, prog) {
   const riff = EXTRA_RIFFS.get(riffKey) || RIFFS[riffKey] || RIFFS.rock;
   const sr = ctx.sampleRate;
-  const len = Math.floor(sr * riff.beats * spb);
+  // Following a progression moves the whole riff shape to each new root, the
+  // way a player transposes a lick across the changes. Each step lasts as
+  // long as the progression says, with the riff repeating to fill it.
+  const steps = prog && prog.length
+    ? prog.map((st) => ({ shift: st.d, beats: (st.b || 1) * 4 }))
+    : [{ shift: 0, beats: riff.beats }];
+  const totalBeats = steps.reduce((a, st) => a + st.beats, 0);
+  const len = Math.floor(sr * totalBeats * spb);
   const buf = ctx.createBuffer(1, len, sr);
   const out = buf.getChannelData(0);
-  for (const n of riff.notes) {
-    const f = E2 * Math.pow(2, (rootSemi + n.s) / 12);
-    pluckInto(out, sr, len, f, n.t * spb, n.r ?? riff.ring,
-      riff.damp ?? 0.996, 0.55 * (n.g ?? 1));
+  let cursor = 0;
+  for (const step of steps) {
+    const reps = Math.max(1, Math.round(step.beats / riff.beats));
+    for (let r = 0; r < reps; r++) {
+      const base = cursor + r * riff.beats;
+      for (const n of riff.notes) {
+        if (n.t + r * riff.beats >= step.beats) continue; // don't spill past the change
+        const f = E2 * Math.pow(2, (rootSemi + step.shift + n.s) / 12);
+        pluckInto(out, sr, len, f, (base + n.t) * spb, n.r ?? riff.ring,
+          riff.damp ?? 0.996, 0.55 * (n.g ?? 1));
+      }
+    }
+    cursor += step.beats;
   }
   normalize(out, CHORD_LEVEL * 1.6);
   return buf;
