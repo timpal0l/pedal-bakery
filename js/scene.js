@@ -498,7 +498,8 @@ export function createScene(canvas) {
     const mesh = BABYLON.MeshBuilder.CreateTube('cable_' + id,
       { path, radius: 0.045, tessellation: 12, cap: BABYLON.Mesh.CAP_ALL, updatable: true }, scene);
     mesh.material = matCable;
-    mesh.isPickable = false;
+    mesh.isPickable = true;
+    mesh.metadata = { cable: id };
     shadows.addShadowCaster(mesh);
     cables.set(id, { mesh, bootA: makeBoot(), bootB: makeBoot(), phase, getA, getB, slack, energy: 1 });
   }
@@ -512,8 +513,34 @@ export function createScene(canvas) {
     cables.delete(id);
   }
 
+  // while a cable is in hand, every jack it could land in gets a soft halo
+  const hintMat = new BABYLON.StandardMaterial('jackHint', scene);
+  hintMat.emissiveColor = BABYLON.Color3.FromHexString('#5aa9ff');
+  hintMat.disableLighting = true;
+  hintMat.alpha = 0.55;
+  const hints = [];
+  function setJackHints(positions) {
+    while (hints.length < positions.length) {
+      const h = BABYLON.MeshBuilder.CreateTorus('jackHintRing',
+        { diameter: 0.42, thickness: 0.055, tessellation: 20 }, scene);
+      h.material = hintMat;
+      h.isPickable = false;
+      h.rotation.z = Math.PI / 2;
+      h.__offstage = true;
+      hints.push(h);
+    }
+    hints.forEach((h, i) => {
+      const on = i < positions.length;
+      h.setEnabled(on);
+      if (on) h.position.copyFrom(positions[i]);
+    });
+  }
+
   scene.onBeforeRenderObservable.add(() => {
     const t = performance.now() / 1000;
+    // gently pulse the hints so they read as "drop here"
+    const pulse = 0.45 + Math.sin(t * 4) * 0.18;
+    if (hints.length) hintMat.alpha = pulse;
     for (const c of cables.values()) {
       const a = c.getA(), b = c.getB();
       const moved = !c.lastA
@@ -987,7 +1014,7 @@ export function createScene(canvas) {
     engine, scene, camera,
     buildPedal, buildAmp, buildSourcePost,
     groundPoint, groundPointFromClient, snapshotPedal,
-    setCable, removeCable,
+    setCable, removeCable, setJackHints, project: projectToScreen,
     setPlayerMarker, movePlayerMarker, removePlayerMarker, clearPlayerMarkers,
   };
 }

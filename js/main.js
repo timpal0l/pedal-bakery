@@ -98,6 +98,35 @@ const net = createNet({
 
 /* ------------------------------------------------------- board plumbing -- */
 
+// Every jack on the board, so clicks can snap to the nearest one instead of
+// demanding a pixel-perfect hit.
+function allJacks() {
+  const list = [];
+  for (const p of posts.values()) {
+    list.push({ node: p.id, kind: p.view.jack.kind, jack: p.view.jack });
+  }
+  for (const i of instances.values()) {
+    for (const kind of ['in', 'out']) {
+      const j = i.view.jack(kind);
+      if (j) list.push({ node: i.id, kind, jack: j });
+    }
+  }
+  return list;
+}
+
+// nearest jack to a screen point, within maxPx; optionally only one kind
+function nearestJack(x, y, maxPx, wantKind, excludeNode) {
+  let best = null, bestD = maxPx;
+  for (const j of allJacks()) {
+    if (wantKind && j.kind !== wantKind) continue;
+    if (excludeNode && j.node === excludeNode) continue;
+    const p = view.project(j.jack.pos());
+    const d = Math.hypot(p.x - x, p.y - y);
+    if (d < bestD) { bestD = d; best = j; }
+  }
+  return best;
+}
+
 function endpointOf(node, kind) {
   const j = posts.get(node)?.view.jack ?? instances.get(node)?.view.jack(kind);
   if (!j) return null; // node vanished (remote remove racing a connect)
@@ -528,6 +557,7 @@ let selected = null;     // pedal id highlighted for the Delete key
 let menuTarget = null;   // which source post the chord menu applies to
 let cursorGround = new BABYLON.Vector3(0, 0, 0);
 let lastHoverPick = 0;
+const lastPointer = { x: 0, y: 0 };
 
 function selectPedal(id) { // pedals, amps and tone posts all select the same way
   if (selected === id) return;
@@ -550,7 +580,14 @@ function freeCamera() {
     camHeld = false;
   }
 }
-window.addEventListener('pointerup', () => {
+window.addEventListener('pointerup', (e) => {
+  // drag-and-drop patching: a release that travelled lands the cable on the
+  // nearest compatible jack. A release that didn't move leaves it in hand.
+  if (patching && Math.hypot(e.clientX - patching.x, e.clientY - patching.y) > 14) {
+    const want = patching.kind === 'out' ? 'in' : 'out';
+    const near = nearestJack(e.clientX, e.clientY, 90, want, patching.node);
+    if (near) completePatch(near.node);
+  }
   dragKnob = null;
   dragPostKnob = null;
   dragPedal = null;
@@ -566,21 +603,33 @@ function pendingEndpoint() {
 
 // A patch can start at either end of the cable: from an OUTPUT you're
 // looking for an input to land in, from an INPUT you're looking for a source.
-function startPatch(node, kind) {
-  patching = { node, kind };
+function refreshJackHints() {
+  if (!patching) { view.setJackHints([]); return; }
+  const want = patching.kind === 'out' ? 'in' : 'out';
+  view.setJackHints(allJacks()
+    .filter((j) => j.kind === want && j.node !== patching.node)
+    .map((j) => j.jack.pos()));
+}
+
+function startPatch(node, kind, x = 0, y = 0) {
+  // remember where the grab began: releasing without moving means "click to
+  // pick up" (finish with a second click), moving means drag-and-drop
+  patching = { node, kind, x, y };
   const held = endpointOf(node, kind);
   const loose = pendingEndpoint();
   // the dangling end always trails the cursor, whichever end you grabbed
   view.setCable('__pending', kind === 'out' ? held : loose,
     kind === 'out' ? loose : held, 0.15);
+  refreshJackHints();
   showHud(kind === 'out'
-    ? 'cable out — drop it on an INPUT jack'
-    : 'cable in — drop it on an OUTPUT jack', true);
+    ? 'cable out — drop it near an INPUT jack'
+    : 'cable in — drop it near an OUTPUT jack', true);
 }
 
 function cancelPatch() {
   if (!patching) return;
   patching = null;
+  view.setJackHints([]);
   view.removeCable('__pending');
   freeCamera();
   showHud('cable dropped');
@@ -592,6 +641,7 @@ function completePatch(otherNode) {
   const to = patching.kind === 'out' ? otherNode : patching.node;
   board.connect(from, to);
   patching = null;
+  view.setJackHints([]);
   view.removeCable('__pending');
   freeCamera();
   refreshBoard();
@@ -613,7 +663,7 @@ function jackClicked(jack) {
     net.sendOp({ type: 'disconnect', node, kind });
     showHud('cable pulled');
   } else {
-    startPatch(node, kind);
+    startPatch(node, kind, lastPointer.x, lastPointer.y);
   }
 }
 
@@ -650,12 +700,36 @@ view.scene.onPointerObservable.add((pi) => {
   switch (pi.type) {
     case BABYLON.PointerEventTypes.POINTERDOWN: {
       if (pi.event.button !== 0) break; // right/middle mouse belongs to the camera
+      // Babylon can raise POINTERDOWN for moves made with a button held; only
+      // a genuine press may act, or one drag fires the same jack many times
+      if (pi.event.type && pi.event.type !== 'pointerdown') break;
+      lastPointer.x = pi.event.clientX; lastPointer.y = pi.event.clientY;
       const pick = scene.pick(scene.pointerX, scene.pointerY);
       const meta = pick.hit ? pick.pickedMesh.metadata : null;
-      if (!meta) {
+      if (!meta || meta.cable) {
+        // clicking a cable pulls it; clicking near a jack still counts as a hit
+        const near = nearestJack(pi.event.clientX, pi.event.clientY, 70,
+          patching ? (patching.kind === 'out' ? 'in' : 'out') : null,
+          patching ? patching.node : null);
+        if (near) { holdCamera(); jackClicked({ node: near.node, kind: near.kind }); break; }
+        if (meta && meta.cable) {
+          const [from, to] = meta.cable.split('->');
+          board.disconnectJack(from, 'out');
+          refreshBoard();
+          net.sendOp({ type: 'disconnect', node: from, kind: 'out' });
+          showHud('cable pulled');
+          break;
+        }
         cancelPatch();
         selectPedal(null);
         break;
+      }
+      // a body/cabinet surface overlaps its own jacks near the edges, and the
+      // body mesh usually wins the raycast — so a click close to a jack is
+      // treated as a jack click, never as the start of a drag
+      if ((meta.body || meta.endpoint) && !patching) {
+        const near = nearestJack(pi.event.clientX, pi.event.clientY, 48);
+        if (near) { holdCamera(); jackClicked({ node: near.node, kind: near.kind }); break; }
       }
       if (meta.jack) {
         holdCamera(); // pulling a cable must never rotate the camera
@@ -771,14 +845,6 @@ view.scene.onPointerObservable.add((pi) => {
           removeEndpoint(dragEndpoint.id);
         }
         dragEndpoint = null;
-      }
-      // Reason-style: releasing over an input jack while dragging a cable connects
-      if (patching) {
-        const pick = scene.pick(scene.pointerX, scene.pointerY);
-        const jack = pick.hit ? pick.pickedMesh.metadata?.jack : null;
-        if (jack && jack.kind !== patching.kind && jack.node !== patching.node) {
-          completePatch(jack.node);
-        }
       }
       freeCamera();
       break;
@@ -1464,6 +1530,8 @@ window.__pedal = {
   select: selectPedal,
   selected: () => selected,
   audio: audio.contextState,
+  jacks: () => allJacks().map((j) => ({ node: j.node, kind: j.kind, at: view.project(j.jack.pos()) })),
+  patching: () => patching && { node: patching.node, kind: patching.kind },
   screenPos: (id, name) =>
     (instances.get(id) ?? posts.get(id))?.view.screenPos(name),
   camera: () => ({
