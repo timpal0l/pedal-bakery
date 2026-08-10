@@ -1,0 +1,94 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Malibu Drip",
+  "tagline": "wet plate, 1962, salt on the tank",
+  "enclosure": {
+    "width": 2.6,
+    "depth": 2.4,
+    "height": 0.6,
+    "color": "#0f7d9c"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#0f7d9c",
+      "#f2e6c9",
+      "#e8b23a"
+    ],
+    "textColor": "#f7f3e3"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 4.0,
+        "attack": 7.0
+      }
+    },
+    {
+      "id": "trm",
+      "type": "tremolo",
+      "params": {
+        "rate": 5.5,
+        "depth": 3.0
+      }
+    },
+    {
+      "id": "vrb",
+      "type": "reverb",
+      "params": {
+        "size": 8.0,
+        "mix": 7.5
+      }
+    },
+    {
+      "id": "eq",
+      "type": "eq",
+      "params": {
+        "bass": 4.0,
+        "mid": 4.0,
+        "treble": 7.5,
+        "freq": 6.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "DWELL",
+      "target": "vrb.size"
+    },
+    {
+      "id": "k2",
+      "label": "WET",
+      "target": "vrb.mix"
+    },
+    {
+      "id": "k3",
+      "label": "SPEED",
+      "target": "trm.rate"
+    },
+    {
+      "id": "k4",
+      "label": "THROB",
+      "target": "trm.depth"
+    },
+    {
+      "id": "k5",
+      "label": "BRIGHT",
+      "target": "eq.treble"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "TANK",
+      "target": "cmp.sustain",
+      "off": 4.0,
+      "on": 8.0
+    }
+  ],
+  "bakedFrom": "surf reverb spring 1960s wet"
+}

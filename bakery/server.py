@@ -32,7 +32,7 @@ PORT = int(os.environ.get("PORT", "8123"))
 
 # keep in sync with js/modules.js
 MODULES = {
-    "drive":   ["amount", "tone", "level"],
+    "drive":   ["amount", "tone", "level", "character"],
     "delay":   ["time", "feedback", "mix"],
     "chorus":  ["rate", "depth", "mix"],
     "tremolo": ["rate", "depth"],
@@ -42,6 +42,9 @@ MODULES = {
     "ring":    ["freq", "mix"],
     "comp":    ["sustain", "attack"],
     "eq":      ["bass", "mid", "treble", "freq"],
+    "octave":  ["blend", "tone"],
+    "crush":   ["bits", "tone", "mix"],
+    "wah":     ["sens", "peak", "heel"],
     "level":   ["gain"],
 }
 
@@ -73,7 +76,7 @@ Schema (all numeric params are knob-space 0-10):
 }}
 
 Available modules and their params (each param 0-10, module owns the real-unit curve):
-- drive: amount (clean->fuzz), tone (dark->bright), level
+- drive: amount (clean->fuzz), tone (dark->bright), level, character (THE dirt personality: 0-2 tube warmth, 2-4 overdrive, 4-6 distortion, 6-8 splatty fuzz, 8-10 wavefolder chaos — always set it deliberately)
 - delay: time (60ms->1.2s), feedback, mix
 - chorus: rate, depth, mix (10 = full vibrato)
 - tremolo: rate, depth (STEREO ping-pong: full depth sweeps ear to ear)
@@ -83,6 +86,9 @@ Available modules and their params (each param 0-10, module owns the real-unit c
 - ring: freq (30Hz->2kHz ring modulator: bells, robots, aliens), mix
 - comp: sustain (squeeze + makeup gain), attack
 - eq: bass, mid, treble (each 0-10 = -12..+12 dB, 5 flat), freq (mid center 300Hz->3kHz)
+- octave: blend (dry->octave-up rectifier, the classic octave fuzz trick), tone
+- crush: bits (64 steps -> 2, digital grit), tone, mix
+- wah: sens (envelope follower amount — filter opens as you dig in), peak (Q), heel (base frequency)
 - level: gain (0 silent, 5 unity, 10 hot)
 
 Rules:
@@ -104,6 +110,7 @@ Rules:
 - shape: "round" (fuzz-face style circular pedal, max 4 knobs, suits simple vintage circuits) or "box". Use round sometimes — variety matters. Amps are always boxes.
 - name, palette, art style, enclosure color: match the vibe. Be bold and varied; different sounds should look like they came from different builders.
 - NAMES MUST VARY in structure: mix single evocative words ("Vermilion", "Motorik"), compounds ("Rustbucket"), place/person names ("Saint Fuzz", "Osaka Drift"), and puns — never the same Adjective-Noun formula twice in a row.
+- MIX PARAMS ARE TRUE CROSSFADES: mix/blend 10 = no dry signal at all. A "drowned" or "washed out" sound wants mix 8-10; a subtle sweetener wants 2-4. Use the whole range — timid mixes are why pedals blur together.
 - BE BOLD WITH PARAMS: defaults must already SOUND like the description. A filthy fuzz wants amount 8-10; a subtle shimmer wants depth 2. Never park everything near 5, and prefer distinctive module combos (ring, comp, phaser, tremolo where they fit) over defaulting to drive+reverb.
 - KNOB COUNT MUST VARY — do NOT default to 4. One-trick boxes get 1-2 knobs. Classic stomps 3-4. Rich or complex descriptions get 6-8 knobs exposing secondary parameters (tone, level, feedback, attack, resonance...). Spread across the whole 1-8 range.
 

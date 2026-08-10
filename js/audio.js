@@ -11,7 +11,7 @@
 // ---------------------------------------------------------------------------
 
 import { CHORDS, CHORD_GAINS, CHORD_LEVEL, E2 } from './config.js';
-import { MODULES } from './modules.js';
+import { MODULES, createCabinet } from './modules.js';
 
 export function createAudio() {
   let ctx = null;     // created on the first user gesture, then permanent
@@ -30,6 +30,7 @@ export function createAudio() {
   const rigs = new Map();     // pedal instanceId -> rig
   const sources = new Map();  // source post id -> { bus, loop, guitar }
   const ampGains = new Map(); // amp post id -> gain (its volume knob)
+  const ampCabs = new Map();  // amp post id -> speaker cabinet
 
   function vol(v) { return Math.pow((v ?? 5) / 10, 1.5) * 2; }
 
@@ -58,14 +59,21 @@ export function createAudio() {
     if (!ctx || ampGains.has(id)) return;
     const g = ctx.createGain();
     g.gain.value = vol(state?.volume);
-    g.connect(master);
+    // every amp has a speaker in it — the biggest single step toward
+    // sounding like a real rig instead of a synth patch
+    const cab = createCabinet(ctx);
+    g.connect(cab.in);
+    cab.out.connect(master);
     ampGains.set(id, g);
+    ampCabs.set(id, cab);
   }
 
   function disposeAmp(id) {
     const g = ampGains.get(id);
     if (!g) return;
     try { g.disconnect(); } catch { /* ok */ }
+    ampCabs.get(id)?.dispose();
+    ampCabs.delete(id);
     ampGains.delete(id);
   }
 
@@ -223,7 +231,13 @@ export function createAudio() {
     }
     node.connect(wet).connect(out);
     pedalIn.connect(bypass).connect(out);
-    rigs.set(id, { pedalIn, wet, bypass, out, modules });
+    let tail = out, cab = null;
+    if (spec.kind === 'amp') { // a baked amp is a head AND a speaker
+      cab = createCabinet(ctx);
+      out.connect(cab.in);
+      tail = cab.out;
+    }
+    rigs.set(id, { pedalIn, wet, bypass, out, tail, cab, modules });
     applyRig(id, spec, state);
   }
 
@@ -246,6 +260,7 @@ export function createAudio() {
     const rig = rigs.get(id);
     if (!rig) return;
     for (const m of Object.values(rig.modules)) m.dispose();
+    rig.cab?.dispose();
     for (const n of [rig.pedalIn, rig.wet, rig.bypass, rig.out]) {
       try { n.disconnect(); } catch { /* ok */ }
     }
@@ -259,7 +274,11 @@ export function createAudio() {
   function setChain(chains) {
     if (!ctx) return;
     for (const s of sources.values()) { try { s.bus.disconnect(); } catch { /* ok */ } }
-    for (const rig of rigs.values()) { try { rig.out.disconnect(); } catch { /* ok */ } }
+    for (const rig of rigs.values()) {
+      try { rig.out.disconnect(); } catch { /* ok */ }
+      try { rig.cab?.out.disconnect(); } catch { /* ok */ }
+      if (rig.cab) rig.out.connect(rig.cab.in); // re-arm the speaker path
+    }
     // internal source wiring survives disconnect() of the bus outputs only —
     // reconnect generators to their bus is not needed (they feed INTO bus)
     for (const chain of chains) {
@@ -277,7 +296,7 @@ export function createAudio() {
       const ampRig = rigs.get(chain.amp); // a baked amp: route through its tone stack
       if (ampRig) {
         node.connect(ampRig.pedalIn);
-        ampRig.out.connect(master);
+        (ampRig.tail ?? ampRig.out).connect(master);
       } else {
         node.connect(ampGains.get(chain.amp) ?? master);
       }
