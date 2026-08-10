@@ -13,6 +13,7 @@ import { createScene, GRID_HALF, SNAP } from './scene.js';
 import { createBoard } from './board.js';
 import { CHORDS, KEYS, INTERVALS, DETUNES } from './config.js';
 import { STRUM_STYLES, ARP_PATTERNS } from './audio.js';
+import { RIFFS } from './riffs.js';
 import { createNet, playerIdentity, savedBakeries, rememberBakery, forgetBakery } from './net.js';
 
 const canvas = document.getElementById('view');
@@ -273,7 +274,7 @@ function applyTone(op) {
       armedGuitar.delete(op.id);
       audio.setSourceMode(op.id, st.mode, st).catch(() => {});
     }
-  } else if (st.mode === 'chord' || st.mode === 'arp' || st.mode === 'interval') {
+  } else if (['chord', 'arp', 'interval', 'riff'].includes(st.mode)) {
     audio.refreshTone(op.id, st);
   }
   if (menuTarget === op.id && sourceMenu.style.display === 'flex') renderSourceMenu();
@@ -283,7 +284,7 @@ function applyBpm(op) {
   audio.setTransportBpm(op.value);
   for (const post of posts.values()) { // synced loops re-bake to the new clock
     if (post.type === 'source' && post.state.sync
-        && ['chord', 'arp', 'interval'].includes(post.state.mode)) {
+        && ['chord', 'arp', 'interval', 'riff'].includes(post.state.mode)) {
       audio.refreshTone(post.id, post.state);
     }
   }
@@ -334,7 +335,7 @@ function spawnSource(at) {
   const op = { type: 'spawnPost', id: nextId('s'), ptype: 'source',
     pos: at ?? { x: 7.6, z: [0, 3.5, -3.5, 7, -7][n % 5] },
     st: { mode: 'chord', chord: 'major', root: 0, strumStyle: 'ring',
-      arpPattern: 'up', interval: 350, detune: 0, volume: 5,
+      arpPattern: 'up', riff: 'rock', interval: 350, detune: 0, volume: 5,
       bpm: 100, sync: true, // inputs join the shared clock by default
       channel: n } }; // post N maps to interface input N+1
   applySpawnPost(op);
@@ -792,6 +793,7 @@ const sourceMenu = document.getElementById('source-menu');
 const SOUND_MODES = [
   { label: 'Strum', kind: 'chord' },
   { label: 'Arpeggio', kind: 'arp' },
+  { label: 'Riff', kind: 'riff' },
   { label: 'Interval', kind: 'interval' },
   { label: 'Guitar 1', kind: 'guitar', channel: 0 },
   { label: 'Guitar 2', kind: 'guitar', channel: 1 },
@@ -975,7 +977,7 @@ function renderSourceMenu() {
     }
     sourceMenu.appendChild(grid);
   }
-  if (['chord', 'arp', 'interval'].includes(st.mode)) {
+  if (['chord', 'arp', 'interval', 'riff'].includes(st.mode)) {
     section('TEMPO');
     const syncRow = document.createElement('button');
     syncRow.className = 'menu-row' + (st.sync ? ' active' : '');
@@ -993,6 +995,11 @@ function renderSourceMenu() {
     section('STRUM STYLE');
     chipGrid(Object.entries(STRUM_STYLES).map(([k, v]) => [k, v.label]),
       st.strumStyle || 'ring', (k) => chooseToneOption('strumStyle', k), 4);
+  }
+  if (st.mode === 'riff') {
+    section('RIFF');
+    chipGrid(Object.entries(RIFFS).map(([k, v]) => [k, v.label]),
+      st.riff || 'rock', (k) => chooseToneOption('riff', k), 3);
   }
   if (st.mode === 'arp') {
     section('PATTERN');
@@ -1014,7 +1021,7 @@ function renderSourceMenu() {
     chipGrid(DETUNES.map((c) => [c, c > 0 ? `+${c}¢` : `${c}¢`.replace('0¢', '0')]),
       st.detune || 0, (c) => chooseToneOption('detune', c), 7);
   }
-  if (st.mode !== 'interval') { // the dyad chip voices the interval in strums/arps
+  if (!['interval', 'riff'].includes(st.mode)) { // riffs carry their own notes
     section('CHORD');
     chipGrid([...Object.keys(CHORDS).map((c) => [c, c.toUpperCase()]), ['dyad', 'DYAD']],
       st.chord, (c) => chooseChord(c), 5);

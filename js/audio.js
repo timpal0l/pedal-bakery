@@ -12,6 +12,7 @@
 
 import { CHORDS, CHORD_GAINS, CHORD_LEVEL, E2 } from './config.js';
 import { MODULES, createCabinet } from './modules.js';
+import { RIFFS } from './riffs.js';
 
 export function createAudio() {
   let ctx = null;     // created on the first user gesture, then permanent
@@ -129,6 +130,7 @@ export function createAudio() {
     const src = ctx.createBufferSource();
     src.buffer = kind === 'arp' ? makeArpBuffer(ctx, semis, state.arpPattern, spb)
       : kind === 'interval' ? makeIntervalBuffer(ctx, root, state.interval ?? 350, spb)
+      : kind === 'riff' ? makeRiffBuffer(ctx, root, state.riff ?? 'rock', spb)
       : makeStrumBuffer(ctx, semis, state.strumStyle, spb);
     src.loop = true;
     const g = ctx.createGain();
@@ -196,7 +198,7 @@ export function createAudio() {
       state.mode = 'off';
       return 'UNPLUGGED';
     }
-    const kind = mode === 'arp' || mode === 'interval' ? mode : 'chord';
+    const kind = ['arp', 'interval', 'riff'].includes(mode) ? mode : 'chord';
     if (!s.loop || s.loop.kind !== kind) {
       stopLoop(s);
       startLoop(s, kind, state);
@@ -500,6 +502,23 @@ function makeStrumBuffer(ctx, semis, styleKey, spb) {
     });
   }
   normalize(out, CHORD_LEVEL * 1.5);
+  return buf;
+}
+
+// A riff is note data, not a chord: each entry has its own beat position,
+// pitch and pick strength, so rests and phrasing survive into the loop.
+function makeRiffBuffer(ctx, rootSemi, riffKey, spb) {
+  const riff = RIFFS[riffKey] || RIFFS.rock;
+  const sr = ctx.sampleRate;
+  const len = Math.floor(sr * riff.beats * spb);
+  const buf = ctx.createBuffer(1, len, sr);
+  const out = buf.getChannelData(0);
+  for (const n of riff.notes) {
+    const f = E2 * Math.pow(2, (rootSemi + n.s) / 12);
+    pluckInto(out, sr, len, f, n.t * spb, n.r ?? riff.ring,
+      riff.damp ?? 0.996, 0.55 * (n.g ?? 1));
+  }
+  normalize(out, CHORD_LEVEL * 1.6);
   return buf;
 }
 

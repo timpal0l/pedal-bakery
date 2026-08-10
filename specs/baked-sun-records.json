@@ -1,0 +1,77 @@
+{
+  "kind": "pedal",
+  "shape": "round",
+  "name": "Sun Records",
+  "tagline": "one bounce off the tin wall",
+  "enclosure": {
+    "width": 2.0,
+    "depth": 2.0,
+    "height": 0.6,
+    "color": "#e8dcc0"
+  },
+  "artwork": {
+    "style": "rings",
+    "palette": [
+      "#e8dcc0",
+      "#8c3b2a",
+      "#3a2a20"
+    ],
+    "textColor": "#3a2a20"
+  },
+  "chain": [
+    {
+      "id": "cp",
+      "type": "comp",
+      "params": {
+        "sustain": 4.0,
+        "attack": 7.0
+      }
+    },
+    {
+      "id": "sl",
+      "type": "delay",
+      "params": {
+        "time": 1.2,
+        "feedback": 1.5,
+        "mix": 3.5
+      }
+    },
+    {
+      "id": "eq",
+      "type": "eq",
+      "params": {
+        "bass": 4.0,
+        "mid": 6.0,
+        "treble": 6.5,
+        "freq": 4.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "SLAP",
+      "target": "sl.time"
+    },
+    {
+      "id": "k2",
+      "label": "MIX",
+      "target": "sl.mix"
+    },
+    {
+      "id": "k3",
+      "label": "REPEATS",
+      "target": "sl.feedback"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "DOUBLE",
+      "target": "sl.feedback",
+      "off": 1.5,
+      "on": 3.5
+    }
+  ],
+  "bakedFrom": "slapback echo pedal"
+}
