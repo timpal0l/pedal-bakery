@@ -368,6 +368,19 @@ function createEQ(ctx) {
 export function createCabinet(ctx) {
   const input = ctx.createGain();
   const out = ctx.createGain();
+  // valve stage: even a clean amp is slightly non-linear, and that gentle
+  // asymmetric squash is the "warmth" people mean when they say tube
+  const valve = ctx.createWaveShaper();
+  {
+    const n = 1024, curve = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const x = (i / (n - 1)) * 2 - 1;
+      const b = x < 0 ? 0.72 : 1;           // asymmetry -> 2nd harmonic
+      curve[i] = b * Math.tanh(2.4 * x) / Math.tanh(2.4);
+    }
+    valve.curve = curve;
+    valve.oversample = '4x';
+  }
   const hp = ctx.createBiquadFilter();      // no subsonic mud
   hp.type = 'highpass'; hp.frequency.value = 85; hp.Q.value = 0.7;
   const body = ctx.createBiquadFilter();    // cabinet thump
@@ -388,9 +401,33 @@ export function createCabinet(ctx) {
   const sag = ctx.createDynamicsCompressor();
   sag.threshold.value = -16; sag.ratio.value = 3.2;
   sag.attack.value = 0.012; sag.release.value = 0.28;
-  input.connect(hp).connect(body).connect(dip).connect(presence)
+  // a mic in front of a cab in a room: direct sound plus a short ambience,
+  // which is what stops a rig sounding like it lives inside your head
+  const roomSend = ctx.createGain(); roomSend.gain.value = 0.5;
+  const room = ctx.createConvolver();
+  room.normalize = false; // keep the IR's own level; normalising buries it
+  {
+    const sr = ctx.sampleRate, N = Math.floor(sr * 0.32);
+    const buf = ctx.createBuffer(2, N, sr);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = buf.getChannelData(ch);
+      let lp = 0;
+      for (let i = 0; i < N; i++) {
+        const t = i / N;
+        lp = lp * (0.3 + 0.6 * t) + (Math.random() * 2 - 1) * (0.7 - 0.6 * t);
+        d[i] = lp * Math.exp(-7 * t) * 0.5;
+      }
+      (ch ? [0.0071, 0.0134, 0.0219] : [0.0063, 0.0148, 0.0202]).forEach((sec, k) => {
+        const idx = Math.floor(sec * sr);
+        if (idx < N) d[idx] += (k % 2 ? -0.4 : 0.5) / (k + 1);
+      });
+    }
+    room.buffer = buf;
+  }
+  input.connect(valve).connect(hp).connect(body).connect(dip).connect(presence)
        .connect(lp1).connect(lp2).connect(sag).connect(out);
   lp2.connect(refl).connect(reflG).connect(sag);
+  sag.connect(roomSend).connect(room).connect(out);
   return { in: input, out, dispose() { try { input.disconnect(); out.disconnect(); } catch { /* ok */ } } };
 }
 

@@ -454,19 +454,27 @@ export const ARP_PATTERNS = {
 // transient click, the string decays inharmonically, and no two plucks are
 // identical. This renders one pluck with all three.
 function pluckInto(out, sr, len, f, startSec, ringSec, damp, gain) {
-  const start = Math.floor(sr * startSec);
+  // Humanise: no two plucks of a real guitar share timing, tuning or force,
+  // and perfectly quantised repeats are the main tell of a synthetic player.
+  const jitter = (Math.random() - 0.5) * 0.012;       // +/-6ms of feel
+  const detune = 1 + (Math.random() - 0.5) * 0.0046;  // +/-4 cents
+  const velocity = gain * (1 + (Math.random() - 0.5) * 0.16);
+  const start = Math.max(0, Math.floor(sr * (startSec + jitter)));
   // the two-tap average delays N - 0.5 samples; the allpass adds frac more,
   // kept in [0.3, 1.3) so its pole stays well inside the unit circle
-  const exact = sr / f + 0.5;
+  const exact = sr / (f * detune) + 0.5;
   const N = Math.max(4, Math.floor(exact - 0.3));
   const frac = Math.max(0.1, exact - N);
   const C = (1 - frac) / (1 + frac);
   const ring = new Float32Array(N);
   const seed = new Float32Array(N);
+  // harder picking is brighter, not merely louder — that link is most of what
+  // makes a line sound played rather than sequenced
+  const bright = Math.min(0.85, 0.45 + velocity * 0.5);
   let prev = 0;
   for (let j = 0; j < N; j++) {
     const white = Math.random() * 2 - 1;
-    prev = 0.3 * prev + 0.7 * white; // bright single-coil pick attack
+    prev = (1 - bright) * prev + bright * white;
     seed[j] = prev;
   }
   const comb = Math.max(1, Math.round(N * 0.16)); // pickup-position comb -> quack
@@ -474,10 +482,9 @@ function pluckInto(out, sr, len, f, startSec, ringSec, damp, gain) {
   // pick attack: a short bright click before the string settles, which is
   // most of what the ear uses to identify a plucked instrument
   const clickLen = Math.min(Math.floor(sr * 0.004), len);
-  const clickStart = Math.floor(sr * startSec);
   for (let j = 0; j < clickLen; j++) {
-    const p = (clickStart + j) % len;
-    out[p] += gain * 0.5 * (Math.random() * 2 - 1) * (1 - j / clickLen) ** 2;
+    const p = (start + j) % len;
+    out[p] += velocity * 0.5 * (Math.random() * 2 - 1) * (1 - j / clickLen) ** 2;
   }
   let idx = 0;
   let apX = 0, apY = 0; // allpass state
@@ -489,7 +496,7 @@ function pluckInto(out, sr, len, f, startSec, ringSec, damp, gain) {
     apY = C * avg + apX - C * apY;
     apX = avg;
     ring[idx] = damp * apY;
-    out[p] += gain * ring[idx];
+    out[p] += velocity * ring[idx];
     idx = next;
   }
 }

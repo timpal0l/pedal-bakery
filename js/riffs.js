@@ -164,6 +164,18 @@ export const RIFFS = {
       : [{ t, s: 0, g: 0.95 }, { t: t + 0.25, s: 12, g: 0.55 }])),
   },
 
+  slacker: {
+    label: 'Slacker jangle', beats: 8, ring: 1.9, damp: 0.9975,
+    // Mac DeMarco territory: major-7th and 9th colour, notes hanging just
+    // behind the beat, lots of ring. A style, not a transcription.
+    notes: [
+      { t: 0, s: 0, g: 0.95 }, { t: 0.5, s: 16, g: 0.7 }, { t: 1.05, s: 14, g: 0.75 },
+      { t: 1.75, s: 11, g: 0.8 }, { t: 2.55, s: 16, g: 0.65 }, { t: 3.05, s: 7, g: 0.7 },
+      { t: 4, s: 5, g: 0.9 }, { t: 4.55, s: 21, g: 0.7 }, { t: 5.05, s: 19, g: 0.75 },
+      { t: 5.8, s: 16, g: 0.7 }, { t: 6.55, s: 21, g: 0.6 }, { t: 7.05, s: 12, g: 0.8 },
+    ],
+  },
+
   desert: {
     label: 'Desert', beats: 8, ring: 1.6, damp: 0.997,
     // hypnotic dorian loop, deliberately repetitive but never static

@@ -1,0 +1,96 @@
+{
+  "kind": "pedal",
+  "shape": "round",
+  "name": "Salad Days",
+  "tagline": "the wobbly cigarette-stained smile",
+  "enclosure": {
+    "width": 2.2,
+    "depth": 2.2,
+    "height": 0.55,
+    "color": "#d9b96a"
+  },
+  "artwork": {
+    "style": "waves",
+    "palette": [
+      "#d9b96a",
+      "#7fa38b",
+      "#c96f4a"
+    ],
+    "textColor": "#3a2b1c"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 6.0,
+        "attack": 3.0
+      }
+    },
+    {
+      "id": "ch",
+      "type": "chorus",
+      "params": {
+        "rate": 1.6,
+        "depth": 8.0,
+        "mix": 9.0
+      }
+    },
+    {
+      "id": "vib",
+      "type": "tremolo",
+      "params": {
+        "rate": 2.2,
+        "depth": 3.0
+      }
+    },
+    {
+      "id": "tn",
+      "type": "filter",
+      "params": {
+        "cutoff": 4.2,
+        "resonance": 2.0
+      }
+    },
+    {
+      "id": "vb",
+      "type": "reverb",
+      "params": {
+        "size": 4.0,
+        "mix": 3.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "warble",
+      "label": "WARBLE",
+      "target": "ch.depth"
+    },
+    {
+      "id": "speed",
+      "label": "SPEED",
+      "target": "ch.rate"
+    },
+    {
+      "id": "soak",
+      "label": "SOAK",
+      "target": "ch.mix"
+    },
+    {
+      "id": "butter",
+      "label": "BUTTER",
+      "target": "tn.cutoff"
+    }
+  ],
+  "switches": [
+    {
+      "id": "seasick",
+      "label": "SEASICK",
+      "target": "vib.depth",
+      "off": 3.0,
+      "on": 8.0
+    }
+  ],
+  "bakedFrom": "mac demarco butter"
+}
