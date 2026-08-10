@@ -619,6 +619,13 @@ class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
 
+    def end_headers(self):
+        # Dev server: never let a browser keep serving yesterday's app code
+        # from cache. Editing a file and reloading must always show the edit.
+        if self.path.split("?")[0].endswith((".js", ".html", ".css", "/")):
+            self.send_header("Cache-Control", "no-cache, must-revalidate")
+        super().end_headers()
+
     def do_GET(self):
         route = self.path.split("?")[0]
         if route == "/ws":

@@ -68,7 +68,10 @@ export function createNet(handlers) {
     if (ws) { try { ws.close(); } catch { /* already dead */ } ws = null; }
   }
 
-  function connect(roomCode, playerName) {
+  // isRetry marks a background reconnect attempt. The difference matters on
+  // failure: a lobby connect reports the error to the player and stops, while
+  // a reconnect keeps trying — the bakery is probably just restarting.
+  function connect(roomCode, playerName, isRetry = false) {
     teardown(); // switching rooms / double-connect must never leak a socket
     code = roomCode;
     name = playerName || name;
@@ -95,7 +98,7 @@ export function createNet(handlers) {
             // a duplicated tab inherited our sessionStorage id and evicted
             // us — become a fresh player instead of evicting them back
             mintIdentity();
-            connect(code, name).catch(() => {});
+            connect(code, name, true).catch(() => {});
           } else {
             closing = true;
             handlers.onStatus?.('refused', msg.error || 'kicked');
@@ -117,14 +120,15 @@ export function createNet(handlers) {
         heartbeat = null;
         welcomed = false;
         if (closing) return;
-        if (!settled) {
+        if (!settled && !isRetry) { // first attempt: the lobby shows the error
           settled = true;
           reject(new Error('bakery unreachable — is the server running?'));
           return;
         }
+        settled = true; // a retry answers to nobody; it just keeps knocking
         handlers.onStatus?.('reconnecting');
         setTimeout(() => {
-          if (gen === myGen && !closing) connect(code, name).catch(() => {});
+          if (gen === myGen && !closing) connect(code, name, true).catch(() => {});
         }, retryMs);
         retryMs = Math.min(retryMs * 2, 10000);
       };
