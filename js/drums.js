@@ -19,51 +19,54 @@
 
 /* ------------------------------------------------------------- the kits --
    Each kit is a full set of numbers rather than a delta, because reading one
-   should tell you what it sounds like. Frequencies in Hz, times in seconds. */
+   should tell you what it sounds like. Frequencies in Hz, times in seconds.
+   Every *Decay is a time CONSTANT: the drum is inaudible at about 4.6 of
+   them, which is the number to picture. A studio kick at 0.10 rings for half
+   a second; that is already on the generous side of a real one. */
 
 export const DRUM_KITS = {
   studio: {
     label: 'Studio',
-    kickF: 52, kickSweep: 3.4, kickBend: 0.030, kickDecay: 0.30, kickClick: 0.55,
-    snareF: 195, snareBody: 0.55, snareWire: 0.95, snareNoise: 1900, snareTail: 0.155,
-    hatF: 8200, hatDecay: 0.042, hatOpen: 0.30,
-    tomF: [230, 165, 108], tomDecay: 0.36,
+    kickF: 52, kickSweep: 3.4, kickBend: 0.030, kickDecay: 0.10, kickClick: 0.55,
+    snareF: 195, snareBody: 0.48, snareWire: 0.95, snareNoise: 2200, snareTail: 0.085,
+    hatF: 7400, hatDecay: 0.026, hatOpen: 0.15,
+    tomF: [230, 165, 108], tomDecay: 0.16,
     rideF: 520, crashF: 1100,
     drive: 1.25, room: 0.16, size: 0.011, tail: 0.10,
   },
   room: {
     label: 'Big room',
-    kickF: 48, kickSweep: 3.8, kickBend: 0.036, kickDecay: 0.40, kickClick: 0.45,
-    snareF: 180, snareBody: 0.62, snareWire: 1.0, snareNoise: 1750, snareTail: 0.24,
-    hatF: 7600, hatDecay: 0.055, hatOpen: 0.42,
-    tomF: [210, 150, 96], tomDecay: 0.52,
+    kickF: 48, kickSweep: 3.8, kickBend: 0.036, kickDecay: 0.15, kickClick: 0.45,
+    snareF: 180, snareBody: 0.55, snareWire: 1.0, snareNoise: 2000, snareTail: 0.13,
+    hatF: 7000, hatDecay: 0.032, hatOpen: 0.20,
+    tomF: [210, 150, 96], tomDecay: 0.22,
     rideF: 480, crashF: 980,
     drive: 1.15, room: 0.42, size: 0.021, tail: 0.34,
   },
   vintage: {
     label: 'Vintage',
-    kickF: 58, kickSweep: 2.8, kickBend: 0.024, kickDecay: 0.20, kickClick: 0.35,
-    snareF: 215, snareBody: 0.70, snareWire: 0.72, snareNoise: 1500, snareTail: 0.105,
-    hatF: 6800, hatDecay: 0.034, hatOpen: 0.22,
-    tomF: [260, 190, 125], tomDecay: 0.26,
+    kickF: 58, kickSweep: 2.8, kickBend: 0.024, kickDecay: 0.075, kickClick: 0.35,
+    snareF: 215, snareBody: 0.62, snareWire: 0.72, snareNoise: 1700, snareTail: 0.055,
+    hatF: 6400, hatDecay: 0.020, hatOpen: 0.11,
+    tomF: [260, 190, 125], tomDecay: 0.115,
     rideF: 560, crashF: 1250,
     drive: 1.7, room: 0.12, size: 0.008, tail: 0.05,
   },
   jazz: {
     label: 'Jazz',
-    kickF: 66, kickSweep: 2.4, kickBend: 0.022, kickDecay: 0.17, kickClick: 0.28,
-    snareF: 245, snareBody: 0.45, snareWire: 1.05, snareNoise: 2600, snareTail: 0.115,
-    hatF: 9000, hatDecay: 0.030, hatOpen: 0.24,
-    tomF: [290, 205, 140], tomDecay: 0.28,
+    kickF: 66, kickSweep: 2.4, kickBend: 0.022, kickDecay: 0.070, kickClick: 0.28,
+    snareF: 245, snareBody: 0.40, snareWire: 1.05, snareNoise: 2800, snareTail: 0.062,
+    hatF: 8200, hatDecay: 0.019, hatOpen: 0.12,
+    tomF: [290, 205, 140], tomDecay: 0.125,
     rideF: 610, crashF: 1400,
     drive: 1.0, room: 0.22, size: 0.014, tail: 0.16,
   },
   heavy: {
     label: 'Heavy',
-    kickF: 46, kickSweep: 4.6, kickBend: 0.018, kickDecay: 0.16, kickClick: 1.0,
-    snareF: 205, snareBody: 0.40, snareWire: 1.15, snareNoise: 2300, snareTail: 0.13,
-    hatF: 8800, hatDecay: 0.030, hatOpen: 0.26,
-    tomF: [225, 158, 100], tomDecay: 0.28,
+    kickF: 46, kickSweep: 4.6, kickBend: 0.018, kickDecay: 0.065, kickClick: 1.0,
+    snareF: 205, snareBody: 0.36, snareWire: 1.15, snareNoise: 2500, snareTail: 0.065,
+    hatF: 8000, hatDecay: 0.018, hatOpen: 0.13,
+    tomF: [225, 158, 100], tomDecay: 0.12,
     rideF: 540, crashF: 1050,
     drive: 2.1, room: 0.20, size: 0.013, tail: 0.12,
   },
@@ -402,31 +405,38 @@ function snare(out, sr, start, g, k) {
   }
 }
 
-// cross-stick: the click of wood on a rim, with the shell answering underneath
+// cross-stick: the click of wood on a rim, with the shell answering under it.
+// The two resonances need real Q or the shell doesn't ring long enough to
+// read as wood — at Q 7 an 840 Hz mode is over in three milliseconds.
 function rim(out, sr, start, g, k) {
   const n = Math.min(out.length, Math.floor(sr * 0.14));
-  const body = svf(sr, 840, 7);
+  const shell = svf(sr, 820, 20);
+  const body = svf(sr, 390, 14);
   const click = svf(sr, 3400, 0.8);
   for (let j = 0; j < n; j++) {
     const t = j / sr;
     const nz = noise();
-    body.run(nz * (t < 0.003 ? 1 : 0));
-    click.run(nz);
-    const s = body.bp * 2.2 * Math.exp(-t / 0.045)
+    const strike = t < 0.005 ? nz : 0;
+    shell.run(strike); body.run(strike); click.run(nz);
+    const s = (shell.bp * 1.9 + body.bp * 1.1) * Math.exp(-t / 0.030)
       + (t < 0.004 ? click.hp * (1 - t / 0.004) * 0.5 : 0);
-    out[(start + j) % out.length] += s * g * 0.5;
+    out[(start + j) % out.length] += s * g * 0.32;
   }
 }
 
 // one function for closed and open: a cymbal is a cymbal, it's the foot that
 // decides how long it rings. maxDur is how long until the next hat chokes it.
 function cymbalHat(out, sr, start, g, k, decay, maxDur) {
-  const dur = Math.min(decay * 4 + 0.005, maxDur);
+  const full = decay * 4.8; // ~-40 dB, where it stops mattering
+  const dur = Math.min(full, maxDur);
   const n = Math.min(out.length, Math.floor(sr * dur));
   const hp = svf(sr, k.hatF, 0.7);
-  const r1 = svf(sr, k.hatF * 1.47, 5);
-  const r2 = svf(sr, k.hatF * 2.13, 7);
-  const choke = maxDur < decay * 4 ? maxDur : Infinity; // fade, don't cut
+  const r1 = svf(sr, k.hatF * 1.28, 5);
+  const r2 = svf(sr, k.hatF * 1.83, 7);
+  // a real cymbal runs out of top end well before Nyquist; without this the
+  // hat is all sizzle and sits an octave too bright
+  const tilt = svf(sr, 12000, 0.7);
+  const choke = maxDur < full ? maxDur : Infinity; // fade it, don't cut it
   for (let j = 0; j < n; j++) {
     const t = j / sr;
     const nz = noise();
@@ -434,13 +444,13 @@ function cymbalHat(out, sr, start, g, k, decay, maxDur) {
     let a = Math.exp(-t / decay);
     if (t < 0.0008) a *= t / 0.0008;                      // no click on attack
     if (choke !== Infinity && t > choke - 0.006) a *= Math.max(0, (choke - t) / 0.006);
-    const s = (hp.hp * 0.8 + r1.bp * 0.22 + r2.bp * 0.18) * a;
-    out[(start + j) % out.length] += s * g * 0.42;
+    tilt.run((hp.hp * 0.8 + r1.bp * 0.22 + r2.bp * 0.18) * a);
+    out[(start + j) % out.length] += tilt.lp * g * 0.5;
   }
 }
 
 function ride(out, sr, start, g, k) {
-  const n = Math.min(out.length, Math.floor(sr * 1.1));
+  const n = Math.min(out.length, Math.floor(sr * 1.6)); // 4.6 x the wash decay
   const wash = svf(sr, 3600, 0.6);
   // a ride is a ping riding on a wash — the inharmonic partials are the ping
   const parts = [1, 1.51, 2.34, 3.17].map((m) => (2 * Math.PI * k.rideF * m) / sr);
@@ -453,8 +463,8 @@ function ride(out, sr, start, g, k) {
       ping += Math.sin(ph[p]) * (0.5 / (p + 1));
     }
     wash.run(noise());
-    const s = ping * Math.exp(-t / 0.34) * 0.5
-      + wash.hp * Math.exp(-t / 0.75) * 0.35;
+    const s = ping * Math.exp(-t / 0.30) * 0.5
+      + wash.hp * Math.exp(-t / 0.34) * 0.35;
     out[(start + j) % out.length] += s * g * 0.32;
   }
 }
@@ -468,7 +478,7 @@ function crash(out, sr, start, g, k) {
     const nz = noise();
     hp.run(nz); r1.run(nz);
     // a crash takes a few milliseconds to bloom, and dies slowly
-    const a = Math.min(1, t / 0.006) * Math.exp(-t / 0.62);
+    const a = Math.min(1, t / 0.006) * Math.exp(-t / 0.50);
     out[(start + j) % out.length] += (hp.hp * 0.7 + r1.bp * 0.3) * a * g * 0.3;
   }
 }

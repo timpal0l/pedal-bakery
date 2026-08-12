@@ -13,6 +13,7 @@
 import { CHORDS, CHORD_GAINS, CHORD_LEVEL, E2 } from './config.js';
 import { MODULES, createCabinet, createStrings } from './modules.js';
 import { RIFFS, PROGRESSIONS } from './riffs.js';
+import { DRUM_PATTERNS, kitFor, renderDrums, drumBars } from './drums.js';
 
 export function createAudio() {
   let ctx = null;     // created on the first user gesture, then permanent
@@ -188,11 +189,30 @@ export function createAudio() {
     s.guitar = null;
   }
 
+  // A drummer is not a guitarist: the kit must not go through a single-coil
+  // pickup, a wooden body or sympathetic strings. It arrives already mixed
+  // and already in a room, so all it wants on the way out is a little glue.
+  function startDrums(s, state) {
+    const pattern = DRUM_PATTERNS[state.drumPattern] || DRUM_PATTERNS.rock;
+    const src = ctx.createBufferSource();
+    src.buffer = makeDrumBuffer(ctx, pattern, state.drumKit, beatSeconds(state));
+    src.loop = true;
+    const g = ctx.createGain();
+    g.gain.value = 0.85;
+    const glue = ctx.createDynamicsCompressor();
+    glue.threshold.value = -18; glue.ratio.value = 3;
+    glue.attack.value = 0.008; glue.release.value = 0.14;
+    src.connect(g).connect(glue).connect(s.bus);
+    src.start(state.sync ? nextBeatTime() : undefined);
+    s.loop = { src, g, kind: 'drums', voicing: [glue] };
+  }
+
   // All tone modes are seamless Karplus-Strong loops: 'chord' is a strummed
   // chord (in the chosen style), 'arp' a picked pattern — both in any key —
   // and 'interval' is a dyad of the root plus any interval in cents, which
   // is what opens the door to microtones (neutral thirds, quarter tones…).
   function startLoop(s, kind, state) {
+    if (kind === 'drums') { startDrums(s, state); return; }
     // detune is cents — a fractional semitone that rides the whole pitch
     // pipeline, so any input can sit e.g. a quarter tone off standard
     const root = (state.root || 0) + (state.detune || 0) / 100;
@@ -290,12 +310,16 @@ export function createAudio() {
       state.mode = 'off';
       return 'UNPLUGGED';
     }
-    const kind = ['arp', 'interval', 'riff'].includes(mode) ? mode : 'chord';
+    const kind = ['arp', 'interval', 'riff', 'drums'].includes(mode) ? mode : 'chord';
     if (!s.loop || s.loop.kind !== kind) {
       stopLoop(s);
       startLoop(s, kind, state);
     }
     state.mode = kind;
+    if (kind === 'drums') {
+      const p = DRUM_PATTERNS[state.drumPattern] || DRUM_PATTERNS.rock;
+      return `DRUMS — ${p.label.toUpperCase()}`;
+    }
     if (kind === 'interval') return `DYAD — ROOT + ${state.interval ?? 350}¢`;
     return `${(state.chord || 'major').toUpperCase()}${kind === 'arp' ? ' ARPEGGIO' : ''}`;
   }
@@ -704,6 +728,22 @@ function renderStrumSpan(out, sr, len, semis, style, spb, beatOffset, spanBeats)
     });
    }
   }
+}
+
+// Several bars of a groove, rendered once and looped. Long enough that the
+// ear stops hearing the repeat — every bar is humanised separately and the
+// last one gets a fill, so it never lands twice the same way.
+function makeDrumBuffer(ctx, pattern, kitKey, spb) {
+  const sr = ctx.sampleRate;
+  const bars = drumBars(pattern);
+  const len = Math.max(1, Math.floor(sr * bars * pattern.beats * spb));
+  const buf = ctx.createBuffer(1, len, sr);
+  const out = buf.getChannelData(0);
+  renderDrums(out, sr, spb, pattern, kitFor(kitKey, pattern), bars);
+  // peak-normalised like every other loop, which lands a brushed jazz kit
+  // well below a metal one — exactly as it should be
+  normalize(out, CHORD_LEVEL * 1.5);
+  return buf;
 }
 
 // A riff is note data, not a chord: each entry has its own beat position,

@@ -284,7 +284,8 @@ function createPhaser(ctx) {
     _nodes: { dry, wet, fb, lfoG, ...stages },
     rate: (v, t) => lfo.frequency.setTargetAtTime(0.1 + Math.pow(v / 10, 1.6) * 7.9, t, 0.05),
     depth: (v, t) => lfoG.gain.setTargetAtTime((v / 10) * 1400, t, 0.05),
-    feedback: (v, t) => fb.gain.setTargetAtTime((v / 10) * 0.85, t, 0.05),
+    // 0.85 peaked at 5x through the allpass chain; 0.6 still swooshes hard
+    feedback: (v, t) => fb.gain.setTargetAtTime((v / 10) * 0.6, t, 0.05),
     mix: (v, t) => { // 5 is the classic 50/50 notch; 10 is pure vocal sweep
       const m = (v / 10) * (Math.PI / 2);
       dry.gain.setTargetAtTime(Math.cos(m), t, 0.05);
@@ -432,8 +433,11 @@ export function createStrings(ctx) {
   const parts = [];
   for (const f of OPEN) {
     const d = ctx.createDelay(0.05);
-    d.delayTime.value = 1 / f;
-    const fb = ctx.createGain(); fb.gain.value = 0.86;   // long-ish ring
+    d.delayTime.value = Math.round(ctx.sampleRate / f) / ctx.sampleRate;
+    // 0.86 feedback measured stable on paper but ran away catastrophically in
+    // a real graph (a single resonator reached 868,000x). 0.6 and below is
+    // stable at every string pitch with margin; this is set well under that.
+    const fb = ctx.createGain(); fb.gain.value = 0.55;
     const damp = ctx.createBiquadFilter();               // strings lose highs
     damp.type = 'lowpass'; damp.frequency.value = 2600; damp.Q.value = 0.5;
     input.connect(d);
@@ -441,7 +445,12 @@ export function createStrings(ctx) {
     d.connect(bus);
     parts.push(d, fb, damp);
   }
-  bus.connect(out);
+  // belt and braces: even if a resonator misbehaves it can never howl
+  const safety = ctx.createDynamicsCompressor();
+  safety.threshold.value = -18; safety.knee.value = 6;
+  safety.ratio.value = 12; safety.attack.value = 0.003; safety.release.value = 0.1;
+  bus.connect(safety).connect(out);
+  parts.push(safety);
   return {
     in: input, out,
     setAmount: (v) => { bus.gain.value = Math.max(0, Math.min(0.4, v)); },

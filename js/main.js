@@ -14,6 +14,7 @@ import { createBoard } from './board.js';
 import { CHORDS, KEYS, INTERVALS, DETUNES } from './config.js';
 import { STRUM_STYLES, ARP_PATTERNS } from './audio.js';
 import { RIFFS, PROGRESSIONS } from './riffs.js';
+import { DRUM_KITS, DRUM_PATTERNS, drumsFor } from './drums.js';
 import { createNet, playerIdentity, savedBakeries, rememberBakery, forgetBakery } from './net.js';
 
 const canvas = document.getElementById('view');
@@ -35,6 +36,9 @@ const instances = new Map(); // pedal id -> { id, spec, state, view }
 const posts = new Map();     // endpoint id -> { id, type: 'source'|'amp', state?, view }
 const others = new Map();    // remote player id -> { id, name, color }
 const armedGuitar = new Set(); // source ids where THIS client granted the mic
+// source modes that are a baked, looping buffer — the ones that re-bake when
+// the chord, the style or the clock changes. 'guitar' and 'off' are neither.
+const LOOP_MODES = ['chord', 'arp', 'interval', 'riff', 'drums'];
 const myId = playerIdentity();
 let counter = 0;
 
@@ -220,6 +224,7 @@ function applySpawnPost(op) {
   }
   posts.get(op.id).view.setKnobValue(state.volume ?? 5);
   refreshBoard();
+  syncDrums(); // a new player on the board is something to play along with
 }
 
 function applyRemove(id) {
@@ -250,6 +255,7 @@ function applyRemove(id) {
     post.view.dispose();
     posts.delete(id);
     refreshBoard();
+    syncDrums(); // whoever the drummer was following may have just left
   }
   return post;
 }
@@ -305,9 +311,10 @@ function applyTone(op) {
       armedGuitar.delete(op.id);
       audio.setSourceMode(op.id, st.mode, st).catch(() => {});
     }
-  } else if (['chord', 'arp', 'interval', 'riff'].includes(st.mode)) {
+  } else if (LOOP_MODES.includes(st.mode)) {
     audio.refreshTone(op.id, st);
   }
+  syncDrums(); // somebody changed what they're playing — the drummer follows
   if (menuTarget === op.id && sourceMenu.style.display === 'flex') renderSourceMenu();
 }
 
@@ -315,9 +322,42 @@ function applyBpm(op) {
   audio.setTransportBpm(op.value);
   for (const post of posts.values()) { // synced loops re-bake to the new clock
     if (post.type === 'source' && post.state.sync
-        && ['chord', 'arp', 'interval', 'riff'].includes(post.state.mode)) {
+        && LOOP_MODES.includes(post.state.mode)) {
       audio.refreshTone(post.id, post.state);
     }
+  }
+}
+
+/* --------------------------------------------------- the drummer listens --
+   A following drum post plays whatever suits the rest of the room. This is
+   DERIVED state, not a board mutation: every client runs the same function
+   over the same synced source states and lands on the same groove, so it
+   needs no op and can't desync. Picking a groove by hand turns follow off,
+   and that choice IS an op like everything else. */
+
+function bandGroove(drummerId) {
+  // by id, NOT by insertion order: a late joiner rebuilds the board from the
+  // snapshot in the server's order, which need not match the order the ops
+  // arrived here. Sorting by id is the one ordering every client agrees on.
+  const band = [...posts.values()]
+    .filter((p) => p.type === 'source' && p.id !== drummerId
+      && p.state.mode !== 'drums' && p.state.mode !== 'off')
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  for (const post of band) {
+    const groove = drumsFor(post.state);
+    if (groove) return groove;
+  }
+  return null;
+}
+
+function syncDrums() {
+  for (const post of posts.values()) {
+    const st = post.state;
+    if (post.type !== 'source' || st.mode !== 'drums' || st.drumFollow === false) continue;
+    const groove = bandGroove(post.id);
+    if (!groove || groove === st.drumPattern) continue;
+    st.drumPattern = groove;
+    audio.refreshTone(post.id, st);
   }
 }
 
@@ -360,20 +400,29 @@ function spawnPedal(spec, at) {
   return op.id;
 }
 
-function spawnSource(at) {
-  const n = [...posts.values()].filter((p) => p.type === 'source').length;
-  if (n >= 2) { showHud('two inputs max for now'); return null; }
+function spawnSource(at, mode) {
+  const all = [...posts.values()].filter((p) => p.type === 'source');
+  // the cap is on things that could want an interface channel; a drummer
+  // doesn't, so drums never cost you a guitar input
+  const n = all.filter((p) => p.state.mode !== 'drums').length;
+  if (mode !== 'drums' && n >= 2) { showHud('two inputs max for now'); return null; }
   const op = { type: 'spawnPost', id: nextId('s'), ptype: 'source',
-    pos: at ?? { x: 7.6, z: [0, 3.5, -3.5, 7, -7][n % 5] },
-    st: { mode: 'chord', chord: 'major', root: 0, strumStyle: 'ring',
+    pos: at ?? { x: 7.6, z: [0, 3.5, -3.5, 7, -7][all.length % 5] },
+    st: { mode: mode || 'chord', chord: 'major', root: 0, strumStyle: 'ring',
       arpPattern: 'up', riff: 'rock', progression: 'none', riffFollow: true, interval: 350, detune: 0, volume: 5,
+      drumKit: 'auto', drumPattern: 'rock', drumFollow: true,
       bpm: 100, sync: true, // inputs join the shared clock by default
       channel: n } }; // post N maps to interface input N+1
+  if (mode === 'drums') op.st.drumPattern = bandGroove(op.id) || 'rock';
   applySpawnPost(op);
   net.sendOp(op);
-  showHud('TONE IN added — click it to pick a chord');
+  showHud(mode === 'drums'
+    ? 'DRUMS added — cable them to an amp'
+    : 'TONE IN added — click it to pick a chord');
   return op.id;
 }
+
+function spawnDrums(at) { return spawnSource(at, 'drums'); }
 
 function spawnAmp(at) {
   const n = [...posts.values()].filter((p) => p.type === 'amp').length;
@@ -397,12 +446,14 @@ function removeEndpoint(id) {
   const post = applyRemove(id);
   if (!post) return;
   net.sendOp({ type: 'remove', id });
-  showHud(post.type === 'source' ? 'tone removed' : 'amp removed');
+  showHud(post.type !== 'source' ? 'amp removed'
+    : post.state.mode === 'drums' ? 'drummer sent home' : 'tone removed');
 }
 
 /* ------------------------------------------------------------ the shelf -- */
 
-for (const [label, fn] of [['+ TONE IN', spawnSource], ['+ AMP', spawnAmp]]) {
+for (const [label, fn] of [['+ TONE IN', spawnSource], ['+ DRUMS', spawnDrums],
+  ['+ AMP', spawnAmp]]) {
   const b = document.createElement('button');
   b.className = 'chip';
   b.textContent = label;
@@ -675,6 +726,11 @@ function dyadName(st) {
 }
 
 function toneLabel(st) {
+  if (st.mode === 'drums') {
+    const p = DRUM_PATTERNS[st.drumPattern] || DRUM_PATTERNS.rock;
+    const kit = DRUM_KITS[st.drumKit];
+    return `DRUMS — ${p.label.toUpperCase()}${kit ? ` · ${kit.label.toUpperCase()}` : ''}`;
+  }
   if (['chord', 'arp'].includes(st.mode) && st.chord === 'dyad') {
     const key = KEYS.find((k) => k[1] === (st.root || 0))?.[0] ?? 'E';
     return `${key} ${dyadName(st).toUpperCase()}${st.mode === 'arp' ? ' ARP' : ''}`;
@@ -874,6 +930,7 @@ const sourceMenu = document.getElementById('source-menu');
 const SOUND_MODES = [
   { label: 'Strum', kind: 'chord' },
   { label: 'Riff', kind: 'riff' },
+  { label: 'Drums', kind: 'drums' },
   { label: 'Guitar 1', kind: 'guitar', channel: 0 },
   { label: 'Guitar 2', kind: 'guitar', channel: 1 },
   { label: 'Off', kind: 'off' },
@@ -1056,7 +1113,7 @@ function renderSourceMenu() {
     }
     sourceMenu.appendChild(grid);
   }
-  if (['chord', 'arp', 'interval', 'riff'].includes(st.mode)) {
+  if (LOOP_MODES.includes(st.mode)) {
     section('TEMPO');
     const syncRow = document.createElement('button');
     syncRow.className = 'menu-row' + (st.sync ? ' active' : '');
@@ -1098,6 +1155,26 @@ function renderSourceMenu() {
     hint.textContent = 'pick or bake one in the riff shelf →';
     sourceMenu.appendChild(hint);
   }
+  if (st.mode === 'drums') {
+    const follow = st.drumFollow !== false;
+    section('GROOVE');
+    const row = document.createElement('button');
+    row.className = 'menu-row' + (follow ? ' active' : '');
+    row.innerHTML = `<span class="check">${follow ? '✓' : ''}</span><span></span>`;
+    const heard = bandGroove(post.id);
+    row.lastChild.textContent = follow
+      ? `Follows the band${heard ? ` — playing ${DRUM_PATTERNS[heard].label}` : ' — nobody else playing'}`
+      : 'Follow whatever the band plays';
+    row.addEventListener('click', () => chooseDrumFollow(!follow));
+    sourceMenu.appendChild(row);
+    // picking a groove by hand is a decision; it takes the drummer off follow
+    chipGrid(Object.entries(DRUM_PATTERNS).map(([k, v]) => [k, v.label]),
+      st.drumPattern || 'rock', (k) => chooseGroove(k), 3);
+    section('KIT');
+    chipGrid([['auto', 'Auto'], ...Object.entries(DRUM_KITS).map(([k, v]) => [k, v.label])],
+      st.drumKit || 'auto', (k) => chooseToneOption('drumKit', k), 3);
+    return; // a kit has no key and no chord
+  }
 
   section('KEY');
   chipGrid(KEYS.map(([name, semi]) => [semi, name]), st.root || 0,
@@ -1109,12 +1186,40 @@ function renderSourceMenu() {
   }
 }
 
+// choosing a groove by hand means you want that groove, not the one the band
+// suggests — so both halves travel together as one op
+function chooseGroove(key) {
+  const post = posts.get(menuTarget);
+  if (!post) return;
+  Object.assign(post.state, { drumPattern: key, drumFollow: false });
+  audio.refreshTone(menuTarget, post.state);
+  net.sendOp({ type: 'tone', id: menuTarget,
+    patch: { drumPattern: key, drumFollow: false } });
+  showHud(`DRUMS — ${DRUM_PATTERNS[key].label.toUpperCase()}`);
+  renderSourceMenu();
+}
+
+function chooseDrumFollow(on) {
+  const post = posts.get(menuTarget);
+  if (!post) return;
+  const patch = { drumFollow: on };
+  // switching follow back on adopts the band's groove immediately, and that
+  // resolved value has to be in the op or the menu lies to everyone else
+  if (on) patch.drumPattern = bandGroove(post.id) || post.state.drumPattern || 'rock';
+  Object.assign(post.state, patch);
+  audio.refreshTone(menuTarget, post.state);
+  net.sendOp({ type: 'tone', id: menuTarget, patch });
+  showHud(on ? 'drums follow the band' : 'drums stay on this groove');
+  renderSourceMenu();
+}
+
 function chooseToneOption(field, value) {
   const post = posts.get(menuTarget);
   if (!post) return;
   post.state[field] = value;
   audio.refreshTone(menuTarget, post.state);
   net.sendOp({ type: 'tone', id: menuTarget, patch: { [field]: value } });
+  syncDrums(); // a new riff or strum style is a new groove for the drummer
   showHud(toneLabel(post.state));
   renderSourceMenu();
 }
@@ -1175,6 +1280,7 @@ async function chooseMode(m) {
     await audio.setSourceMode(menuTarget, 'chord', st).catch(() => {});
     net.sendOp({ type: 'tone', id: menuTarget, patch: { mode: st.mode } });
   }
+  syncDrums();
   renderSourceMenu();
 }
 
@@ -1189,6 +1295,7 @@ async function chooseChord(c) {
   }
   audio.refreshTone(menuTarget, st);
   net.sendOp({ type: 'tone', id: menuTarget, patch: { chord: c, mode: st.mode } });
+  syncDrums();
   showHud(toneLabel(st));
   renderSourceMenu();
 }
@@ -1347,6 +1454,9 @@ function enterRoom(msg) {
   }
   for (const [from, to] of st.cables) board.connect(from, to);
   refreshBoard();
+  // the snapshot stores the groove a following drummer had when it was last
+  // set by hand; re-derive so a late joiner hears the same kit as the room
+  syncDrums();
   // Only the creator seeds the starter board — a joiner finding an empty
   // room leaves it empty (deliberately cleared, or a seeding race).
   if (seedOnWelcome && !posts.size && !instances.size) {
@@ -1790,7 +1900,11 @@ window.__pedal = {
   state: (id) => instances.get(id)?.state ?? posts.get(id)?.state,
   spawn: spawnPedal,
   spawnSource,
+  spawnDrums,
   spawnAmp,
+  groove: (id, key) => { menuTarget = id; chooseGroove(key); },
+  drumFollow: (id, on) => { menuTarget = id; chooseDrumFollow(on); },
+  bandGroove,
   remove: (id) => (instances.has(id) ? removePedal(id) : removeEndpoint(id)),
   connect: (from, to) => {
     board.connect(from, to);
