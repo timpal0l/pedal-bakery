@@ -102,7 +102,7 @@ export const DRUM_PATTERNS = {
     ],
     top: at([0], 'crash', 0.7),
     fillFrom: 3,
-    fill: [{ t: 3, d: 'snare', g: 0.8 }, { t: 3.25, d: 'tom1', g: 0.75 },
+    fill: [{ t: 3, d: 'snare', g: 0.8, flam: true }, { t: 3.25, d: 'tom1', g: 0.75 },
            { t: 3.5, d: 'tom2', g: 0.8 }, { t: 3.75, d: 'tom3', g: 0.9 }],
   },
 
@@ -110,7 +110,7 @@ export const DRUM_PATTERNS = {
     label: 'Punk', beats: 4, kit: 'vintage', drag: -0.006, // always rushing
     notes: [
       ...at([0, 0.5, 2, 2.5], 'kick', 0.9), ...at([1, 3], 'snare', 1),
-      ...eighths(8, 'hat', 0.72, 0.52),
+      ...eighths(8, 'lhat', 0.72, 0.52),
     ],
     top: at([0], 'crash', 0.8),
     fillFrom: 3,
@@ -162,7 +162,7 @@ export const DRUM_PATTERNS = {
       { t: 2.5, d: 'snare', g: 0.28 }, { t: 0.5, d: 'snare', g: 0.14 },
     ],
     fillFrom: 3,
-    fill: [{ t: 3, d: 'snare', g: 0.45 }, { t: 3.5, d: 'tom1', g: 0.4 },
+    fill: [{ t: 3, d: 'snare', g: 0.45, flam: true }, { t: 3.5, d: 'tom1', g: 0.4 },
            { t: 3.75, d: 'snare', g: 0.5 }, { t: 3, d: 'hat', g: 0.4 }],
   },
 
@@ -255,7 +255,7 @@ export const DRUM_PATTERNS = {
     ],
     top: at([0], 'crash', 0.85),
     fillFrom: 3,
-    fill: [{ t: 3, d: 'snare', g: 0.9 }, { t: 3.5, d: 'tom2', g: 0.8 },
+    fill: [{ t: 3, d: 'snare', g: 0.9, flam: true }, { t: 3.5, d: 'tom2', g: 0.8 },
            { t: 3.75, d: 'tom3', g: 0.95 }],
   },
 
@@ -370,7 +370,12 @@ function svf(sr, fc, Q) {
 
 const noise = () => Math.random() * 2 - 1;
 
-function kick(out, sr, start, g, k) {
+// Every voice takes a trailing `amp` — a pure output scale, used by the
+// stereo stage for pan gains. It must NOT influence decay or brightness
+// (those follow g, how hard the drum was HIT, which is the same from every
+// seat in the room).
+
+function kick(out, sr, start, g, k, _c, amp = 1) {
   const decay = k.kickDecay * (0.72 + 0.5 * g);
   const n = Math.min(out.length, Math.floor(sr * (decay * 4 + 0.02)));
   const fEnd = k.kickF, fStart = fEnd * k.kickSweep;
@@ -386,11 +391,11 @@ function kick(out, sr, start, g, k) {
       click.run(noise());
       s += click.hp * (1 - t / 0.007) * k.kickClick * 0.6;
     }
-    out[(start + j) % out.length] += Math.tanh(s * g * k.drive * 1.5) * 0.72;
+    out[(start + j) % out.length] += Math.tanh(s * g * k.drive * 1.5) * 0.72 * amp;
   }
 }
 
-function snare(out, sr, start, g, k) {
+function snare(out, sr, start, g, k, _c, amp = 1) {
   // harder hits are brighter and ring longer — that link is most of what
   // separates a backbeat from a ghost note
   const bodyDec = 0.075 * (0.65 + 0.6 * g);
@@ -410,14 +415,27 @@ function snare(out, sr, start, g, k) {
     const wires = band.bp * Math.exp(-t / wireDec) * k.snareWire;
     const stick = t < 0.02 ? snap.hp * Math.exp(-t / 0.006) * 0.55 * g : 0;
     out[(start + j) % out.length] +=
-      Math.tanh((head * k.snareBody + wires + stick) * g * k.drive) * 0.55;
+      Math.tanh((head * k.snareBody + wires + stick) * g * k.drive) * 0.55 * amp;
+  }
+}
+
+// the OTHER side of the snare: its wires buzz in sympathy whenever the kick
+// or a tom shakes the shell — the quiet rattle that says "one kit, one room"
+function buzz(out, sr, start, g, k, _c, amp = 1) {
+  const n = Math.min(out.length, Math.floor(sr * 0.09));
+  const band = svf(sr, k.snareNoise * 0.8, 1.2);
+  for (let j = 0; j < n; j++) {
+    const t = j / sr;
+    band.run(noise());
+    const a = Math.min(1, t / 0.008) * Math.exp(-t / 0.028);
+    out[(start + j) % out.length] += band.bp * a * g * k.snareWire * 0.05 * amp;
   }
 }
 
 // cross-stick: the click of wood on a rim, with the shell answering under it.
 // The two resonances need real Q or the shell doesn't ring long enough to
 // read as wood — at Q 7 an 840 Hz mode is over in three milliseconds.
-function rim(out, sr, start, g, k) {
+function rim(out, sr, start, g, k, _c, amp = 1) {
   const n = Math.min(out.length, Math.floor(sr * 0.14));
   const shell = svf(sr, 820, 20);
   const body = svf(sr, 390, 14);
@@ -429,19 +447,25 @@ function rim(out, sr, start, g, k) {
     shell.run(strike); body.run(strike); click.run(nz);
     const s = (shell.bp * 1.9 + body.bp * 1.1) * Math.exp(-t / 0.030)
       + (t < 0.004 ? click.hp * (1 - t / 0.004) * 0.5 : 0);
-    out[(start + j) % out.length] += s * g * 0.32;
+    out[(start + j) % out.length] += s * g * 0.32 * amp;
   }
 }
 
 // one function for closed and open: a cymbal is a cymbal, it's the foot that
 // decides how long it rings. maxDur is how long until the next hat chokes it.
-function cymbalHat(out, sr, start, g, k, decay, maxDur) {
+// Filtered noise alone is sizzle with no metal in it — a real cymbal is an
+// inharmonic cluster of modes, so a quiet deterministic partial stack rings
+// underneath (deterministic also means it images solidly in stereo).
+function cymbalHat(out, sr, start, g, k, decay, maxDur, amp = 1) {
   const full = decay * 4.8; // ~-40 dB, where it stops mattering
   const dur = Math.min(full, maxDur);
   const n = Math.min(out.length, Math.floor(sr * dur));
   const hp = svf(sr, k.hatF, 0.7);
   const r1 = svf(sr, k.hatF * 1.28, 5);
   const r2 = svf(sr, k.hatF * 1.83, 7);
+  const f0 = k.hatF / 5.5; // the cluster sits well under the sizzle band
+  const pw = [1, 1.342, 1.938, 2.632].map((m) => (2 * Math.PI * f0 * m) / sr);
+  const ph = [0, 0, 0, 0];
   // a real cymbal runs out of top end well before Nyquist; without this the
   // hat is all sizzle and sits an octave too bright
   const tilt = svf(sr, 12000, 0.7);
@@ -450,49 +474,69 @@ function cymbalHat(out, sr, start, g, k, decay, maxDur) {
     const t = j / sr;
     const nz = noise();
     hp.run(nz); r1.run(nz); r2.run(nz);
+    let clang = 0;
+    for (let p = 0; p < 4; p++) { ph[p] += pw[p]; clang += Math.sin(ph[p]); }
     let a = Math.exp(-t / decay);
     if (t < 0.0008) a *= t / 0.0008;                      // no click on attack
     if (choke !== Infinity && t > choke - 0.006) a *= Math.max(0, (choke - t) / 0.006);
-    tilt.run((hp.hp * 0.8 + r1.bp * 0.22 + r2.bp * 0.18) * a);
-    out[(start + j) % out.length] += tilt.lp * g * 0.5;
+    tilt.run((hp.hp * 0.8 + r1.bp * 0.22 + r2.bp * 0.18 + clang * 0.05) * a);
+    out[(start + j) % out.length] += tilt.lp * g * 0.5 * amp;
   }
 }
 
-function ride(out, sr, start, g, k) {
+function ride(out, sr, start, g, k, _c, amp = 1) {
   const n = Math.min(out.length, Math.floor(sr * 1.6)); // 4.6 x the wash decay
   const wash = svf(sr, 3600, 0.6);
-  // a ride is a ping riding on a wash — the inharmonic partials are the ping
-  const parts = [1, 1.51, 2.34, 3.17].map((m) => (2 * Math.PI * k.rideF * m) / sr);
-  const ph = [0, 0, 0, 0];
+  // a ride is a ping riding on a wash — the inharmonic partials are the ping,
+  // the bell mode outlives everything, and the wash shimmers slowly (real
+  // cymbal modes beat against each other; one slow AM stands in for that)
+  const parts = [1, 1.51, 2.34, 3.17, 5.43].map((m) => (2 * Math.PI * k.rideF * m) / sr);
+  const ph = [0, 0, 0, 0, 0];
   for (let j = 0; j < n; j++) {
     const t = j / sr;
     let ping = 0;
-    for (let p = 0; p < parts.length; p++) {
+    for (let p = 0; p < 4; p++) {
       ph[p] += parts[p];
       ping += Math.sin(ph[p]) * (0.5 / (p + 1));
     }
+    ph[4] += parts[4];
+    const bell = Math.sin(ph[4]) * Math.exp(-t / 0.5) * 0.16;
     wash.run(noise());
-    const s = ping * Math.exp(-t / 0.30) * 0.5
-      + wash.hp * Math.exp(-t / 0.34) * 0.35;
-    out[(start + j) % out.length] += s * g * 0.32;
+    const shimmer = 1 + 0.16 * Math.sin(2 * Math.PI * 0.9 * t);
+    const s = ping * Math.exp(-t / 0.30) * 0.5 + bell
+      + wash.hp * Math.exp(-t / 0.34) * 0.35 * shimmer;
+    out[(start + j) % out.length] += s * g * 0.32 * amp;
   }
 }
 
-function crash(out, sr, start, g, k) {
+function crash(out, sr, start, g, k, _c, amp = 1) {
   const n = Math.min(out.length, Math.floor(sr * 2.4));
   const hp = svf(sr, k.crashF, 0.5);
   const r1 = svf(sr, k.crashF * 2.7, 3);
+  // the clang under the wash: a mode cluster, each partial with its own decay
+  // and a slow beat against its neighbours
+  const ratios = [0.71, 1, 1.42, 1.97, 2.61];
+  const pw = ratios.map((m) => (2 * Math.PI * k.crashF * m) / sr);
+  const pd = [0.55, 0.45, 0.34, 0.26, 0.2];
+  const ph = [0, 0, 0, 0, 0];
   for (let j = 0; j < n; j++) {
     const t = j / sr;
     const nz = noise();
     hp.run(nz); r1.run(nz);
+    let clang = 0;
+    for (let p = 0; p < 5; p++) {
+      ph[p] += pw[p];
+      clang += Math.sin(ph[p]) * Math.exp(-t / pd[p])
+        * (1 + 0.3 * Math.sin(2 * Math.PI * (1.1 + p * 0.37) * t));
+    }
     // a crash takes a few milliseconds to bloom, and dies slowly
     const a = Math.min(1, t / 0.006) * Math.exp(-t / 0.50);
-    out[(start + j) % out.length] += (hp.hp * 0.7 + r1.bp * 0.3) * a * g * 0.3;
+    out[(start + j) % out.length] +=
+      ((hp.hp * 0.7 + r1.bp * 0.3) * a + clang * 0.055 * Math.min(1, t / 0.006)) * g * 0.3 * amp;
   }
 }
 
-function tom(out, sr, start, g, k, which) {
+function tom(out, sr, start, g, k, which, amp = 1) {
   const f = k.tomF[which];
   const decay = k.tomDecay * (0.7 + 0.5 * g);
   const n = Math.min(out.length, Math.floor(sr * (decay * 4 + 0.01)));
@@ -508,11 +552,11 @@ function tom(out, sr, start, g, k, which) {
       skin.run(noise());
       s += skin.hp * (1 - t / 0.005) * 0.35;
     }
-    out[(start + j) % out.length] += Math.tanh(s * g * k.drive) * 0.5;
+    out[(start + j) % out.length] += Math.tanh(s * g * k.drive) * 0.5 * amp;
   }
 }
 
-function shaker(out, sr, start, g) {
+function shaker(out, sr, start, g, _k, _c, amp = 1) {
   const n = Math.min(out.length, Math.floor(sr * 0.09));
   const hp = svf(sr, 5200, 0.8);
   for (let j = 0; j < n; j++) {
@@ -520,17 +564,21 @@ function shaker(out, sr, start, g) {
     hp.run(noise());
     // beads accelerate into the shell and stop dead — attack, then nothing
     const a = Math.min(1, t / 0.004) * Math.exp(-t / 0.022);
-    out[(start + j) % out.length] += hp.hp * a * g * 0.32;
+    out[(start + j) % out.length] += hp.hp * a * g * 0.32 * amp;
   }
 }
 
+// every voice: (out, sr, start, g, kit, choke, amp)
 const VOICES = {
-  kick, snare, rim, ride, crash, shaker,
-  hat: (out, sr, s, g, k, choke) => cymbalHat(out, sr, s, g, k, k.hatDecay * (0.6 + 0.7 * g), choke),
-  ohat: (out, sr, s, g, k, choke) => cymbalHat(out, sr, s, g, k, k.hatOpen, choke),
-  tom1: (out, sr, s, g, k) => tom(out, sr, s, g, k, 0),
-  tom2: (out, sr, s, g, k) => tom(out, sr, s, g, k, 1),
-  tom3: (out, sr, s, g, k) => tom(out, sr, s, g, k, 2),
+  kick, snare, rim, ride, crash, shaker, buzz,
+  hat: (out, sr, s, g, k, choke, amp) =>
+    cymbalHat(out, sr, s, g, k, k.hatDecay * (0.6 + 0.7 * g), choke, amp),
+  // half-open: the sloppy in-between that sizzles but still chokes
+  lhat: (out, sr, s, g, k, choke, amp) => cymbalHat(out, sr, s, g, k, k.hatOpen * 0.55, choke, amp),
+  ohat: (out, sr, s, g, k, choke, amp) => cymbalHat(out, sr, s, g, k, k.hatOpen, choke, amp),
+  tom1: (out, sr, s, g, k, _c, amp) => tom(out, sr, s, g, k, 0, amp),
+  tom2: (out, sr, s, g, k, _c, amp) => tom(out, sr, s, g, k, 1, amp),
+  tom3: (out, sr, s, g, k, _c, amp) => tom(out, sr, s, g, k, 2, amp),
 };
 
 /* ---------------------------------------------------------------- room --
@@ -579,6 +627,7 @@ const FEEL = {
   snare: { push: 0.003, jit: 0.007, vel: 0.10 },
   rim:   { push: 0.002, jit: 0.006, vel: 0.10 },
   hat:   { push: -0.001, jit: 0.004, vel: 0.13 },
+  lhat:  { push: -0.001, jit: 0.005, vel: 0.12 },
   ohat:  { push: -0.001, jit: 0.005, vel: 0.12 },
   ride:  { push: 0.001, jit: 0.005, vel: 0.12 },
   crash: { push: -0.002, jit: 0.005, vel: 0.08 },
@@ -597,19 +646,27 @@ function swung(t, swing) {
 }
 
 /* --------------------------------------------------------------- render --
-   Writes `bars` bars of `pattern` into `out`. The caller owns the array and
-   has already sized it to bars * pattern.beats * spb seconds. */
+   Two stages. buildEvents turns `bars` bars of pattern into one humanised
+   event list — fills every fourth bar (a smaller one mid-render, the full
+   one at the end), flams expanded, snare buzz under kick and tom hits, open
+   hats choked by the next foot. renderEvents plays that list into a buffer,
+   optionally as one side of a stereo pair. */
 
-export function renderDrums(out, sr, spb, pattern, kit, bars) {
-  const k = kit;
+function buildEvents(sr, spb, pattern, bars) {
   const beats = pattern.beats;
   const events = [];
-
   for (let bar = 0; bar < bars; bar++) {
-    const last = bar === bars - 1;
-    const from = last && pattern.fill ? (pattern.fillFrom ?? 0) : Infinity;
+    // a fill every fourth bar; mid-render fills are the small version (fewer
+    // notes, softer), the last one is the full statement
+    const fillBar = pattern.fill && ((bar + 1) % 4 === 0 || bar === bars - 1);
+    const small = fillBar && bar !== bars - 1;
+    const from = fillBar ? (pattern.fillFrom ?? 0) : Infinity;
+    const fill = fillBar
+      ? (small ? pattern.fill.filter((_, i) => i % 2 === 0).map((n) => ({ ...n, g: n.g * 0.8 }))
+               : pattern.fill)
+      : [];
     const notes = pattern.notes.filter((n) => n.t < from)
-      .concat(last && pattern.fill ? pattern.fill : [])
+      .concat(fill)
       .concat(bar === 0 && pattern.top ? pattern.top : []);
     // the weak hand is softer and a shade late; count each drum's hits per bar
     const hand = {};
@@ -619,38 +676,81 @@ export function renderDrums(out, sr, spb, pattern, kit, bars) {
       const weak = i % 2 === 1 && (n.d === 'hat' || n.d === 'shaker' || n.d === 'ride');
       const beat = bar * beats + swung(n.t, pattern.swing);
       const jitter = (Math.random() - 0.5) * 2 * feel.jit;
-      events.push({
-        at: beat * spb + feel.push + jitter + (pattern.drag || 0) + (weak ? 0.0015 : 0),
-        d: n.d,
-        g: Math.max(0.02, n.g * (weak ? 0.88 : 1)
-          * (1 + (Math.random() - 0.5) * 2 * feel.vel)),
-      });
+      const at = beat * spb + feel.push + jitter + (pattern.drag || 0) + (weak ? 0.0015 : 0);
+      const g = Math.max(0.02, n.g * (weak ? 0.88 : 1)
+        * (1 + (Math.random() - 0.5) * 2 * feel.vel));
+      events.push({ at, d: n.d, g });
+      // a flam is the grace note of the other stick, just ahead and softer
+      if (n.flam) events.push({ at: at - 0.026, d: n.d, g: g * 0.45 });
+      // kicks and toms shake the snare's wires
+      if (n.d === 'kick' || n.d.startsWith('tom')) {
+        events.push({ at: at + 0.002, d: 'buzz', g: Math.min(1, g) });
+      }
     }
   }
   events.sort((x, y) => x.at - y.at);
 
-  // an open hat rings until the foot comes down on the next one
+  // an open (or half-open) hat rings until the foot comes down on the next one
   const loopSec = bars * beats * spb;
+  const isHat = (d) => d === 'hat' || d === 'lhat' || d === 'ohat';
   for (let i = 0; i < events.length; i++) {
-    if (events[i].d !== 'ohat') continue;
+    if (events[i].d !== 'ohat' && events[i].d !== 'lhat') continue;
     let next = loopSec + events[0].at; // wraps: the first hat of the next pass
     for (let j = i + 1; j < events.length; j++) {
-      if (events[j].d === 'hat' || events[j].d === 'ohat') { next = events[j].at; break; }
+      if (isHat(events[j].d)) { next = events[j].at; break; }
     }
     events[i].choke = Math.max(0.03, next - events[i].at);
   }
+  return events;
+}
 
+function renderEvents(out, sr, events, k, gainOf) {
   for (const e of events) {
     const voice = VOICES[e.d];
     if (!voice) continue;
+    const amp = gainOf ? gainOf(e.d) : 1;
+    if (amp < 0.001) continue;
     const start = ((Math.round(e.at * sr) % out.length) + out.length) % out.length;
-    voice(out, sr, start, e.g, k, e.choke ?? Infinity);
+    voice(out, sr, start, e.g, k, e.choke ?? Infinity, amp);
   }
-  addRoom(out, sr, k);
 }
 
-// how many bars to render into one loop: long enough that the ear stops
-// hearing the repeat, short enough not to eat memory at slow tempos
+export function renderDrums(out, sr, spb, pattern, kit, bars) {
+  renderEvents(out, sr, buildEvents(sr, spb, pattern, bars), kit, null);
+  addRoom(out, sr, kit);
+}
+
+/* --------------------------------------------------------------- stereo --
+   The kit on a stage instead of in a point: hat player-left, ride right,
+   toms sweeping across, kick and snare in the middle. One shared event list
+   (one performance), rendered once per channel with equal-power pan gains.
+   The sine-based voices are deterministic, so kick, toms and the cymbal
+   clangs image rock-solid; the noise components draw fresh randomness per
+   channel, which decorrelates the sizzle exactly the way two mics do. Each
+   channel then gets a room with different geometry. */
+
+const PAN = { kick: 0, snare: -0.08, rim: -0.08, buzz: -0.08, hat: -0.62,
+  lhat: -0.62, ohat: -0.62, ride: 0.66, crash: 0.3, tom1: -0.45, tom2: 0.08,
+  tom3: 0.5, shaker: 0.72 };
+
+export function renderDrumsStereo(outL, outR, sr, spb, pattern, kit, bars) {
+  const events = buildEvents(sr, spb, pattern, bars);
+  const gL = {}, gR = {};
+  for (const [d, p] of Object.entries(PAN)) {
+    gL[d] = Math.cos(((p + 1) * Math.PI) / 4) * 1.41;
+    gR[d] = Math.sin(((p + 1) * Math.PI) / 4) * 1.41;
+  }
+  renderEvents(outL, sr, events, kit, (d) => gL[d] ?? 1);
+  renderEvents(outR, sr, events, kit, (d) => gR[d] ?? 1);
+  addRoom(outL, sr, kit);
+  addRoom(outR, sr, { ...kit, size: kit.size * 1.37 }); // different walls each side
+}
+
+// How many bars to render into one loop: long enough that the ear stops
+// hearing the repeat — every bar is humanised separately, so more bars means
+// more variation for free. Dense patterns (blast beats) stay shorter because
+// they cost the most to render and their repetition reads as intent anyway.
 export function drumBars(pattern) {
-  return Math.max(2, Math.min(4, Math.round(16 / pattern.beats)));
+  const cap = pattern.notes.length > 20 ? 4 : 8;
+  return Math.max(2, Math.min(cap, Math.round(32 / pattern.beats)));
 }

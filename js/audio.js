@@ -13,7 +13,7 @@
 import { CHORDS, CHORD_GAINS, CHORD_LEVEL, E2 } from './config.js';
 import { MODULES, createCabinet, createStrings } from './modules.js';
 import { RIFFS, PROGRESSIONS } from './riffs.js';
-import { DRUM_PATTERNS, kitFor, renderDrums, drumBars } from './drums.js';
+import { DRUM_PATTERNS, kitFor, renderDrumsStereo, drumBars } from './drums.js';
 import { BASS_LINES, BASS_TONES } from './bass.js';
 
 export function createAudio() {
@@ -25,6 +25,7 @@ export function createAudio() {
     Number(localStorage.getItem('masterVolume') ?? 0.5)));
   let speakers = null; // last node before the destination — what you hear
   const transport = { origin: 0, bpm: 100 }; // the shared clock for synced inputs
+  let paused = false; // this player has stopped the room; see setPaused()
 
   function beatSeconds(state) {
     return 60 / (state.sync ? transport.bpm : (state.bpm || 100));
@@ -45,8 +46,10 @@ export function createAudio() {
   function vol(v) { return Math.pow((v ?? 5) / 10, 1.5) * 1.15; }
 
   // Browsers only allow sound after a user gesture, so call this from a click.
+  // While paused it must NOT wake the context back up — clicking the board is
+  // a gesture, and a pause that the next click undoes is not a pause.
   function start() {
-    if (ctx) { ctx.resume(); return; }
+    if (ctx) { if (!paused) ctx.resume(); return; }
     ctx = new (window.AudioContext || window.webkitAudioContext)();
     master = ctx.createGain();
     master.gain.value = 0.26; // quiet nominal level: dynamics survive
@@ -82,8 +85,56 @@ export function createAudio() {
     userVolume.gain.value = savedVolume;
     master.connect(limiter).connect(softClip).connect(userVolume).connect(ctx.destination);
     speakers = softClip;
+    // One room for the whole band. Each instrument brings its own space (the
+    // cab's IR, the kit's reflections, the bass bone dry) — three different
+    // rooms is the tell that the band was pasted together. A small shared
+    // early-reflection send puts everyone in the same one. Band-limited so it
+    // can't thicken the lows or hiss the top, and quiet enough to be felt
+    // rather than heard.
+    const glueSend = ctx.createGain();
+    glueSend.gain.value = 0.085;
+    const glueHp = ctx.createBiquadFilter();
+    glueHp.type = 'highpass'; glueHp.frequency.value = 280; glueHp.Q.value = 0.7;
+    const glueLp = ctx.createBiquadFilter();
+    glueLp.type = 'lowpass'; glueLp.frequency.value = 5800; glueLp.Q.value = 0.7;
+    const glue = ctx.createConvolver();
+    glue.normalize = false;
+    {
+      const gsr = ctx.sampleRate, N = Math.floor(gsr * 0.09);
+      const ir = ctx.createBuffer(2, N, gsr);
+      // six early bounces per side, different walls left and right, then a
+      // whisper of diffusion — 90 ms of "same room", no audible tail
+      const taps = [[0.011, 0.013], [0.017, 0.019], [0.023, 0.029],
+        [0.031, 0.037], [0.041, 0.047], [0.053, 0.059]];
+      for (let ch = 0; ch < 2; ch++) {
+        const d = ir.getChannelData(ch);
+        taps.forEach(([tl, tr], i) => {
+          d[Math.floor((ch ? tr : tl) * gsr)] = Math.pow(0.72, i) * 0.8 * (i % 2 && ch ? -1 : 1);
+        });
+        for (let i = Math.floor(0.012 * gsr); i < N; i++) {
+          d[i] += (Math.random() * 2 - 1) * 0.02 * Math.exp(-3 * (i / N));
+        }
+      }
+      glue.buffer = ir;
+    }
+    master.connect(glueSend);
+    glueSend.connect(glueHp).connect(glueLp).connect(glue).connect(limiter);
     transport.origin = ctx.currentTime;
+    if (paused) ctx.suspend(); // paused before the first gesture: stay that way
     console.log('[audio] started');
+  }
+
+  /* ------------------------------------------------------------- pause --
+     A real stop, not a mute: suspending the context freezes the clock, so
+     every loop, delay tail and reverb resumes exactly where it left off and
+     the whole band stays in phase. transportBeat() reads ctx.currentTime, so
+     the playhead freezes with the sound for free. Local to this player —
+     it changes nothing on the board, so there's no op and nothing to sync. */
+  function setPaused(on) {
+    paused = !!on;
+    if (!ctx) return paused; // nothing running yet; start() will honour it
+    if (paused) ctx.suspend(); else ctx.resume();
+    return paused;
   }
 
   /* ------------------------------------------------------- source posts -- */
@@ -282,11 +333,11 @@ export function createAudio() {
       beatSeconds(state), state.bassFollow === false ? null : prog);
     src.loop = true;
     const g = ctx.createGain();
-    // 0.5, not 0.9: every loop is peak-normalised to the same level, but a
-    // bass note SUSTAINS where a strum or a drum hit decays, so at equal
-    // peaks it carries ~6 dB more energy and was burying the band. Measured
-    // K-weighted against the other stems, not guessed.
-    g.gain.value = 0.5;
+    // Balanced K-weighted against the other stems, not guessed. History:
+    // 0.9 buried the band (+6.5 dB — equal-peak loops favour whatever
+    // sustains), 0.5 fixed that, and the mono choke then cost the line
+    // ~2.5 dB of sustained energy, which this buys back.
+    g.gain.value = 0.65;
     const eq = [
       ['highpass', 35, 0.7, 0],
       ['peaking', 60, 1.0, -2.5],
@@ -637,9 +688,14 @@ export function createAudio() {
       if (userVolume) userVolume.gain.setTargetAtTime(0, ctx.currentTime, 0.01);
     },
     start, createSource, disposeSource, createAmp, disposeAmp,
+    setPaused, paused: () => paused,
     setSourceMode, refreshTone, setPostVolume,
     registerRiff: (id, riff) => EXTRA_RIFFS.set(id, riff), setTransportBpm,
     transportBpm: () => transport.bpm,
+    // where the shared clock is right now, in beats since it started — every
+    // synced loop entered on one of these, so a playhead drawn from it lands
+    // on the same grid the loops did
+    transportBeat: () => (ctx ? (ctx.currentTime - transport.origin) * transport.bpm / 60 : 0),
     createRig, applyRig, disposeRig, setChain, ampScope,
     canRecord, startRecording, stopRecording,
     recording: () => !!recorder,
@@ -766,81 +822,104 @@ export const ARP_PATTERNS = {
 // The loop is tuned to a fraction of a sample with a first-order allpass —
 // an integer delay line alone quantizes pitch by up to ~10 cents up high,
 // which would smear the microtone intervals this engine now supports.
-// A real string is two coupled strings' worth of complexity: the pick makes a
-// transient click, the string decays inharmonically, and no two plucks are
-// identical. This renders one pluck with all three.
-// brightBase/clickAmt/loopTone let a bass override the guitar's assumptions.
-// A wound bass string is darker at the pluck, far less clicky, and — the one
-// that matters most — loses its top end on every trip round the string, which
-// is why a bass reads as a fundamental with a bit of growl rather than as a
-// big guitar. loopTone is that loss: 1 keeps the guitar's behaviour exactly.
-function pluckInto(out, sr, len, f, startSec, ringSec, damp, gain,
-                   brightBase, clickAmt, loopTone) {
+//
+// A real string vibrates in two planes at once: the vertical polarization is
+// loud and dies fast, the horizontal one is quieter, darker and outlives it,
+// a few cents away so the upper partials shimmer against each other. Every
+// pluck therefore renders TWO loops — that compound decay and slow breathing
+// is most of the difference between a note and a beep.
+//
+// Options (all optional):
+//   bright  pluck brightness floor — a bass overrides the guitar's assumption
+//   click   attack transient amount (a fingerpad has almost none)
+//   tone    top end kept per trip round the string (wound strings < 1)
+//   choke   seconds after the pluck when a finger lands on the string
+//   release how fast the choke closes (default 35 ms — a mute, not a gate)
+//   jitter  timing slop override (default ±6 ms; a locked-in bassist wants less)
+//   lean    constant offset off the grid (sitting behind the kick is a choice)
+function pluckInto(out, sr, len, f, startSec, ringSec, damp, gain, o = {}) {
   // Humanise: no two plucks of a real guitar share timing, tuning or force,
   // and perfectly quantised repeats are the main tell of a synthetic player.
-  const jitter = (Math.random() - 0.5) * 0.012;       // +/-6ms of feel
-  const detune = 1 + (Math.random() - 0.5) * 0.0046;  // +/-4 cents
+  const jitter = (Math.random() - 0.5) * 2 * (o.jitter ?? 0.006);
+  const detuneCents = (Math.random() - 0.5) * 8; // ±4 cents — nobody frets exactly
   const velocity = gain * (1 + (Math.random() - 0.5) * 0.16);
-  const start = Math.max(0, Math.floor(sr * (startSec + jitter)));
-  // the two-tap average delays N - 0.5 samples; the allpass adds frac more,
-  // kept in [0.3, 1.3) so its pole stays well inside the unit circle
-  const exact = sr / (f * detune) + 0.5;
-  const N = Math.max(4, Math.floor(exact - 0.3));
-  const frac = Math.max(0.1, exact - N);
-  const C = (1 - frac) / (1 + frac);
-  const ring = new Float32Array(N);
-  const seed = new Float32Array(N);
+  const start = Math.max(0, Math.floor(sr * (startSec + jitter + (o.lean ?? 0))));
   // Harder picking is brighter, not merely louder — that link is most of what
   // makes a line sound played rather than sequenced. Pitch matters too: the
   // low strings on a guitar are wound and comparatively dull with a metallic
   // zing, the top strings are plain steel and bright.
   const wound = Math.min(1, Math.max(0, (330 - f) / 250)); // 1 = low E, 0 above E4
-  const bright = brightBase !== undefined
-    ? Math.max(0.08, Math.min(0.9, brightBase + velocity * 0.18))
+  const bright = o.bright !== undefined
+    ? Math.max(0.08, Math.min(0.9, o.bright + velocity * 0.18))
     : Math.max(0.3, Math.min(0.88, 0.35 + velocity * 0.35 + (1 - wound) * 0.2));
-  let prev = 0;
-  for (let j = 0; j < N; j++) {
-    const white = Math.random() * 2 - 1;
-    prev = (1 - bright) * prev + bright * white;
-    seed[j] = prev;
-  }
-  const comb = Math.max(1, Math.round(N * 0.16)); // pickup-position comb -> quack
-  for (let j = 0; j < N; j++) ring[j] = seed[j] - 0.9 * seed[(j - comb + N) % N];
-  // Wound strings ring with a fine metallic zing over the fundamental. It is
-  // alternating-sign noise, i.e. energy right at Nyquist, so it has to scale
-  // with how bright the string is — at full strength on a bass it is the only
-  // thing you'd hear.
-  const zing = (brightBase !== undefined ? bright * 0.22 : 0.16);
-  if (wound > 0.05) {
-    for (let j = 0; j < N; j++) {
-      ring[j] += wound * zing * (Math.random() * 2 - 1) * (j % 2 ? 1 : -1);
-    }
-  }
+  // where the pick meets the string wanders a little between strokes
+  const combPos = 0.16 * (1 + (Math.random() - 0.5) * 0.25);
+  const tone = o.tone ?? 1;
+  const chokeAt = o.choke !== undefined
+    ? Math.floor(sr * Math.max(0.01, o.choke)) : Infinity;
+  const chokeK = Math.exp(-1 / (sr * (o.release ?? 0.035)));
+
   // pick attack: a short bright click before the string settles, which is
   // most of what the ear uses to identify a plucked instrument
   const clickLen = Math.min(Math.floor(sr * 0.004), len);
-  const click = (clickAmt ?? 0.5) * velocity;
+  const click = (o.click ?? 0.5) * velocity;
   for (let j = 0; j < clickLen; j++) {
     const p = (start + j) % len;
     out[p] += click * (Math.random() * 2 - 1) * (1 - j / clickLen) ** 2;
   }
-  let idx = 0;
-  let apX = 0, apY = 0; // allpass state
-  let loopLp = 0;       // extra in-loop damping, for strings that lose highs
-  const tone = loopTone ?? 1;
-  const dur = Math.min(len, Math.floor(sr * ringSec));
-  for (let j = 0; j < dur; j++) {
-    const p = (start + j) % len; // tail wraps -> seamless loop
-    const next = (idx + 1) % N;
-    const avg = 0.5 * (ring[idx] + ring[next]);
-    apY = C * avg + apX - C * apY;
-    apX = avg;
-    let v = damp * apY;
-    if (tone < 1) { loopLp += tone * (v - loopLp); v = loopLp; }
-    ring[idx] = v;
-    out[p] += velocity * ring[idx];
-    idx = next;
-  }
+
+  const renderLoop = (cents, dampX, ampX, brightX, ringX) => {
+    // the two-tap average delays N - 0.5 samples; the allpass adds frac more,
+    // kept in [0.3, 1.3) so its pole stays well inside the unit circle
+    const exact = sr / (f * Math.pow(2, cents / 1200)) + 0.5;
+    const N = Math.max(4, Math.floor(exact - 0.3));
+    const frac = Math.max(0.1, exact - N);
+    const C = (1 - frac) / (1 + frac);
+    const ring = new Float32Array(N);
+    const seed = new Float32Array(N);
+    let prev = 0;
+    for (let j = 0; j < N; j++) {
+      const white = Math.random() * 2 - 1;
+      prev = (1 - brightX) * prev + brightX * white;
+      seed[j] = prev;
+    }
+    const comb = Math.max(1, Math.round(N * combPos)); // pickup-position comb -> quack
+    for (let j = 0; j < N; j++) ring[j] = seed[j] - 0.9 * seed[(j - comb + N) % N];
+    // Wound strings ring with a fine metallic zing over the fundamental. It is
+    // alternating-sign noise, i.e. energy right at Nyquist, so it has to scale
+    // with how bright the string is — at full strength on a bass it is the
+    // only thing you'd hear.
+    const zing = (o.bright !== undefined ? brightX * 0.22 : 0.16);
+    if (wound > 0.05) {
+      for (let j = 0; j < N; j++) {
+        ring[j] += wound * zing * (Math.random() * 2 - 1) * (j % 2 ? 1 : -1);
+      }
+    }
+    let idx = 0;
+    let apX = 0, apY = 0; // allpass state
+    let loopLp = 0;       // extra in-loop damping, for strings that lose highs
+    let chokeEnv = 1;
+    const dur = Math.min(len, Math.floor(sr * ringX));
+    for (let j = 0; j < dur; j++) {
+      const p = (start + j) % len; // tail wraps -> seamless loop
+      const next = (idx + 1) % N;
+      const avg = 0.5 * (ring[idx] + ring[next]);
+      apY = C * avg + apX - C * apY;
+      apX = avg;
+      let v = dampX * apY;
+      if (tone < 1) { loopLp += tone * (v - loopLp); v = loopLp; }
+      ring[idx] = v;
+      if (j >= chokeAt) {
+        chokeEnv *= chokeK;
+        if (chokeEnv < 1e-4) break; // inaudible; the finger has won
+      }
+      out[p] += velocity * ampX * ring[idx] * chokeEnv;
+      idx = next;
+    }
+  };
+  renderLoop(detuneCents + 1.6, damp, 1, bright, ringSec);
+  renderLoop(detuneCents - 1.6, Math.min(0.99995, damp + (1 - damp) * 0.45),
+    0.38, Math.max(0.08, bright * 0.75), ringSec * 1.4);
 }
 
 function normalize(out, target) {
@@ -863,25 +942,49 @@ function makeStrumBuffer(ctx, semis, styleKey, spb, prog, root) {
                           beats: (st.b || 1) * 4 }))
     : [{ semis, beats: style.beats }];
   const totalBeats = steps.reduce((a, st) => a + st.beats, 0);
-  const len = Math.floor(sr * totalBeats * spb);
+  // several passes with fresh humanisation, so the loop never plays the same
+  // bar the same way twice
+  const cycles = Math.max(1, Math.min(8, Math.round(32 / totalBeats)));
+  const len = Math.floor(sr * totalBeats * cycles * spb);
   const buf = ctx.createBuffer(1, len, sr);
   const out = buf.getChannelData(0);
-  let beatCursor = 0;
-  for (const step of steps) {
-    renderStrumSpan(out, sr, len, step.semis, style, spb, beatCursor, step.beats);
-    beatCursor += step.beats;
+  for (let c = 0; c < cycles; c++) {
+    let beatCursor = c * totalBeats;
+    for (const step of steps) {
+      // With changes, the player damps the strings as the next chord comes —
+      // the old chord must not keep ringing over it (measured: it used to sit
+      // only 1.8 dB down through the whole next bar). Without a progression
+      // there is nothing to damp for, and the tails wrap to seam the loop.
+      const chokeBeat = prog && prog.length ? beatCursor + step.beats : undefined;
+      renderStrumSpan(out, sr, len, step.semis, style, spb, beatCursor, step.beats, chokeBeat);
+      if (chokeBeat !== undefined) {
+        // the hand landing is audible: a tiny muted 'chick' before the change
+        for (const s of [0, 1]) {
+          pluckInto(out, sr, len, E2 * Math.pow(2, step.semis[s] / 12),
+            chokeBeat * spb - 0.045 + s * 0.012, 0.05, 0.9, 0.11,
+            { bright: 0.75, click: 0.8, jitter: 0.004 });
+        }
+      }
+      beatCursor += step.beats;
+    }
   }
   normalize(out, CHORD_LEVEL * 1.5);
   return buf;
 }
 
-// lay one chord's worth of strumming into the buffer, starting at a beat
-function renderStrumSpan(out, sr, len, semis, style, spb, beatOffset, spanBeats) {
+// Lay one chord's worth of strumming into the buffer, starting at a beat.
+// Events past the span are dropped — the next chord plays its own bar. (They
+// used to render anyway: with a progression, every style longer than the bar
+// was strumming two chords at once and wrapping wrong-chord strums onto the
+// loop's downbeat.)
+function renderStrumSpan(out, sr, len, semis, style, spb, beatOffset, spanBeats, chokeBeat) {
   const sweep = style.sweep ?? 0.045;
   const reps = Math.max(1, Math.round(spanBeats / style.beats));
   for (const evBase of style.events) {
    for (let rep = 0; rep < reps; rep++) {
-    const ev = { ...evBase, t: evBase.t + beatOffset + rep * style.beats };
+    const local = evBase.t + rep * style.beats;
+    if (local >= spanBeats) continue;
+    const ev = { ...evBase, t: local + beatOffset };
     let order = semis.map((_, i) => i);
     if (ev.strings === 'low') order = order.slice(0, 3);
     else if (ev.strings === 'high') order = order.slice(2);
@@ -889,8 +992,11 @@ function renderStrumSpan(out, sr, len, semis, style, spb, beatOffset, spanBeats)
     if (ev.dir < 0) order = [...order].reverse();
     order.forEach((stringIdx, k) => {
       const f = E2 * Math.pow(2, semis[stringIdx] / 12);
-      pluckInto(out, sr, len, f, ev.t * spb + k * sweep, style.ring, style.damp,
-        (CHORD_GAINS[stringIdx] ?? 0.15) * 2.2 * ev.g);
+      const startSec = ev.t * spb + k * sweep;
+      pluckInto(out, sr, len, f, startSec, style.ring, style.damp,
+        (CHORD_GAINS[stringIdx] ?? 0.15) * 2.2 * ev.g,
+        chokeBeat === undefined ? {}
+          : { choke: Math.max(0.06, chokeBeat * spb - startSec + 0.08) });
     });
    }
   }
@@ -903,12 +1009,22 @@ function makeDrumBuffer(ctx, pattern, kitKey, spb) {
   const sr = ctx.sampleRate;
   const bars = drumBars(pattern);
   const len = Math.max(1, Math.floor(sr * bars * pattern.beats * spb));
-  const buf = ctx.createBuffer(1, len, sr);
-  const out = buf.getChannelData(0);
-  renderDrums(out, sr, spb, pattern, kitFor(kitKey, pattern), bars);
-  // peak-normalised like every other loop, which lands a brushed jazz kit
-  // well below a metal one — exactly as it should be
-  normalize(out, CHORD_LEVEL * 1.5);
+  // stereo: the kit is a stage, not a point — hat left, ride right, toms
+  // sweeping across, kick and snare holding the middle
+  const buf = ctx.createBuffer(2, len, sr);
+  const L = buf.getChannelData(0), R = buf.getChannelData(1);
+  renderDrumsStereo(L, R, sr, spb, pattern, kitFor(kitKey, pattern), bars);
+  // Peak-normalised like every other loop (a brushed jazz kit lands well
+  // below a metal one, exactly as it should) — but by the SHARED peak:
+  // normalising the channels separately would drag the stage back to mono.
+  let peak = 0;
+  for (let i = 0; i < len; i++) {
+    const a = Math.abs(L[i]), b = Math.abs(R[i]);
+    if (a > peak) peak = a;
+    if (b > peak) peak = b;
+  }
+  const s = peak > 0 ? (CHORD_LEVEL * 1.5) / peak : 1;
+  for (let i = 0; i < len; i++) { L[i] *= s; R[i] *= s; }
   return buf;
 }
 
@@ -923,39 +1039,69 @@ function makeBassBuffer(ctx, rootSemi, lineKey, toneKey, spb, prog) {
     ? prog.map((st) => ({ shift: st.d, quality: st.q, beats: (st.b || 1) * 4 }))
     : [{ shift: 0, quality: 'major', beats: line.beats }];
   const totalBeats = steps.reduce((a, st) => a + st.beats, 0);
-  const len = Math.floor(sr * totalBeats * spb);
+  // several passes with fresh humanisation — a frozen one-bar loop is the
+  // most machine thing a bassline can do
+  const cycles = Math.max(1, Math.min(8, Math.round(32 / totalBeats)));
+  const len = Math.floor(sr * totalBeats * cycles * spb);
   const buf = ctx.createBuffer(1, len, sr);
   const out = buf.getChannelData(0);
 
-  let cursor = 0;
-  steps.forEach((step, si) => {
-    const reps = Math.max(1, Math.round(step.beats / line.beats));
-    // a pedal line ignores the changes and sits on the key's root; every
-    // other line moves with them
-    const shift = line.pedal ? 0 : step.shift;
-    const minor = /min|dim|m6|m7/.test(step.quality || '');
-    for (let r = 0; r < reps; r++) {
-      const base = cursor + r * line.beats;
-      const lastRep = si === steps.length - 1 ? r === reps - 1 : false;
-      for (const n of line.notes) {
-        if (n.t >= step.beats - r * line.beats) continue; // don't spill past the change
-        let s = n.s;
-        // the walking line borrows its third from the chord, and its last
-        // note leans a semitone into wherever the next chord starts
-        if (line.walk) {
-          if (s === 4 && minor) s = 3;
-          if (n.t === line.beats - 1 && !lastRep) {
-            const next = steps[(si + 1) % steps.length];
-            s = (line.pedal ? 0 : next.shift) - shift - 1;
+  // first the notes, as data — the walk logic needs its step context here
+  const events = [];
+  for (let c = 0; c < cycles; c++) {
+    let cursor = c * totalBeats;
+    steps.forEach((step, si) => {
+      const reps = Math.max(1, Math.round(step.beats / line.beats));
+      // a pedal line ignores the changes and sits on the key's root; every
+      // other line moves with them
+      const shift = line.pedal ? 0 : step.shift;
+      const minor = /min|dim|m6|m7/.test(step.quality || '');
+      for (let r = 0; r < reps; r++) {
+        const base = cursor + r * line.beats;
+        for (const n of line.notes) {
+          if (n.t >= step.beats - r * line.beats) continue; // don't spill past the change
+          let s = n.s;
+          // the walking line borrows its third from the chord, and its last
+          // note leans a semitone into wherever comes next — including the
+          // loop wrapping around to the top, which is also a change
+          if (line.walk) {
+            if (s === 4 && minor) s = 3;
+            if (n.t === line.beats - 1) {
+              const next = steps[(si + 1) % steps.length];
+              s = (line.pedal ? 0 : next.shift) - shift - 1;
+            }
           }
+          events.push({
+            beat: swingBeat(n.t, line.swing) + base,
+            f: (E2 / 2) * Math.pow(2, (rootSemi + shift + s) / 12),
+            g: n.g,
+          });
         }
-        const t = swingBeat(n.t, line.swing) + base;
-        const f = (E2 / 2) * Math.pow(2, (rootSemi + shift + s) / 12);
-        pluckInto(out, sr, len, f, t * spb, line.ring ?? tone.ring, tone.damp,
-          0.85 * n.g, tone.bright, tone.click, tone.tone);
       }
-    }
-    cursor += step.beats;
+      cursor += step.beats;
+    });
+  }
+
+  // Then the playing. A bass is monophonic: fretting the next note mutes the
+  // one before it, which is most of what makes a line read as notes instead
+  // of a pad (measured: only 5.5 dB of movement between notes before this).
+  // Ghosts are dead notes — a thumb on the string, thud not tone. And the
+  // whole instrument runs tighter than a guitarist and a hair behind the
+  // kick: that lock is the pocket.
+  events.sort((a, b) => a.beat - b.beat);
+  events.forEach((e, i) => {
+    const nextBeat = i + 1 < events.length
+      ? events[i + 1].beat
+      : totalBeats * cycles + events[0].beat; // the loop's next pass
+    const gap = (nextBeat - e.beat) * spb;
+    const dead = e.g < 0.35;
+    pluckInto(out, sr, len, e.f, e.beat * spb, line.ring ?? tone.ring, tone.damp,
+      0.85 * e.g, {
+        bright: tone.bright, click: tone.click, tone: tone.tone,
+        choke: dead ? 0.06 : Math.max(0.08, gap * 0.85),
+        release: dead ? 0.025 : 0.04,
+        jitter: 0.0025, lean: 0.003,
+      });
   });
   normalize(out, CHORD_LEVEL * 1.5);
   return buf;
@@ -982,22 +1128,31 @@ function makeRiffBuffer(ctx, rootSemi, riffKey, spb, prog) {
     ? prog.map((st) => ({ shift: st.d, beats: (st.b || 1) * 4 }))
     : [{ shift: 0, beats: riff.beats }];
   const totalBeats = steps.reduce((a, st) => a + st.beats, 0);
-  const len = Math.floor(sr * totalBeats * spb);
+  // fresh humanisation every pass — see makeStrumBuffer
+  const cycles = Math.max(1, Math.min(8, Math.round(32 / totalBeats)));
+  const len = Math.floor(sr * totalBeats * cycles * spb);
   const buf = ctx.createBuffer(1, len, sr);
   const out = buf.getChannelData(0);
-  let cursor = 0;
-  for (const step of steps) {
-    const reps = Math.max(1, Math.round(step.beats / riff.beats));
-    for (let r = 0; r < reps; r++) {
-      const base = cursor + r * riff.beats;
-      for (const n of riff.notes) {
-        if (n.t + r * riff.beats >= step.beats) continue; // don't spill past the change
-        const f = E2 * Math.pow(2, (rootSemi + step.shift + n.s) / 12);
-        pluckInto(out, sr, len, f, (base + n.t) * spb, n.r ?? riff.ring,
-          riff.damp ?? 0.996, 0.55 * (n.g ?? 1));
+  for (let c = 0; c < cycles; c++) {
+    let cursor = c * totalBeats;
+    for (const step of steps) {
+      const stepEnd = cursor + step.beats;
+      const reps = Math.max(1, Math.round(step.beats / riff.beats));
+      for (let r = 0; r < reps; r++) {
+        const base = cursor + r * riff.beats;
+        for (const n of riff.notes) {
+          if (n.t + r * riff.beats >= step.beats) continue; // don't spill past the change
+          const f = E2 * Math.pow(2, (rootSemi + step.shift + n.s) / 12);
+          const startSec = (base + n.t) * spb;
+          pluckInto(out, sr, len, f, startSec, n.r ?? riff.ring,
+            riff.damp ?? 0.996, 0.55 * (n.g ?? 1),
+            // with changes, damp the lick as the next chord arrives
+            prog && prog.length
+              ? { choke: Math.max(0.06, stepEnd * spb - startSec + 0.08) } : {});
+        }
       }
+      cursor += step.beats;
     }
-    cursor += step.beats;
   }
   normalize(out, CHORD_LEVEL * 1.6);
   return buf;
@@ -1011,13 +1166,18 @@ function makeArpBuffer(ctx, semis, patternKey, spb) {
   const sr = ctx.sampleRate;
   const step = (pattern.step ?? 0.5) * spb; // beats -> seconds
   const ring = pattern.ring ?? 1.7;
-  const len = Math.floor(sr * step * pattern.order.length);
+  const cycleBeats = (pattern.step ?? 0.5) * pattern.order.length;
+  const cycles = Math.max(1, Math.min(8, Math.round(32 / cycleBeats)));
+  const len = Math.floor(sr * step * pattern.order.length * cycles);
   const buf = ctx.createBuffer(1, len, sr);
   const out = buf.getChannelData(0);
-  pattern.order.forEach((noteIdx, i) => {
-    const semi = semis[noteIdx] ?? semis[semis.length - 1];
-    pluckInto(out, sr, len, E2 * Math.pow(2, semi / 12), step * i, ring, 0.9965, 0.5);
-  });
+  for (let c = 0; c < cycles; c++) {
+    pattern.order.forEach((noteIdx, i) => {
+      const semi = semis[noteIdx] ?? semis[semis.length - 1];
+      pluckInto(out, sr, len, E2 * Math.pow(2, semi / 12),
+        step * (i + c * pattern.order.length), ring, 0.9965, 0.5);
+    });
+  }
   normalize(out, 0.7);
   return buf;
 }
