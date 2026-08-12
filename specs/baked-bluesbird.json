@@ -1,0 +1,83 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "Bluesbird",
+  "tagline": "amp on the edge of breakup",
+  "enclosure": {
+    "width": 2.2,
+    "depth": 2.6,
+    "height": 0.55,
+    "color": "#2f5d8a"
+  },
+  "artwork": {
+    "style": "burst",
+    "palette": [
+      "#1b3a5c",
+      "#4a86b8",
+      "#e8c87a"
+    ],
+    "textColor": "#fbf3e0"
+  },
+  "chain": [
+    {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+        "sustain": 3.5,
+        "attack": 6.0
+      }
+    },
+    {
+      "id": "drv",
+      "type": "drive",
+      "params": {
+        "amount": 5.5,
+        "tone": 6.0,
+        "level": 5.5,
+        "character": 2.5
+      }
+    },
+    {
+      "id": "eq",
+      "type": "eq",
+      "params": {
+        "bass": 5.5,
+        "mid": 7.0,
+        "treble": 5.5,
+        "freq": 4.0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "CRUNCH",
+      "target": "drv.amount"
+    },
+    {
+      "id": "k2",
+      "label": "TONE",
+      "target": "drv.tone"
+    },
+    {
+      "id": "k3",
+      "label": "LEVEL",
+      "target": "drv.level"
+    },
+    {
+      "id": "k4",
+      "label": "MIDS",
+      "target": "eq.mid"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "FAT",
+      "target": "eq.bass",
+      "off": 5.5,
+      "on": 7.5
+    }
+  ],
+  "bakedFrom": "blues crunch pedal"
+}

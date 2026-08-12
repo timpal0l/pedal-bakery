@@ -66,6 +66,7 @@ every complete post→pedals→amp path plays simultaneously.
 | shelf (left panel) | click a pedal — or drag it straight onto the floor |
 | + TONE IN / + AMP chips | add more sources and amps — several tones at once, parallel chains |
 | + DRUMS chip | a synthesised kit that plays along; cable it to an amp like anything else |
+| + BASS chip | a bass that takes the band's line, key and changes; cable it to an amp too |
 | type a sound + BAKE | a new pedal is designed, saved to the shelf, and dropped |
 | drag a pedal / amp / source | move it (snaps to the grid); pedals dropped off the grid are removed |
 | Delete / Backspace | remove the selected (outlined) pedal |
@@ -76,6 +77,7 @@ every complete post→pedals→amp path plays simultaneously.
 | click the footswitch | bypass that pedal (dry passes through — the LED shows it) |
 | click a red tone post | menu: chord flavors (major…power) · arpeggio mode · unplugged · guitar · drums |
 | a drum post's menu | 19 grooves and 5 kits, or leave it on FOLLOWS THE BAND and it picks to match |
+| a bass post's menu | 15 lines and 4 tones, and by default it follows the band's line, key and changes |
 | left-drag empty floor | pan around the room (Google-Maps style) |
 | right-drag / scroll | orbit and zoom |
 

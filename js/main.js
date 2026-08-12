@@ -9,7 +9,7 @@
 // ---------------------------------------------------------------------------
 
 import { createAudio } from './audio.js';
-import { createScene, GRID_HALF, SNAP } from './scene.js';
+import { createScene, GRID_HALF, SNAP, sourceLook } from './scene.js';
 import { createBoard } from './board.js';
 import { CHORDS, KEYS, INTERVALS, DETUNES } from './config.js';
 import { STRUM_STYLES, ARP_PATTERNS } from './audio.js';
@@ -213,7 +213,8 @@ function applySpawnPost(op) {
   bumpCounter(op.id);
   const state = op.st;
   if (op.ptype === 'source') {
-    posts.set(op.id, { id: op.id, type: 'source', state, view: view.buildSourcePost(op.id, op.pos) });
+    posts.set(op.id, { id: op.id, type: 'source',
+      state, view: view.buildSourcePost(op.id, op.pos, sourceLook(state.mode)) });
     // a guitar can only come through the interface of whoever armed it;
     // everyone else keeps the state (for the menu) but hears silence
     if (state.mode === 'guitar' && !armedGuitar.has(op.id)) {
@@ -317,6 +318,7 @@ function applyTone(op) {
     // drums take a different way into the amp than a guitar does, so a mode
     // change is a re-wire, not just a new sound
     refreshBoard();
+    post.view.setKind?.(sourceLook(st.mode)); // and the post wears the change
   } else if (LOOP_MODES.includes(st.mode)) {
     audio.refreshTone(op.id, st);
   }
@@ -1185,7 +1187,8 @@ function renderSourceMenu() {
     chipGrid([70, 85, 100, 115, 130, 150, 170, 190].map((b) => [b, `${b}`]),
       bpmNow, (b) => chooseBpm(b), 4);
   }
-  if (st.mode === 'chord' || st.mode === 'riff' || st.mode === 'bass') {
+  const bassLed = st.mode === 'bass' && st.bassFollow !== false;
+  if (st.mode === 'chord' || st.mode === 'riff' || (st.mode === 'bass' && !bassLed)) {
     section('PROGRESSION');
     chipGrid(Object.entries(PROGRESSIONS).map(([k, v]) => [k, v.label]),
       st.progression || 'none', (k) => chooseToneOption('progression', k), 2);
@@ -1213,7 +1216,8 @@ function renderSourceMenu() {
     row.innerHTML = `<span class="check">${follow ? '✓' : ''}</span><span></span>`;
     const heard = bandBassLine(post.id);
     row.lastChild.textContent = follow
-      ? `Follows the band${heard ? ` — playing ${BASS_LINES[heard].label}` : ' — nobody else playing'}`
+      ? `Follows the band${heard ? `: ${BASS_LINES[heard].label}, their key and changes`
+        : ' — nobody else is playing yet'}`
       : 'Follow the band’s line, key and changes';
     row.addEventListener('click', () => chooseBassFollow(!follow));
     sourceMenu.appendChild(row);
@@ -1227,11 +1231,20 @@ function renderSourceMenu() {
   }
   if (st.mode === 'riff') {
     section('RIFF');
-    const hint = document.createElement('div');
-    hint.className = 'panel-sub';
-    hint.style.padding = '0 12px 6px';
-    hint.textContent = 'pick or bake one in the riff shelf →';
-    sourceMenu.appendChild(hint);
+    if (riffShelfOpen()) {
+      const hint = document.createElement('div');
+      hint.className = 'panel-sub';
+      hint.style.padding = '0 12px 6px';
+      hint.textContent = 'pick or bake one in the riff shelf →';
+      sourceMenu.appendChild(hint);
+    } else {
+      // closed by hand, but this input still wants riffs — offer the way back
+      const b = document.createElement('button');
+      b.className = 'panel-btn';
+      b.textContent = 'OPEN RIFF SHELF';
+      b.addEventListener('click', () => { setRiffShelf(true); renderSourceMenu(); });
+      sourceMenu.appendChild(b);
+    }
   }
   if (st.mode === 'drums') {
     const follow = st.drumFollow !== false;
@@ -1254,9 +1267,11 @@ function renderSourceMenu() {
     return; // a kit has no key and no chord
   }
 
-  section('KEY');
-  chipGrid(KEYS.map(([name, semi]) => [semi, name]), st.root || 0,
-    (semi) => chooseToneOption('root', semi), 6);
+  if (!bassLed) { // a following bass is in the band's key, not its own
+    section('KEY');
+    chipGrid(KEYS.map(([name, semi]) => [semi, name]), st.root || 0,
+      (semi) => chooseToneOption('root', semi), 6);
+  }
   if (st.mode !== 'riff' && st.mode !== 'bass') { // these carry their own notes
     section('CHORD');
     chipGrid(Object.keys(CHORDS).map((c) => [c, c.toUpperCase()]), st.chord,
@@ -1363,6 +1378,10 @@ function chooseBpm(bpm) {
 // the settings panel docks to the right edge — it never floats
 function openPanel(id) {
   menuTarget = id;
+  // the riff drawer belongs to riff inputs only: selecting the drums or a
+  // pedal shouldn't leave a shelf of riffs sitting there
+  const post = posts.get(id);
+  if (post?.type === 'source') setRiffShelf(post.state.mode === 'riff');
   renderSourceMenu();
   sourceMenu.style.display = 'flex';
 }
@@ -1388,7 +1407,9 @@ async function chooseMode(m) {
     net.sendOp({ type: 'tone', id: menuTarget, patch: { mode: st.mode } });
   }
   refreshBoard(); // drums and guitars enter the amp by different doors
+  post.view.setKind?.(sourceLook(st.mode));
   syncDrums();
+  setRiffShelf(st.mode === 'riff'); // picking a sound is what opens the drawer
   renderSourceMenu();
 }
 
@@ -1748,10 +1769,17 @@ function wireLobby() {
 
 const riffList = document.getElementById('riff-list');
 const riffSearch = document.getElementById('riff-search');
+const riffClose = document.getElementById('riff-close');
 const riffInput = document.getElementById('riff-input');
 const riffButton = document.getElementById('riff-button');
 const riffStatus = document.getElementById('riff-status');
 const bakedRiffs = new Map(); // id -> riff data from the server
+
+// The drawer is local chrome, not board state — it never travels over the
+// wire, so each player opens and closes their own.
+function riffShelfOpen() { return document.body.classList.contains('riffs-open'); }
+function setRiffShelf(open) { document.body.classList.toggle('riffs-open', open); }
+riffClose.addEventListener('click', () => { setRiffShelf(false); renderSourceMenu(); });
 
 function currentTonePost() {
   const chosen = posts.get(menuTarget);
@@ -2062,6 +2090,7 @@ window.__pedal = {
   },
   tone: (id, field, value) => { menuTarget = id; chooseToneOption(field, value); },
   openMenu: (id) => openPanel(id),
+  riffShelf: (open) => (open === undefined ? riffShelfOpen() : setRiffShelf(open)),
   volume: (id, v) => {
     applyVolume({ id, value: v });
     net.sendOp({ type: 'volume', id, value: v });

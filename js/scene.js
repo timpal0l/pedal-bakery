@@ -17,6 +17,12 @@ export const GRID_HALF = 60;     // play area; dropping a pedal past this
                                  // (far outside the panning range) removes it
 export const SNAP = 0.5;         // grid snap step
 
+// Which body a source post wears, from the mode it is playing. Exported so
+// main.js can ask without knowing anything about meshes.
+export function sourceLook(mode) {
+  return mode === 'drums' ? 'drums' : mode === 'bass' ? 'bass' : 'tone';
+}
+
 function valueToAngle(v) {
   return (v - 5) / 5 * (Math.PI * 0.75);
 }
@@ -222,7 +228,21 @@ export function createScene(canvas) {
     return { node, kind, pos: () => root.position.add(tip), dir };
   }
 
-  const matSrcBody = pbr('srcBody', '#b04a3a', 0.2, 0.6);
+  // A source post wears the instrument it's playing. Same height and the same
+  // jack and knob positions for all three, so only the silhouette and the
+  // colour change — you can tell a drum machine from a bass across the room.
+  const SOURCE_LOOKS = {
+    tone: { mat: pbr('srcTone', '#b04a3a', 0.2, 0.6),
+      mesh: () => BABYLON.MeshBuilder.CreateBox('srcPost',
+        { width: 0.55, height: 0.55, depth: 0.55 }, scene) },
+    drums: { mat: pbr('srcDrums', '#d08a35', 0.25, 0.5),
+      mesh: () => BABYLON.MeshBuilder.CreateCylinder('srcPost',
+        { diameter: 0.64, height: 0.55, tessellation: 28 }, scene) },
+    bass: { mat: pbr('srcBass', '#4a54b4', 0.3, 0.55),
+      mesh: () => BABYLON.MeshBuilder.CreateBox('srcPost',
+        { width: 0.34, height: 0.55, depth: 0.72 }, scene) },
+  };
+
 
   // a small volume knob shared by tone posts and amps; yaw turns the whole
   // dial so amp knobs read right when you face the grille
@@ -552,18 +572,31 @@ export function createScene(canvas) {
   }
 
   /* a source post — one tone generator, output jack toward the pedals (-x) */
-  function buildSourcePost(id, pos) {
+  function buildSourcePost(id, pos, look) {
     const root = new BABYLON.TransformNode('src_' + id, scene);
     root.position.set(pos.x, 0, pos.z);
-    const post = BABYLON.MeshBuilder.CreateBox('srcPost', { width: 0.55, height: 0.55, depth: 0.55 }, scene);
-    post.parent = root;
-    post.position.y = 0.275;
-    post.material = matSrcBody;
-    post.metadata = { endpoint: id };
-    shadows.addShadowCaster(post);
+    // all three bodies are built once and swapped by visibility — cheaper and
+    // far less error-prone than rebuilding a post every time its mode changes
+    const bodies = {};
+    for (const [kind, def] of Object.entries(SOURCE_LOOKS)) {
+      const mesh = def.mesh();
+      mesh.parent = root;
+      mesh.position.y = 0.275;
+      mesh.material = def.mat;
+      mesh.metadata = { endpoint: id };
+      shadows.addShadowCaster(mesh);
+      bodies[kind] = mesh;
+    }
+    const setKind = (kind) => {
+      const want = SOURCE_LOOKS[kind] ? kind : 'tone';
+      for (const [k, mesh] of Object.entries(bodies)) mesh.setEnabled(k === want);
+    };
+    setKind(look);
     const knob = buildVolumeKnob(root, id, 0, 0.55, 0, 0.26);
-    return endpointHandles(id, root,
+    const handles = endpointHandles(id, root,
       buildEndpointJack(root, id, 'out', -0.27, 0.3, -1), knob);
+    handles.setKind = setKind;
+    return handles;
   }
 
   /* --------------------------------------------------------------- cables -- */
