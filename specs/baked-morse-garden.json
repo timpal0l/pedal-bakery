@@ -1,96 +1,96 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Morse Garden",
-  "tagline": "echoes that spell out patterns",
-  "enclosure": {
-    "width": 3.5,
-    "depth": 2.9,
-    "height": 0.65,
-    "color": "#27324a"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Morse Garden",
+ "tagline": "echoes that spell out patterns",
+ "enclosure": {
+  "width": 3.5,
+  "depth": 2.9,
+  "height": 0.65,
+  "color": "#27324a"
+ },
+ "artwork": {
+  "style": "dots",
+  "palette": [
+   "#27324a",
+   "#7fd1c8",
+   "#f2e9d8"
+  ],
+  "textColor": "#f2e9d8"
+ },
+ "chain": [
+  {
+   "id": "d1",
+   "type": "delay",
+   "params": {
+    "time": 3.8,
+    "feedback": 4.5,
+    "mix": 5.0
+   }
   },
-  "artwork": {
-    "style": "dots",
-    "palette": [
-      "#27324a",
-      "#7fd1c8",
-      "#f2e9d8"
-    ],
-    "textColor": "#f2e9d8"
+  {
+   "id": "d2",
+   "type": "delay",
+   "params": {
+    "time": 6.4,
+    "feedback": 5.5,
+    "mix": 4.5
+   }
   },
-  "chain": [
-    {
-      "id": "d1",
-      "type": "delay",
-      "params": {
-        "time": 3.8,
-        "feedback": 4.5,
-        "mix": 5.0
-      }
-    },
-    {
-      "id": "d2",
-      "type": "delay",
-      "params": {
-        "time": 6.4,
-        "feedback": 5.5,
-        "mix": 4.5
-      }
-    },
-    {
-      "id": "rev",
-      "type": "reverb",
-      "params": {
-        "size": 6.5,
-        "mix": 3.0
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "TAP A",
-      "target": "d1.time"
-    },
-    {
-      "id": "k2",
-      "label": "TAP B",
-      "target": "d2.time"
-    },
-    {
-      "id": "k3",
-      "label": "REGEN A",
-      "target": "d1.feedback"
-    },
-    {
-      "id": "k4",
-      "label": "REGEN B",
-      "target": "d2.feedback"
-    },
-    {
-      "id": "k5",
-      "label": "MIX A",
-      "target": "d1.mix"
-    },
-    {
-      "id": "k6",
-      "label": "MIX B",
-      "target": "d2.mix"
-    },
-    {
-      "id": "k7",
-      "label": "WASH",
-      "target": "rev.mix"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "BLOOM",
-      "target": "rev.size",
-      "off": 4.0,
-      "on": 9.0
-    }
-  ],
-  "bakedFrom": "a rhythmic multi-tap style echo for ambient patterns"
+  {
+   "id": "rev",
+   "type": "reverb",
+   "params": {
+    "size": 6.5,
+    "mix": 3.0
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "TAP A",
+   "target": "d1.time"
+  },
+  {
+   "id": "k2",
+   "label": "TAP B",
+   "target": "d2.time"
+  },
+  {
+   "id": "k3",
+   "label": "REGEN A",
+   "target": "d1.feedback"
+  },
+  {
+   "id": "k4",
+   "label": "REGEN B",
+   "target": "d2.feedback"
+  },
+  {
+   "id": "k5",
+   "label": "MIX A",
+   "target": "d1.mix"
+  },
+  {
+   "id": "k6",
+   "label": "MIX B",
+   "target": "d2.mix"
+  },
+  {
+   "id": "k7",
+   "label": "WASH",
+   "target": "rev.mix"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "BLOOM",
+   "target": "rev.size",
+   "off": 4.0,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "a rhythmic multi-tap style echo for ambient patterns"
 }

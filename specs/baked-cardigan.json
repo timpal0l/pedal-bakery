@@ -1,93 +1,93 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Cardigan",
-  "tagline": "clean tones for quiet rooms",
-  "enclosure": {
-    "width": 2.6,
-    "depth": 2.5,
-    "height": 0.5,
-    "color": "#dfcfe8"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Cardigan",
+ "tagline": "clean tones for quiet rooms",
+ "enclosure": {
+  "width": 2.6,
+  "depth": 2.5,
+  "height": 0.5,
+  "color": "#dfcfe8"
+ },
+ "artwork": {
+  "style": "waves",
+  "palette": [
+   "#b3a4d6",
+   "#f2c6c2",
+   "#9fd8cb"
+  ],
+  "textColor": "#453a5c"
+ },
+ "chain": [
+  {
+   "id": "cmp",
+   "type": "comp",
+   "params": {
+    "sustain": 6.0,
+    "attack": 3.5
+   }
   },
-  "artwork": {
-    "style": "waves",
-    "palette": [
-      "#b3a4d6",
-      "#f2c6c2",
-      "#9fd8cb"
-    ],
-    "textColor": "#453a5c"
+  {
+   "id": "flt",
+   "type": "filter",
+   "params": {
+    "cutoff": 4.5,
+    "resonance": 1.5
+   }
   },
-  "chain": [
-    {
-      "id": "cmp",
-      "type": "comp",
-      "params": {
-        "sustain": 6.0,
-        "attack": 3.5
-      }
-    },
-    {
-      "id": "flt",
-      "type": "filter",
-      "params": {
-        "cutoff": 4.5,
-        "resonance": 1.5
-      }
-    },
-    {
-      "id": "cho",
-      "type": "chorus",
-      "params": {
-        "rate": 2.5,
-        "depth": 3.5,
-        "mix": 4.0
-      }
-    },
-    {
-      "id": "rev",
-      "type": "reverb",
-      "params": {
-        "size": 5.0,
-        "mix": 3.5
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "SQUEEZE",
-      "target": "cmp.sustain"
-    },
-    {
-      "id": "k2",
-      "label": "WARMTH",
-      "target": "flt.cutoff"
-    },
-    {
-      "id": "k3",
-      "label": "SWIRL",
-      "target": "cho.depth"
-    },
-    {
-      "id": "k4",
-      "label": "RATE",
-      "target": "cho.rate"
-    },
-    {
-      "id": "k5",
-      "label": "WASH",
-      "target": "rev.mix"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "HAZE",
-      "target": "rev.size",
-      "off": 5.0,
-      "on": 8.5
-    }
-  ],
-  "bakedFrom": "1990s soft tone"
+  {
+   "id": "cho",
+   "type": "chorus",
+   "params": {
+    "rate": 2.5,
+    "depth": 3.5,
+    "mix": 4.0
+   }
+  },
+  {
+   "id": "rev",
+   "type": "reverb",
+   "params": {
+    "size": 5.0,
+    "mix": 3.5
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "SQUEEZE",
+   "target": "cmp.sustain"
+  },
+  {
+   "id": "k2",
+   "label": "WARMTH",
+   "target": "flt.cutoff"
+  },
+  {
+   "id": "k3",
+   "label": "SWIRL",
+   "target": "cho.depth"
+  },
+  {
+   "id": "k4",
+   "label": "RATE",
+   "target": "cho.rate"
+  },
+  {
+   "id": "k5",
+   "label": "WASH",
+   "target": "rev.mix"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "HAZE",
+   "target": "rev.size",
+   "off": 5.0,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "1990s soft tone"
 }

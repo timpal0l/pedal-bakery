@@ -1,99 +1,99 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Tinbones",
-  "tagline": "robot bells in a steel chapel",
-  "enclosure": {
-    "width": 2.4,
-    "depth": 2.6,
-    "height": 0.62,
-    "color": "#3a4a52"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Tinbones",
+ "tagline": "robot bells in a steel chapel",
+ "enclosure": {
+  "width": 2.4,
+  "depth": 2.6,
+  "height": 0.62,
+  "color": "#3a4a52"
+ },
+ "artwork": {
+  "style": "rings",
+  "palette": [
+   "#0f171b",
+   "#4fd2c2",
+   "#c98f3e"
+  ],
+  "textColor": "#eaf6f3"
+ },
+ "chain": [
+  {
+   "id": "sq",
+   "type": "comp",
+   "params": {
+    "sustain": 7.0,
+    "attack": 2.0
+   }
   },
-  "artwork": {
-    "style": "rings",
-    "palette": [
-      "#0f171b",
-      "#4fd2c2",
-      "#c98f3e"
-    ],
-    "textColor": "#eaf6f3"
+  {
+   "id": "rng",
+   "type": "ring",
+   "params": {
+    "freq": 6.6,
+    "mix": 8.5
+   }
   },
-  "chain": [
-    {
-      "id": "sq",
-      "type": "comp",
-      "params": {
-        "sustain": 7.5,
-        "attack": 2.0
-      }
-    },
-    {
-      "id": "rng",
-      "type": "ring",
-      "params": {
-        "freq": 6.6,
-        "mix": 8.5
-      }
-    },
-    {
-      "id": "flt",
-      "type": "filter",
-      "params": {
-        "cutoff": 7.4,
-        "resonance": 4.5
-      }
-    },
-    {
-      "id": "vrb",
-      "type": "reverb",
-      "params": {
-        "size": 6.5,
-        "mix": 4.0
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "frq",
-      "label": "FREQ",
-      "target": "rng.freq"
-    },
-    {
-      "id": "bld",
-      "label": "BLEND",
-      "target": "rng.mix"
-    },
-    {
-      "id": "tne",
-      "label": "TONE",
-      "target": "flt.cutoff"
-    },
-    {
-      "id": "pk",
-      "label": "PEAK",
-      "target": "flt.resonance"
-    },
-    {
-      "id": "hl",
-      "label": "HALL",
-      "target": "vrb.mix"
-    }
-  ],
-  "switches": [
-    {
-      "id": "bel",
-      "label": "BELLS",
-      "target": "vrb.size",
-      "off": 3.0,
-      "on": 9.0
-    },
-    {
-      "id": "grp",
-      "label": "GRIP",
-      "target": "sq.sustain",
-      "off": 4.0,
-      "on": 9.5
-    }
-  ],
-  "bakedFrom": "a ring modulator that turns guitar into robot bells"
+  {
+   "id": "flt",
+   "type": "filter",
+   "params": {
+    "cutoff": 7.4,
+    "resonance": 4.5
+   }
+  },
+  {
+   "id": "vrb",
+   "type": "reverb",
+   "params": {
+    "size": 6.5,
+    "mix": 4.0
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "frq",
+   "label": "FREQ",
+   "target": "rng.freq"
+  },
+  {
+   "id": "bld",
+   "label": "BLEND",
+   "target": "rng.mix"
+  },
+  {
+   "id": "tne",
+   "label": "TONE",
+   "target": "flt.cutoff"
+  },
+  {
+   "id": "pk",
+   "label": "PEAK",
+   "target": "flt.resonance"
+  },
+  {
+   "id": "hl",
+   "label": "HALL",
+   "target": "vrb.mix"
+  }
+ ],
+ "switches": [
+  {
+   "id": "bel",
+   "label": "BELLS",
+   "target": "vrb.size",
+   "off": 3.0,
+   "on": 8.0
+  },
+  {
+   "id": "grp",
+   "label": "GRIP",
+   "target": "sq.sustain",
+   "off": 4.0,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "a ring modulator that turns guitar into robot bells"
 }

@@ -1,69 +1,69 @@
 {
-  "kind": "pedal",
-  "shape": "round",
-  "name": "Sundown Bruiser",
-  "tagline": "blown speaker in an orange living room",
-  "enclosure": {
-    "width": 2.6,
-    "depth": 2.6,
-    "height": 0.62,
-    "color": "#c1441a"
+ "kind": "pedal",
+ "shape": "round",
+ "name": "Sundown Bruiser",
+ "tagline": "blown speaker in an orange living room",
+ "enclosure": {
+  "width": 2.6,
+  "depth": 2.6,
+  "height": 0.62,
+  "color": "#c1441a"
+ },
+ "artwork": {
+  "style": "rings",
+  "palette": [
+   "#c1441a",
+   "#e8b23c",
+   "#4a2412"
+  ],
+  "textColor": "#f6e3bd"
+ },
+ "chain": [
+  {
+   "id": "fz",
+   "type": "drive",
+   "params": {
+    "amount": 9.0,
+    "tone": 4.2,
+    "level": 6.5
+   }
   },
-  "artwork": {
-    "style": "rings",
-    "palette": [
-      "#c1441a",
-      "#e8b23c",
-      "#4a2412"
-    ],
-    "textColor": "#f6e3bd"
+  {
+   "id": "eqz",
+   "type": "eq",
+   "params": {
+    "bass": 6.4,
+    "mid": 6.8,
+    "treble": 3.6,
+    "freq": 3.2
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "FUZZ",
+   "target": "fz.amount"
   },
-  "chain": [
-    {
-      "id": "fz",
-      "type": "drive",
-      "params": {
-        "amount": 9.2,
-        "tone": 4.2,
-        "level": 6.5
-      }
-    },
-    {
-      "id": "eqz",
-      "type": "eq",
-      "params": {
-        "bass": 6.4,
-        "mid": 6.8,
-        "treble": 3.6,
-        "freq": 3.2
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "FUZZ",
-      "target": "fz.amount"
-    },
-    {
-      "id": "k2",
-      "label": "TONE",
-      "target": "fz.tone"
-    },
-    {
-      "id": "k3",
-      "label": "VOLUME",
-      "target": "fz.level"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "THICK",
-      "target": "eqz.bass",
-      "off": 5.0,
-      "on": 8.5
-    }
-  ],
-  "bakedFrom": "Make a 1970s fuzzpedal"
+  {
+   "id": "k2",
+   "label": "TONE",
+   "target": "fz.tone"
+  },
+  {
+   "id": "k3",
+   "label": "VOLUME",
+   "target": "fz.level"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "THICK",
+   "target": "eqz.bass",
+   "off": 5.0,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "Make a 1970s fuzzpedal"
 }

@@ -1,57 +1,57 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Skylight",
-  "tagline": "all lift, no dirt",
-  "enclosure": {
-    "width": 1.2,
-    "depth": 1.6,
-    "height": 0.4,
-    "color": "#f4f1e8"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Skylight",
+ "tagline": "all lift, no dirt",
+ "enclosure": {
+  "width": 1.2,
+  "depth": 1.6,
+  "height": 0.4,
+  "color": "#f4f1e8"
+ },
+ "artwork": {
+  "style": "gradient",
+  "palette": [
+   "#dff1fb",
+   "#8ec9e8",
+   "#f4f1e8"
+  ],
+  "textColor": "#1c3a4d"
+ },
+ "chain": [
+  {
+   "id": "eq",
+   "type": "eq",
+   "params": {
+    "bass": 5.0,
+    "mid": 5.0,
+    "treble": 5.5,
+    "freq": 6.0
+   }
   },
-  "artwork": {
-    "style": "gradient",
-    "palette": [
-      "#dff1fb",
-      "#8ec9e8",
-      "#f4f1e8"
-    ],
-    "textColor": "#1c3a4d"
-  },
-  "chain": [
-    {
-      "id": "eq",
-      "type": "eq",
-      "params": {
-        "bass": 5.0,
-        "mid": 5.0,
-        "treble": 5.5,
-        "freq": 6.0
-      }
-    },
-    {
-      "id": "lvl",
-      "type": "level",
-      "params": {
-        "gain": 7.5
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "boost",
-      "label": "LIFT",
-      "target": "lvl.gain"
-    }
-  ],
-  "switches": [
-    {
-      "id": "sheen",
-      "label": "SHEEN",
-      "target": "eq.treble",
-      "off": 5.0,
-      "on": 6.5
-    }
-  ],
-  "bakedFrom": "a clean boost with tons of headroom for solos"
+  {
+   "id": "lvl",
+   "type": "level",
+   "params": {
+    "gain": 6.5
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "boost",
+   "label": "LIFT",
+   "target": "lvl.gain"
+  }
+ ],
+ "switches": [
+  {
+   "id": "sheen",
+   "label": "SHEEN",
+   "target": "eq.treble",
+   "off": 5.0,
+   "on": 6.5
+  }
+ ],
+ "bakedFrom": "a clean boost with tons of headroom for solos"
 }

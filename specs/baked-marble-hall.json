@@ -1,93 +1,93 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Marble Hall",
-  "tagline": "steel plate, dense and blooming",
-  "enclosure": {
-    "width": 2.6,
-    "depth": 2.4,
-    "height": 0.6,
-    "color": "#8c9299"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Marble Hall",
+ "tagline": "steel plate, dense and blooming",
+ "enclosure": {
+  "width": 2.6,
+  "depth": 2.4,
+  "height": 0.6,
+  "color": "#8c9299"
+ },
+ "artwork": {
+  "style": "waves",
+  "palette": [
+   "#c9d2d8",
+   "#5c6a75",
+   "#e8eef2"
+  ],
+  "textColor": "#1c242b"
+ },
+ "chain": [
+  {
+   "id": "pre",
+   "type": "eq",
+   "params": {
+    "bass": 4.0,
+    "mid": 5.0,
+    "treble": 6.0,
+    "freq": 5.0
+   }
   },
-  "artwork": {
-    "style": "waves",
-    "palette": [
-      "#c9d2d8",
-      "#5c6a75",
-      "#e8eef2"
-    ],
-    "textColor": "#1c242b"
+  {
+   "id": "plate",
+   "type": "reverb",
+   "params": {
+    "size": 6.5,
+    "mix": 6.0
+   }
   },
-  "chain": [
-    {
-      "id": "pre",
-      "type": "eq",
-      "params": {
-        "bass": 4.0,
-        "mid": 5.0,
-        "treble": 6.0,
-        "freq": 5.0
-      }
-    },
-    {
-      "id": "plate",
-      "type": "reverb",
-      "params": {
-        "size": 6.5,
-        "mix": 6.0
-      }
-    },
-    {
-      "id": "damp",
-      "type": "filter",
-      "params": {
-        "cutoff": 7.0,
-        "resonance": 1.0
-      }
-    },
-    {
-      "id": "out",
-      "type": "level",
-      "params": {
-        "gain": 5.5
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "DECAY",
-      "target": "plate.size"
-    },
-    {
-      "id": "k2",
-      "label": "BLEND",
-      "target": "plate.mix"
-    },
-    {
-      "id": "k3",
-      "label": "DAMP",
-      "target": "damp.cutoff"
-    },
-    {
-      "id": "k4",
-      "label": "LOWS",
-      "target": "pre.bass"
-    },
-    {
-      "id": "k5",
-      "label": "AIR",
-      "target": "pre.treble"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "BRIGHT",
-      "target": "damp.cutoff",
-      "off": 7.0,
-      "on": 9.5
-    }
-  ],
-  "bakedFrom": "a plate reverb, smooth and dense like a studio classic"
+  {
+   "id": "damp",
+   "type": "filter",
+   "params": {
+    "cutoff": 7.0,
+    "resonance": 1.0
+   }
+  },
+  {
+   "id": "out",
+   "type": "level",
+   "params": {
+    "gain": 5.5
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "DECAY",
+   "target": "plate.size"
+  },
+  {
+   "id": "k2",
+   "label": "BLEND",
+   "target": "plate.mix"
+  },
+  {
+   "id": "k3",
+   "label": "DAMP",
+   "target": "damp.cutoff"
+  },
+  {
+   "id": "k4",
+   "label": "LOWS",
+   "target": "pre.bass"
+  },
+  {
+   "id": "k5",
+   "label": "AIR",
+   "target": "pre.treble"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "BRIGHT",
+   "target": "damp.cutoff",
+   "off": 7.0,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "a plate reverb, smooth and dense like a studio classic"
 }

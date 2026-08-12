@@ -1,99 +1,99 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Clavinet Riot",
-  "tagline": "one bar of wah and the room starts moving",
-  "enclosure": {
-    "width": 2.6,
-    "depth": 2.5,
-    "height": 0.6,
-    "color": "#c8b400"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Clavinet Riot",
+ "tagline": "one bar of wah and the room starts moving",
+ "enclosure": {
+  "width": 2.6,
+  "depth": 2.5,
+  "height": 0.6,
+  "color": "#c8b400"
+ },
+ "artwork": {
+  "style": "stripes",
+  "palette": [
+   "#c8b400",
+   "#1d1a12",
+   "#f2e9c0"
+  ],
+  "textColor": "#1d1a12"
+ },
+ "chain": [
+  {
+   "id": "squash",
+   "type": "comp",
+   "params": {
+    "sustain": 7.0,
+    "attack": 8.8
+   }
   },
-  "artwork": {
-    "style": "stripes",
-    "palette": [
-      "#c8b400",
-      "#1d1a12",
-      "#f2e9c0"
-    ],
-    "textColor": "#1d1a12"
+  {
+   "id": "quack",
+   "type": "filter",
+   "params": {
+    "cutoff": 3.2,
+    "resonance": 9.2
+   }
   },
-  "chain": [
-    {
-      "id": "squash",
-      "type": "comp",
-      "params": {
-        "sustain": 8.5,
-        "attack": 8.8
-      }
-    },
-    {
-      "id": "quack",
-      "type": "filter",
-      "params": {
-        "cutoff": 3.2,
-        "resonance": 9.2
-      }
-    },
-    {
-      "id": "pump",
-      "type": "tremolo",
-      "params": {
-        "rate": 6.4,
-        "depth": 2.2
-      }
-    },
-    {
-      "id": "out",
-      "type": "eq",
-      "params": {
-        "bass": 3.5,
-        "mid": 7.0,
-        "treble": 6.5,
-        "freq": 6.8
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "SQUASH",
-      "target": "squash.sustain"
-    },
-    {
-      "id": "k2",
-      "label": "SNAP",
-      "target": "squash.attack"
-    },
-    {
-      "id": "k3",
-      "label": "QUACK",
-      "target": "quack.cutoff"
-    },
-    {
-      "id": "k4",
-      "label": "PEAK",
-      "target": "quack.resonance"
-    },
-    {
-      "id": "k5",
-      "label": "WOBBLE",
-      "target": "pump.rate"
-    },
-    {
-      "id": "k6",
-      "label": "MID",
-      "target": "out.mid"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "PUMP",
-      "target": "pump.depth",
-      "off": 0,
-      "on": 5.5
-    }
-  ],
-  "bakedFrom": "a funk machine with auto filter quack and tight compression"
+  {
+   "id": "pump",
+   "type": "tremolo",
+   "params": {
+    "rate": 6.4,
+    "depth": 2.2
+   }
+  },
+  {
+   "id": "out",
+   "type": "eq",
+   "params": {
+    "bass": 3.5,
+    "mid": 7.0,
+    "treble": 6.5,
+    "freq": 6.8
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "SQUASH",
+   "target": "squash.sustain"
+  },
+  {
+   "id": "k2",
+   "label": "SNAP",
+   "target": "squash.attack"
+  },
+  {
+   "id": "k3",
+   "label": "QUACK",
+   "target": "quack.cutoff"
+  },
+  {
+   "id": "k4",
+   "label": "PEAK",
+   "target": "quack.resonance"
+  },
+  {
+   "id": "k5",
+   "label": "WOBBLE",
+   "target": "pump.rate"
+  },
+  {
+   "id": "k6",
+   "label": "MID",
+   "target": "out.mid"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "PUMP",
+   "target": "pump.depth",
+   "off": 0,
+   "on": 5.5
+  }
+ ],
+ "bakedFrom": "a funk machine with auto filter quack and tight compression"
 }

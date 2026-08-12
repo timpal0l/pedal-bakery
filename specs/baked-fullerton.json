@@ -1,115 +1,115 @@
 {
-  "kind": "amp",
-  "shape": "box",
-  "name": "Fullerton",
-  "tagline": "endless headroom, glass for days",
-  "enclosure": {
-    "width": 3.5,
-    "depth": 1.15,
-    "height": 2.15,
-    "color": "#101114"
-  },
-  "artwork": {
-    "style": "flake",
-    "palette": [
-      "#C9CDD3",
-      "#5B7FA6",
-      "#101114"
-    ],
-    "textColor": "#E8EAEE"
-  },
-  "chain": [
-    {
-      "id": "cmp",
-      "type": "comp",
-      "params": {
-        "sustain": 3.5,
-        "attack": 6.0
-      }
-    },
-    {
-      "id": "drv",
-      "type": "drive",
-      "params": {
-        "amount": 0.8,
-        "tone": 8.0,
-        "level": 6.0
-      }
-    },
-    {
-      "id": "eq",
-      "type": "eq",
-      "params": {
-        "bass": 5.5,
-        "mid": 3.5,
-        "treble": 8.0,
-        "freq": 5.5
-      }
-    },
-    {
-      "id": "rev",
-      "type": "reverb",
-      "params": {
-        "size": 4.5,
-        "mix": 2.5
-      }
-    },
-    {
-      "id": "lvl",
-      "type": "level",
-      "params": {
-        "gain": 5.5
-      }
-    }
+ "kind": "amp",
+ "shape": "box",
+ "name": "Fullerton",
+ "tagline": "endless headroom, glass for days",
+ "enclosure": {
+  "width": 3.5,
+  "depth": 1.15,
+  "height": 2.15,
+  "color": "#101114"
+ },
+ "artwork": {
+  "style": "flake",
+  "palette": [
+   "#C9CDD3",
+   "#5B7FA6",
+   "#101114"
   ],
-  "controls": [
-    {
-      "id": "vol",
-      "label": "VOLUME",
-      "target": "lvl.gain"
-    },
-    {
-      "id": "bas",
-      "label": "BASS",
-      "target": "eq.bass"
-    },
-    {
-      "id": "mid",
-      "label": "MID",
-      "target": "eq.mid"
-    },
-    {
-      "id": "trb",
-      "label": "TREBLE",
-      "target": "eq.treble"
-    },
-    {
-      "id": "rvb",
-      "label": "REVERB",
-      "target": "rev.mix"
-    }
-  ],
-  "switches": [
-    {
-      "id": "brt",
-      "label": "BRIGHT",
-      "target": "drv.tone",
-      "off": 7.0,
-      "on": 9.5
-    }
-  ],
-  "cabinet": {
-    "format": "combo",
-    "speakers": 2,
-    "grille": {
-      "style": "weave",
-      "color": "#C9CDD3",
-      "accent": "#8A8F98"
-    },
-    "tolex": "levant",
-    "trim": "#C0C4CC",
-    "panel": "#17181B",
-    "logo": "script"
+  "textColor": "#E8EAEE"
+ },
+ "chain": [
+  {
+   "id": "cmp",
+   "type": "comp",
+   "params": {
+    "sustain": 3.5,
+    "attack": 6.0
+   }
   },
-  "bakedFrom": "a sparkling clean american amp with endless headroom and glassy top"
+  {
+   "id": "drv",
+   "type": "drive",
+   "params": {
+    "amount": 0.8,
+    "tone": 8.0,
+    "level": 6.0
+   }
+  },
+  {
+   "id": "eq",
+   "type": "eq",
+   "params": {
+    "bass": 5.5,
+    "mid": 3.5,
+    "treble": 7.5,
+    "freq": 5.5
+   }
+  },
+  {
+   "id": "rev",
+   "type": "reverb",
+   "params": {
+    "size": 4.5,
+    "mix": 2.5
+   }
+  },
+  {
+   "id": "lvl",
+   "type": "level",
+   "params": {
+    "gain": 5.5
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "vol",
+   "label": "VOLUME",
+   "target": "lvl.gain"
+  },
+  {
+   "id": "bas",
+   "label": "BASS",
+   "target": "eq.bass"
+  },
+  {
+   "id": "mid",
+   "label": "MID",
+   "target": "eq.mid"
+  },
+  {
+   "id": "trb",
+   "label": "TREBLE",
+   "target": "eq.treble"
+  },
+  {
+   "id": "rvb",
+   "label": "REVERB",
+   "target": "rev.mix"
+  }
+ ],
+ "switches": [
+  {
+   "id": "brt",
+   "label": "BRIGHT",
+   "target": "drv.tone",
+   "off": 7.0,
+   "on": 8.0
+  }
+ ],
+ "cabinet": {
+  "format": "combo",
+  "speakers": 2,
+  "grille": {
+   "style": "weave",
+   "color": "#C9CDD3",
+   "accent": "#8A8F98"
+  },
+  "tolex": "levant",
+  "trim": "#C0C4CC",
+  "panel": "#17181B",
+  "logo": "script"
+ },
+ "bakedFrom": "a sparkling clean american amp with endless headroom and glassy top"
 }

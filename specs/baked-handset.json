@@ -1,93 +1,93 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Handset",
-  "tagline": "operator, connect me to 1962",
-  "enclosure": {
-    "width": 2.4,
-    "depth": 2.3,
-    "height": 0.5,
-    "color": "#2f4f4a"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Handset",
+ "tagline": "operator, connect me to 1962",
+ "enclosure": {
+  "width": 2.4,
+  "depth": 2.3,
+  "height": 0.5,
+  "color": "#2f4f4a"
+ },
+ "artwork": {
+  "style": "rings",
+  "palette": [
+   "#2f4f4a",
+   "#d9c48a",
+   "#8a3b2c"
+  ],
+  "textColor": "#f2e8d5"
+ },
+ "chain": [
+  {
+   "id": "eq1",
+   "type": "eq",
+   "params": {
+    "bass": 0.5,
+    "mid": 7.5,
+    "treble": 1.0,
+    "freq": 6.5
+   }
   },
-  "artwork": {
-    "style": "rings",
-    "palette": [
-      "#2f4f4a",
-      "#d9c48a",
-      "#8a3b2c"
-    ],
-    "textColor": "#f2e8d5"
+  {
+   "id": "flt",
+   "type": "filter",
+   "params": {
+    "cutoff": 3.2,
+    "resonance": 6.5
+   }
   },
-  "chain": [
-    {
-      "id": "eq1",
-      "type": "eq",
-      "params": {
-        "bass": 0.5,
-        "mid": 9.5,
-        "treble": 1.0,
-        "freq": 6.5
-      }
-    },
-    {
-      "id": "flt",
-      "type": "filter",
-      "params": {
-        "cutoff": 3.2,
-        "resonance": 6.5
-      }
-    },
-    {
-      "id": "cmp",
-      "type": "comp",
-      "params": {
-        "sustain": 7.5,
-        "attack": 8.0
-      }
-    },
-    {
-      "id": "lvl",
-      "type": "level",
-      "params": {
-        "gain": 6.0
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "NASAL",
-      "target": "eq1.mid"
-    },
-    {
-      "id": "k2",
-      "label": "DIAL",
-      "target": "eq1.freq"
-    },
-    {
-      "id": "k3",
-      "label": "MUFFLE",
-      "target": "flt.cutoff"
-    },
-    {
-      "id": "k4",
-      "label": "SQUAWK",
-      "target": "flt.resonance"
-    },
-    {
-      "id": "k5",
-      "label": "LEVEL",
-      "target": "lvl.gain"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "PAYPHONE",
-      "target": "eq1.bass",
-      "off": 0.5,
-      "on": 0
-    }
-  ],
-  "bakedFrom": "a telephone eq that makes everything tiny and nasal"
+  {
+   "id": "cmp",
+   "type": "comp",
+   "params": {
+    "sustain": 7.0,
+    "attack": 8.0
+   }
+  },
+  {
+   "id": "lvl",
+   "type": "level",
+   "params": {
+    "gain": 6.0
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "NASAL",
+   "target": "eq1.mid"
+  },
+  {
+   "id": "k2",
+   "label": "DIAL",
+   "target": "eq1.freq"
+  },
+  {
+   "id": "k3",
+   "label": "MUFFLE",
+   "target": "flt.cutoff"
+  },
+  {
+   "id": "k4",
+   "label": "SQUAWK",
+   "target": "flt.resonance"
+  },
+  {
+   "id": "k5",
+   "label": "LEVEL",
+   "target": "lvl.gain"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "PAYPHONE",
+   "target": "eq1.bass",
+   "off": 0.5,
+   "on": 0
+  }
+ ],
+ "bakedFrom": "a telephone eq that makes everything tiny and nasal"
 }

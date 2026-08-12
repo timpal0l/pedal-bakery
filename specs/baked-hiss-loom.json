@@ -1,132 +1,132 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Hiss Loom",
-  "tagline": "weaving static into cloth",
-  "enclosure": {
-    "width": 3.6,
-    "depth": 2.9,
-    "height": 0.8,
-    "color": "#4a4f58"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Hiss Loom",
+ "tagline": "weaving static into cloth",
+ "enclosure": {
+  "width": 3.6,
+  "depth": 2.9,
+  "height": 0.8,
+  "color": "#4a4f58"
+ },
+ "artwork": {
+  "style": "waves",
+  "palette": [
+   "#20242b",
+   "#7d8794",
+   "#cfd6dd"
+  ],
+  "textColor": "#e8eef3"
+ },
+ "chain": [
+  {
+   "id": "gate",
+   "type": "comp",
+   "params": {
+    "sustain": 7.0,
+    "attack": 1.0
+   }
   },
-  "artwork": {
-    "style": "waves",
-    "palette": [
-      "#20242b",
-      "#7d8794",
-      "#cfd6dd"
-    ],
-    "textColor": "#e8eef3"
+  {
+   "id": "grit",
+   "type": "drive",
+   "params": {
+    "amount": 6.0,
+    "tone": 8.5,
+    "level": 4.0
+   }
   },
-  "chain": [
-    {
-      "id": "gate",
-      "type": "comp",
-      "params": {
-        "sustain": 9.0,
-        "attack": 1.0
-      }
-    },
-    {
-      "id": "grit",
-      "type": "drive",
-      "params": {
-        "amount": 6.0,
-        "tone": 8.5,
-        "level": 4.0
-      }
-    },
-    {
-      "id": "bell",
-      "type": "ring",
-      "params": {
-        "freq": 7.2,
-        "mix": 3.5
-      }
-    },
-    {
-      "id": "sift",
-      "type": "filter",
-      "params": {
-        "cutoff": 4.5,
-        "resonance": 8.0
-      }
-    },
-    {
-      "id": "drift",
-      "type": "phaser",
-      "params": {
-        "rate": 1.2,
-        "depth": 8.0,
-        "feedback": 6.5
-      }
-    },
-    {
-      "id": "cloud",
-      "type": "reverb",
-      "params": {
-        "size": 9.0,
-        "mix": 6.5
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "SQUEEZE",
-      "target": "gate.sustain"
-    },
-    {
-      "id": "k2",
-      "label": "GRAIN",
-      "target": "grit.amount"
-    },
-    {
-      "id": "k3",
-      "label": "METAL",
-      "target": "bell.freq"
-    },
-    {
-      "id": "k4",
-      "label": "SIFT",
-      "target": "sift.cutoff"
-    },
-    {
-      "id": "k5",
-      "label": "PEAK",
-      "target": "sift.resonance"
-    },
-    {
-      "id": "k6",
-      "label": "DRIFT",
-      "target": "drift.rate"
-    },
-    {
-      "id": "k7",
-      "label": "WEAVE",
-      "target": "drift.feedback"
-    },
-    {
-      "id": "k8",
-      "label": "CLOUD",
-      "target": "cloud.mix"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "SHARDS",
-      "target": "bell.mix",
-      "off": 3.5,
-      "on": 8.0
-    },
-    {
-      "id": "s2",
-      "label": "VAST",
-      "target": "cloud.size",
-      "off": 9.0,
-      "on": 10
-    }
-  ],
-  "bakedFrom": "a noise sculptor that turns hiss into texture"
+  {
+   "id": "bell",
+   "type": "ring",
+   "params": {
+    "freq": 7.2,
+    "mix": 3.5
+   }
+  },
+  {
+   "id": "sift",
+   "type": "filter",
+   "params": {
+    "cutoff": 4.5,
+    "resonance": 8.0
+   }
+  },
+  {
+   "id": "drift",
+   "type": "phaser",
+   "params": {
+    "rate": 1.2,
+    "depth": 8.0,
+    "feedback": 6.5
+   }
+  },
+  {
+   "id": "cloud",
+   "type": "reverb",
+   "params": {
+    "size": 9.0,
+    "mix": 6.5
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "SQUEEZE",
+   "target": "gate.sustain"
+  },
+  {
+   "id": "k2",
+   "label": "GRAIN",
+   "target": "grit.amount"
+  },
+  {
+   "id": "k3",
+   "label": "METAL",
+   "target": "bell.freq"
+  },
+  {
+   "id": "k4",
+   "label": "SIFT",
+   "target": "sift.cutoff"
+  },
+  {
+   "id": "k5",
+   "label": "PEAK",
+   "target": "sift.resonance"
+  },
+  {
+   "id": "k6",
+   "label": "DRIFT",
+   "target": "drift.rate"
+  },
+  {
+   "id": "k7",
+   "label": "WEAVE",
+   "target": "drift.feedback"
+  },
+  {
+   "id": "k8",
+   "label": "CLOUD",
+   "target": "cloud.mix"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "SHARDS",
+   "target": "bell.mix",
+   "off": 3.5,
+   "on": 8.0
+  },
+  {
+   "id": "s2",
+   "label": "VAST",
+   "target": "cloud.size",
+   "off": 9.0,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "a noise sculptor that turns hiss into texture"
 }

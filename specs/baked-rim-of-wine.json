@@ -1,96 +1,96 @@
 {
-  "kind": "pedal",
-  "shape": "round",
-  "name": "Rim of Wine",
-  "tagline": "a wet finger on the singing glass",
-  "enclosure": {
-    "width": 2.6,
-    "depth": 2.6,
-    "height": 0.45,
-    "color": "#dff3f6"
+ "kind": "pedal",
+ "shape": "round",
+ "name": "Rim of Wine",
+ "tagline": "a wet finger on the singing glass",
+ "enclosure": {
+  "width": 2.6,
+  "depth": 2.6,
+  "height": 0.45,
+  "color": "#dff3f6"
+ },
+ "artwork": {
+  "style": "rings",
+  "palette": [
+   "#eaf9fb",
+   "#a9dbe6",
+   "#6f8fb0"
+  ],
+  "textColor": "#3a5570"
+ },
+ "chain": [
+  {
+   "id": "gate",
+   "type": "comp",
+   "params": {
+    "sustain": 7.0,
+    "attack": 8.8
+   }
   },
-  "artwork": {
-    "style": "rings",
-    "palette": [
-      "#eaf9fb",
-      "#a9dbe6",
-      "#6f8fb0"
-    ],
-    "textColor": "#3a5570"
+  {
+   "id": "bell",
+   "type": "ring",
+   "params": {
+    "freq": 8.1,
+    "mix": 2.2
+   }
   },
-  "chain": [
-    {
-      "id": "gate",
-      "type": "comp",
-      "params": {
-        "sustain": 8.4,
-        "attack": 8.8
-      }
-    },
-    {
-      "id": "bell",
-      "type": "ring",
-      "params": {
-        "freq": 8.1,
-        "mix": 2.2
-      }
-    },
-    {
-      "id": "veil",
-      "type": "filter",
-      "params": {
-        "cutoff": 8.6,
-        "resonance": 6.4
-      }
-    },
-    {
-      "id": "waver",
-      "type": "chorus",
-      "params": {
-        "rate": 1.6,
-        "depth": 2.1,
-        "mix": 4.2
-      }
-    },
-    {
-      "id": "air",
-      "type": "reverb",
-      "params": {
-        "size": 9.2,
-        "mix": 7.4
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "BLOOM",
-      "target": "air.size"
-    },
-    {
-      "id": "k2",
-      "label": "HALO",
-      "target": "air.mix"
-    },
-    {
-      "id": "k3",
-      "label": "GLASS",
-      "target": "bell.mix"
-    },
-    {
-      "id": "k4",
-      "label": "BREATH",
-      "target": "waver.depth"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "CRYSTAL",
-      "target": "veil.resonance",
-      "off": 6.4,
-      "on": 9.3
-    }
-  ],
-  "bakedFrom": "a glass harmonica shimmer, fragile and pure"
+  {
+   "id": "veil",
+   "type": "filter",
+   "params": {
+    "cutoff": 8.6,
+    "resonance": 6.4
+   }
+  },
+  {
+   "id": "waver",
+   "type": "chorus",
+   "params": {
+    "rate": 1.6,
+    "depth": 2.1,
+    "mix": 4.2
+   }
+  },
+  {
+   "id": "air",
+   "type": "reverb",
+   "params": {
+    "size": 9.2,
+    "mix": 7.4
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "BLOOM",
+   "target": "air.size"
+  },
+  {
+   "id": "k2",
+   "label": "HALO",
+   "target": "air.mix"
+  },
+  {
+   "id": "k3",
+   "label": "GLASS",
+   "target": "bell.mix"
+  },
+  {
+   "id": "k4",
+   "label": "BREATH",
+   "target": "waver.depth"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "CRYSTAL",
+   "target": "veil.resonance",
+   "off": 6.4,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "a glass harmonica shimmer, fragile and pure"
 }

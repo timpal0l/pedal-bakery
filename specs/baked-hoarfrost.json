@@ -1,126 +1,126 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Hoarfrost",
-  "tagline": "still air, glass on the pond",
-  "enclosure": {
-    "width": 3.4,
-    "depth": 2.9,
-    "height": 0.78,
-    "color": "#cfe6ef"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Hoarfrost",
+ "tagline": "still air, glass on the pond",
+ "enclosure": {
+  "width": 3.4,
+  "depth": 2.9,
+  "height": 0.78,
+  "color": "#cfe6ef"
+ },
+ "artwork": {
+  "style": "rings",
+  "palette": [
+   "#e8f4f8",
+   "#8fbfd6",
+   "#2a4a63"
+  ],
+  "textColor": "#1b3346"
+ },
+ "chain": [
+  {
+   "id": "cmp",
+   "type": "comp",
+   "params": {
+    "sustain": 6.5,
+    "attack": 8.5
+   }
   },
-  "artwork": {
-    "style": "rings",
-    "palette": [
-      "#e8f4f8",
-      "#8fbfd6",
-      "#2a4a63"
-    ],
-    "textColor": "#1b3346"
+  {
+   "id": "eq1",
+   "type": "eq",
+   "params": {
+    "bass": 2.5,
+    "mid": 3.0,
+    "treble": 7.5,
+    "freq": 7.0
+   }
   },
-  "chain": [
-    {
-      "id": "cmp",
-      "type": "comp",
-      "params": {
-        "sustain": 6.5,
-        "attack": 8.5
-      }
-    },
-    {
-      "id": "eq1",
-      "type": "eq",
-      "params": {
-        "bass": 2.5,
-        "mid": 3.0,
-        "treble": 8.5,
-        "freq": 7.0
-      }
-    },
-    {
-      "id": "chr",
-      "type": "chorus",
-      "params": {
-        "rate": 1.2,
-        "depth": 2.5,
-        "mix": 4.0
-      }
-    },
-    {
-      "id": "dly",
-      "type": "delay",
-      "params": {
-        "time": 6.5,
-        "feedback": 5.5,
-        "mix": 3.5
-      }
-    },
-    {
-      "id": "rev",
-      "type": "reverb",
-      "params": {
-        "size": 9.5,
-        "mix": 7.0
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "GLAZE",
-      "target": "eq1.treble"
-    },
-    {
-      "id": "k2",
-      "label": "THAW",
-      "target": "eq1.bass"
-    },
-    {
-      "id": "k3",
-      "label": "DRIFT",
-      "target": "chr.rate"
-    },
-    {
-      "id": "k4",
-      "label": "SHIVER",
-      "target": "chr.depth"
-    },
-    {
-      "id": "k5",
-      "label": "ECHO",
-      "target": "dly.feedback"
-    },
-    {
-      "id": "k6",
-      "label": "EXPANSE",
-      "target": "rev.size"
-    },
-    {
-      "id": "k7",
-      "label": "AIR",
-      "target": "rev.mix"
-    },
-    {
-      "id": "k8",
-      "label": "SQUEEZE",
-      "target": "cmp.sustain"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "WHITEOUT",
-      "target": "dly.mix",
-      "off": 3.5,
-      "on": 7.0
-    },
-    {
-      "id": "s2",
-      "label": "BLACK IC",
-      "target": "eq1.mid",
-      "off": 3.0,
-      "on": 0.5
-    }
-  ],
-  "bakedFrom": "a pedal that sounds like winter, cold glassy and still"
+  {
+   "id": "chr",
+   "type": "chorus",
+   "params": {
+    "rate": 1.2,
+    "depth": 2.5,
+    "mix": 4.0
+   }
+  },
+  {
+   "id": "dly",
+   "type": "delay",
+   "params": {
+    "time": 6.5,
+    "feedback": 5.5,
+    "mix": 3.5
+   }
+  },
+  {
+   "id": "rev",
+   "type": "reverb",
+   "params": {
+    "size": 9.5,
+    "mix": 7.0
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "GLAZE",
+   "target": "eq1.treble"
+  },
+  {
+   "id": "k2",
+   "label": "THAW",
+   "target": "eq1.bass"
+  },
+  {
+   "id": "k3",
+   "label": "DRIFT",
+   "target": "chr.rate"
+  },
+  {
+   "id": "k4",
+   "label": "SHIVER",
+   "target": "chr.depth"
+  },
+  {
+   "id": "k5",
+   "label": "ECHO",
+   "target": "dly.feedback"
+  },
+  {
+   "id": "k6",
+   "label": "EXPANSE",
+   "target": "rev.size"
+  },
+  {
+   "id": "k7",
+   "label": "AIR",
+   "target": "rev.mix"
+  },
+  {
+   "id": "k8",
+   "label": "SQUEEZE",
+   "target": "cmp.sustain"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "WHITEOUT",
+   "target": "dly.mix",
+   "off": 3.5,
+   "on": 7.0
+  },
+  {
+   "id": "s2",
+   "label": "BLACK IC",
+   "target": "eq1.mid",
+   "off": 3.0,
+   "on": 0.5
+  }
+ ],
+ "bakedFrom": "a pedal that sounds like winter, cold glassy and still"
 }

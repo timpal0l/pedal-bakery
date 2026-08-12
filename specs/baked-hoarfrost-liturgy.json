@@ -1,105 +1,105 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Hoarfrost Liturgy",
-  "tagline": "frozen chapel, one candle, no mercy",
-  "enclosure": {
-    "width": 3.6,
-    "depth": 2.9,
-    "height": 0.75,
-    "color": "#0d1218"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Hoarfrost Liturgy",
+ "tagline": "frozen chapel, one candle, no mercy",
+ "enclosure": {
+  "width": 3.6,
+  "depth": 2.9,
+  "height": 0.75,
+  "color": "#0d1218"
+ },
+ "artwork": {
+  "style": "waves",
+  "palette": [
+   "#0a0e14",
+   "#4d6b86",
+   "#dfeaf2"
+  ],
+  "textColor": "#e8f2f8"
+ },
+ "chain": [
+  {
+   "id": "gt",
+   "type": "drive",
+   "params": {
+    "amount": 8.6,
+    "tone": 8.8,
+    "level": 5.4
+   }
   },
-  "artwork": {
-    "style": "waves",
-    "palette": [
-      "#0a0e14",
-      "#4d6b86",
-      "#dfeaf2"
-    ],
-    "textColor": "#e8f2f8"
+  {
+   "id": "sc",
+   "type": "eq",
+   "params": {
+    "bass": 2.4,
+    "mid": 2.0,
+    "treble": 7.5,
+    "freq": 6.4
+   }
   },
-  "chain": [
-    {
-      "id": "gt",
-      "type": "drive",
-      "params": {
-        "amount": 8.6,
-        "tone": 8.8,
-        "level": 5.4
-      }
-    },
-    {
-      "id": "sc",
-      "type": "eq",
-      "params": {
-        "bass": 2.4,
-        "mid": 2.0,
-        "treble": 8.6,
-        "freq": 6.4
-      }
-    },
-    {
-      "id": "tr",
-      "type": "tremolo",
-      "params": {
-        "rate": 7.4,
-        "depth": 9.2
-      }
-    },
-    {
-      "id": "cv",
-      "type": "reverb",
-      "params": {
-        "size": 9.6,
-        "mix": 7.8
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "RASP",
-      "target": "gt.amount"
-    },
-    {
-      "id": "k2",
-      "label": "ICE",
-      "target": "sc.treble"
-    },
-    {
-      "id": "k3",
-      "label": "SCOOP",
-      "target": "sc.mid"
-    },
-    {
-      "id": "k4",
-      "label": "FLICKER",
-      "target": "tr.rate"
-    },
-    {
-      "id": "k5",
-      "label": "SWEEP",
-      "target": "tr.depth"
-    },
-    {
-      "id": "k6",
-      "label": "VAULT",
-      "target": "cv.size"
-    },
-    {
-      "id": "k7",
-      "label": "DROWN",
-      "target": "cv.mix"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "BLIZZARD",
-      "target": "gt.tone",
-      "off": 8.8,
-      "on": 10
-    }
-  ],
-  "bakedFrom": "a black metal wall of icy tremolo and reverb"
+  {
+   "id": "tr",
+   "type": "tremolo",
+   "params": {
+    "rate": 7.4,
+    "depth": 9.2
+   }
+  },
+  {
+   "id": "cv",
+   "type": "reverb",
+   "params": {
+    "size": 9.6,
+    "mix": 7.8
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "RASP",
+   "target": "gt.amount"
+  },
+  {
+   "id": "k2",
+   "label": "ICE",
+   "target": "sc.treble"
+  },
+  {
+   "id": "k3",
+   "label": "SCOOP",
+   "target": "sc.mid"
+  },
+  {
+   "id": "k4",
+   "label": "FLICKER",
+   "target": "tr.rate"
+  },
+  {
+   "id": "k5",
+   "label": "SWEEP",
+   "target": "tr.depth"
+  },
+  {
+   "id": "k6",
+   "label": "VAULT",
+   "target": "cv.size"
+  },
+  {
+   "id": "k7",
+   "label": "DROWN",
+   "target": "cv.mix"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "BLIZZARD",
+   "target": "gt.tone",
+   "off": 8.8,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "a black metal wall of icy tremolo and reverb"
 }

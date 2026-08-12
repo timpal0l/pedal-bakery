@@ -1,0 +1,82 @@
+{
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Peppermint Creek",
+ "tagline": "cold water, wide sky",
+ "enclosure": {
+  "width": 2.3,
+  "depth": 2.5,
+  "height": 0.6,
+  "color": "#4a4f5a"
+ },
+ "artwork": {
+  "style": "waves",
+  "palette": [
+   "#0f6b3f",
+   "#3fd18a",
+   "#d7f7e4"
+  ],
+  "textColor": "#04331d"
+ },
+ "chain": [
+  {
+   "id": "cmp",
+   "type": "comp",
+   "params": {
+    "sustain": 3.0,
+    "attack": 6.0
+   }
+  },
+  {
+   "id": "chr",
+   "type": "chorus",
+   "params": {
+    "rate": 3.2,
+    "depth": 5.5,
+    "mix": 6.0
+   }
+  },
+  {
+   "id": "eq",
+   "type": "eq",
+   "params": {
+    "bass": 4.5,
+    "mid": 5.0,
+    "treble": 6.5,
+    "freq": 5.0
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "rate",
+   "label": "RATE",
+   "target": "chr.rate"
+  },
+  {
+   "id": "dpth",
+   "label": "DEPTH",
+   "target": "chr.depth"
+  },
+  {
+   "id": "mix",
+   "label": "MIX",
+   "target": "chr.mix"
+  },
+  {
+   "id": "tone",
+   "label": "SPARKLE",
+   "target": "eq.treble"
+  }
+ ],
+ "switches": [
+  {
+   "id": "vib",
+   "label": "VIBRATO",
+   "target": "chr.mix",
+   "off": 6.0,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "chorus pedal green"
+}

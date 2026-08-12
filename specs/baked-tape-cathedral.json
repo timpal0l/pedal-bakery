@@ -1,131 +1,131 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Tape Cathedral",
-  "tagline": "clouds you can score to",
-  "enclosure": {
-    "width": 3.8,
-    "depth": 3.0,
-    "height": 0.85,
-    "color": "#2b3a4a"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Tape Cathedral",
+ "tagline": "clouds you can score to",
+ "enclosure": {
+  "width": 3.8,
+  "depth": 3.0,
+  "height": 0.85,
+  "color": "#2b3a4a"
+ },
+ "artwork": {
+  "style": "waves",
+  "palette": [
+   "#1b2733",
+   "#4e7a8c",
+   "#d8c9a8"
+  ],
+  "textColor": "#f2ece0"
+ },
+ "chain": [
+  {
+   "id": "cmp",
+   "type": "comp",
+   "params": {
+    "sustain": 7.0,
+    "attack": 8.0
+   }
   },
-  "artwork": {
-    "style": "waves",
-    "palette": [
-      "#1b2733",
-      "#4e7a8c",
-      "#d8c9a8"
-    ],
-    "textColor": "#f2ece0"
+  {
+   "id": "flt",
+   "type": "filter",
+   "params": {
+    "cutoff": 4.0,
+    "resonance": 3.0
+   }
   },
-  "chain": [
-    {
-      "id": "cmp",
-      "type": "comp",
-      "params": {
-        "sustain": 7.0,
-        "attack": 8.0
-      }
-    },
-    {
-      "id": "flt",
-      "type": "filter",
-      "params": {
-        "cutoff": 4.0,
-        "resonance": 3.0
-      }
-    },
-    {
-      "id": "chr",
-      "type": "chorus",
-      "params": {
-        "rate": 1.0,
-        "depth": 6.0,
-        "mix": 6.0
-      }
-    },
-    {
-      "id": "dly",
-      "type": "delay",
-      "params": {
-        "time": 8.0,
-        "feedback": 8.0,
-        "mix": 6.0
-      }
-    },
-    {
-      "id": "rev",
-      "type": "reverb",
-      "params": {
-        "size": 10,
-        "mix": 8.0
-      }
-    },
-    {
-      "id": "out",
-      "type": "level",
-      "params": {
-        "gain": 5.0
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "BLOOM",
-      "target": "rev.size"
-    },
-    {
-      "id": "k2",
-      "label": "HAZE",
-      "target": "rev.mix"
-    },
-    {
-      "id": "k3",
-      "label": "DRIFT",
-      "target": "dly.time"
-    },
-    {
-      "id": "k4",
-      "label": "REPEAT",
-      "target": "dly.feedback"
-    },
-    {
-      "id": "k5",
-      "label": "SMEAR",
-      "target": "dly.mix"
-    },
-    {
-      "id": "k6",
-      "label": "WARP",
-      "target": "chr.depth"
-    },
-    {
-      "id": "k7",
-      "label": "VEIL",
-      "target": "flt.cutoff"
-    },
-    {
-      "id": "k8",
-      "label": "SWELL",
-      "target": "cmp.attack"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "INFINITE",
-      "target": "dly.feedback",
-      "off": 8.0,
-      "on": 10
-    },
-    {
-      "id": "s2",
-      "label": "GLASS",
-      "target": "flt.resonance",
-      "off": 3.0,
-      "on": 8.0
-    }
-  ],
-  "bakedFrom": "an ambient texture generator for film scores"
+  {
+   "id": "chr",
+   "type": "chorus",
+   "params": {
+    "rate": 1.0,
+    "depth": 6.0,
+    "mix": 6.0
+   }
+  },
+  {
+   "id": "dly",
+   "type": "delay",
+   "params": {
+    "time": 8.0,
+    "feedback": 8.0,
+    "mix": 6.0
+   }
+  },
+  {
+   "id": "rev",
+   "type": "reverb",
+   "params": {
+    "size": 10,
+    "mix": 8.0
+   }
+  },
+  {
+   "id": "out",
+   "type": "level",
+   "params": {
+    "gain": 5.0
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "BLOOM",
+   "target": "rev.size"
+  },
+  {
+   "id": "k2",
+   "label": "HAZE",
+   "target": "rev.mix"
+  },
+  {
+   "id": "k3",
+   "label": "DRIFT",
+   "target": "dly.time"
+  },
+  {
+   "id": "k4",
+   "label": "REPEAT",
+   "target": "dly.feedback"
+  },
+  {
+   "id": "k5",
+   "label": "SMEAR",
+   "target": "dly.mix"
+  },
+  {
+   "id": "k6",
+   "label": "WARP",
+   "target": "chr.depth"
+  },
+  {
+   "id": "k7",
+   "label": "VEIL",
+   "target": "flt.cutoff"
+  },
+  {
+   "id": "k8",
+   "label": "SWELL",
+   "target": "cmp.attack"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "INFINITE",
+   "target": "dly.feedback",
+   "off": 8.0,
+   "on": 8.0
+  },
+  {
+   "id": "s2",
+   "label": "GLASS",
+   "target": "flt.resonance",
+   "off": 3.0,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "an ambient texture generator for film scores"
 }

@@ -1,107 +1,107 @@
 {
-  "kind": "amp",
-  "shape": "box",
-  "name": "Gravelpit",
-  "tagline": "deep growl, mean mids",
-  "enclosure": {
-    "width": 3.5,
-    "depth": 1.9,
-    "height": 2.2,
-    "color": "#3a3f44"
-  },
-  "artwork": {
-    "style": "diagonal",
-    "palette": [
-      "#3a3f44",
-      "#23262a",
-      "#b7f04d"
-    ],
-    "textColor": "#e6e9ec"
-  },
-  "chain": [
-    {
-      "id": "cmp",
-      "type": "comp",
-      "params": {
-        "sustain": 6.0,
-        "attack": 6.5
-      }
-    },
-    {
-      "id": "drv",
-      "type": "drive",
-      "params": {
-        "amount": 6.5,
-        "tone": 3.5,
-        "level": 6.0
-      }
-    },
-    {
-      "id": "eq",
-      "type": "eq",
-      "params": {
-        "bass": 8.0,
-        "mid": 7.0,
-        "treble": 4.0,
-        "freq": 4.5
-      }
-    },
-    {
-      "id": "lvl",
-      "type": "level",
-      "params": {
-        "gain": 6.0
-      }
-    }
+ "kind": "amp",
+ "shape": "box",
+ "name": "Gravelpit",
+ "tagline": "deep growl, mean mids",
+ "enclosure": {
+  "width": 3.5,
+  "depth": 1.9,
+  "height": 2.2,
+  "color": "#3a3f44"
+ },
+ "artwork": {
+  "style": "diagonal",
+  "palette": [
+   "#3a3f44",
+   "#23262a",
+   "#b7f04d"
   ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "GROWL",
-      "target": "drv.amount"
-    },
-    {
-      "id": "k2",
-      "label": "BASS",
-      "target": "eq.bass"
-    },
-    {
-      "id": "k3",
-      "label": "GRIND",
-      "target": "eq.mid"
-    },
-    {
-      "id": "k4",
-      "label": "PUNCH",
-      "target": "cmp.sustain"
-    },
-    {
-      "id": "k5",
-      "label": "VOLUME",
-      "target": "lvl.gain"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "EDGE",
-      "target": "drv.tone",
-      "off": 3.5,
-      "on": 6.5
-    }
-  ],
-  "cabinet": {
-    "format": "combo",
-    "speakers": 1,
-    "grille": {
-      "style": "metal",
-      "color": "#23262a",
-      "accent": "#9aa3ab"
-    },
-    "tolex": "levant",
-    "trim": "#c8ccd2",
-    "panel": "#101214",
-    "logo": "block"
+  "textColor": "#e6e9ec"
+ },
+ "chain": [
+  {
+   "id": "cmp",
+   "type": "comp",
+   "params": {
+    "sustain": 6.0,
+    "attack": 6.5
+   }
   },
-  "bakedFrom": "a bass amp that growls, deep and punchy with grindy mids"
+  {
+   "id": "drv",
+   "type": "drive",
+   "params": {
+    "amount": 6.5,
+    "tone": 3.5,
+    "level": 6.0
+   }
+  },
+  {
+   "id": "eq",
+   "type": "eq",
+   "params": {
+    "bass": 7.5,
+    "mid": 7.0,
+    "treble": 4.0,
+    "freq": 4.5
+   }
+  },
+  {
+   "id": "lvl",
+   "type": "level",
+   "params": {
+    "gain": 6.0
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "GROWL",
+   "target": "drv.amount"
+  },
+  {
+   "id": "k2",
+   "label": "BASS",
+   "target": "eq.bass"
+  },
+  {
+   "id": "k3",
+   "label": "GRIND",
+   "target": "eq.mid"
+  },
+  {
+   "id": "k4",
+   "label": "PUNCH",
+   "target": "cmp.sustain"
+  },
+  {
+   "id": "k5",
+   "label": "VOLUME",
+   "target": "lvl.gain"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "EDGE",
+   "target": "drv.tone",
+   "off": 3.5,
+   "on": 6.5
+  }
+ ],
+ "cabinet": {
+  "format": "combo",
+  "speakers": 1,
+  "grille": {
+   "style": "metal",
+   "color": "#23262a",
+   "accent": "#9aa3ab"
+  },
+  "tolex": "levant",
+  "trim": "#c8ccd2",
+  "panel": "#101214",
+  "logo": "block"
+ },
+ "bakedFrom": "a bass amp that growls, deep and punchy with grindy mids"
 }

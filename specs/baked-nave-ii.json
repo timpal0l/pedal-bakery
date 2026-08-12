@@ -1,132 +1,132 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Nave II",
-  "tagline": "press once, the ceiling disappears",
-  "enclosure": {
-    "width": 3.6,
-    "depth": 2.9,
-    "height": 0.82,
-    "color": "#1b2a3c"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Nave II",
+ "tagline": "press once, the ceiling disappears",
+ "enclosure": {
+  "width": 3.6,
+  "depth": 2.9,
+  "height": 0.82,
+  "color": "#1b2a3c"
+ },
+ "artwork": {
+  "style": "rings",
+  "palette": [
+   "#0d1626",
+   "#3f6fa8",
+   "#d9c48a"
+  ],
+  "textColor": "#f2ecdc"
+ },
+ "chain": [
+  {
+   "id": "sq",
+   "type": "comp",
+   "params": {
+    "sustain": 7.0,
+    "attack": 9.5
+   }
   },
-  "artwork": {
-    "style": "rings",
-    "palette": [
-      "#0d1626",
-      "#3f6fa8",
-      "#d9c48a"
-    ],
-    "textColor": "#f2ecdc"
+  {
+   "id": "dr",
+   "type": "drive",
+   "params": {
+    "amount": 2.5,
+    "tone": 6.5,
+    "level": 5.0
+   }
   },
-  "chain": [
-    {
-      "id": "sq",
-      "type": "comp",
-      "params": {
-        "sustain": 9.0,
-        "attack": 9.5
-      }
-    },
-    {
-      "id": "dr",
-      "type": "drive",
-      "params": {
-        "amount": 2.5,
-        "tone": 6.5,
-        "level": 5.0
-      }
-    },
-    {
-      "id": "ch",
-      "type": "chorus",
-      "params": {
-        "rate": 1.5,
-        "depth": 4.0,
-        "mix": 4.0
-      }
-    },
-    {
-      "id": "dl",
-      "type": "delay",
-      "params": {
-        "time": 6.5,
-        "feedback": 7.0,
-        "mix": 5.0
-      }
-    },
-    {
-      "id": "rv",
-      "type": "reverb",
-      "params": {
-        "size": 9.8,
-        "mix": 7.5
-      }
-    },
-    {
-      "id": "out",
-      "type": "level",
-      "params": {
-        "gain": 5.5
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "SWELL",
-      "target": "sq.attack"
-    },
-    {
-      "id": "k2",
-      "label": "SUSTAIN",
-      "target": "sq.sustain"
-    },
-    {
-      "id": "k3",
-      "label": "TIME",
-      "target": "dl.time"
-    },
-    {
-      "id": "k4",
-      "label": "REPEATS",
-      "target": "dl.feedback"
-    },
-    {
-      "id": "k5",
-      "label": "NAVE",
-      "target": "rv.size"
-    },
-    {
-      "id": "k6",
-      "label": "WASH",
-      "target": "rv.mix"
-    },
-    {
-      "id": "k7",
-      "label": "SHIMMER",
-      "target": "ch.depth"
-    },
-    {
-      "id": "k8",
-      "label": "OUTPUT",
-      "target": "out.gain"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "CRESCEND",
-      "target": "dr.amount",
-      "off": 2.5,
-      "on": 7.0
-    },
-    {
-      "id": "s2",
-      "label": "SPILL",
-      "target": "dl.mix",
-      "off": 5.0,
-      "on": 8.5
-    }
-  ],
-  "bakedFrom": "a post-rock swell pedal that builds cathedrals of sound"
+  {
+   "id": "ch",
+   "type": "chorus",
+   "params": {
+    "rate": 1.5,
+    "depth": 4.0,
+    "mix": 4.0
+   }
+  },
+  {
+   "id": "dl",
+   "type": "delay",
+   "params": {
+    "time": 6.5,
+    "feedback": 7.0,
+    "mix": 5.0
+   }
+  },
+  {
+   "id": "rv",
+   "type": "reverb",
+   "params": {
+    "size": 9.8,
+    "mix": 7.5
+   }
+  },
+  {
+   "id": "out",
+   "type": "level",
+   "params": {
+    "gain": 5.5
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "SWELL",
+   "target": "sq.attack"
+  },
+  {
+   "id": "k2",
+   "label": "SUSTAIN",
+   "target": "sq.sustain"
+  },
+  {
+   "id": "k3",
+   "label": "TIME",
+   "target": "dl.time"
+  },
+  {
+   "id": "k4",
+   "label": "REPEATS",
+   "target": "dl.feedback"
+  },
+  {
+   "id": "k5",
+   "label": "NAVE",
+   "target": "rv.size"
+  },
+  {
+   "id": "k6",
+   "label": "WASH",
+   "target": "rv.mix"
+  },
+  {
+   "id": "k7",
+   "label": "SHIMMER",
+   "target": "ch.depth"
+  },
+  {
+   "id": "k8",
+   "label": "OUTPUT",
+   "target": "out.gain"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "CRESCEND",
+   "target": "dr.amount",
+   "off": 2.5,
+   "on": 7.0
+  },
+  {
+   "id": "s2",
+   "label": "SPILL",
+   "target": "dl.mix",
+   "off": 5.0,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "a post-rock swell pedal that builds cathedrals of sound"
 }

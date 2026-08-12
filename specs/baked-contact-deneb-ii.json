@@ -1,132 +1,132 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Contact Deneb II",
-  "tagline": "a slow signal from somewhere out past the map",
-  "enclosure": {
-    "width": 3.8,
-    "depth": 3.0,
-    "height": 0.82,
-    "color": "#141a33"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Contact Deneb II",
+ "tagline": "a slow signal from somewhere out past the map",
+ "enclosure": {
+  "width": 3.8,
+  "depth": 3.0,
+  "height": 0.82,
+  "color": "#141a33"
+ },
+ "artwork": {
+  "style": "rings",
+  "palette": [
+   "#0b1030",
+   "#4b3fa8",
+   "#7fe3d4"
+  ],
+  "textColor": "#e8f4ff"
+ },
+ "chain": [
+  {
+   "id": "sq",
+   "type": "comp",
+   "params": {
+    "sustain": 7.0,
+    "attack": 8.0
+   }
   },
-  "artwork": {
-    "style": "rings",
-    "palette": [
-      "#0b1030",
-      "#4b3fa8",
-      "#7fe3d4"
-    ],
-    "textColor": "#e8f4ff"
+  {
+   "id": "rng",
+   "type": "ring",
+   "params": {
+    "freq": 1.6,
+    "mix": 2.6
+   }
   },
-  "chain": [
-    {
-      "id": "sq",
-      "type": "comp",
-      "params": {
-        "sustain": 9.0,
-        "attack": 8.0
-      }
-    },
-    {
-      "id": "rng",
-      "type": "ring",
-      "params": {
-        "freq": 1.6,
-        "mix": 2.6
-      }
-    },
-    {
-      "id": "ph",
-      "type": "phaser",
-      "params": {
-        "rate": 0.7,
-        "depth": 8.0,
-        "feedback": 6.5
-      }
-    },
-    {
-      "id": "flt",
-      "type": "filter",
-      "params": {
-        "cutoff": 4.0,
-        "resonance": 6.5
-      }
-    },
-    {
-      "id": "dly",
-      "type": "delay",
-      "params": {
-        "time": 8.5,
-        "feedback": 8.0,
-        "mix": 6.0
-      }
-    },
-    {
-      "id": "rv",
-      "type": "reverb",
-      "params": {
-        "size": 10,
-        "mix": 8.5
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "SUSTAIN",
-      "target": "sq.sustain"
-    },
-    {
-      "id": "k2",
-      "label": "ORBIT",
-      "target": "ph.rate"
-    },
-    {
-      "id": "k3",
-      "label": "HORIZON",
-      "target": "flt.cutoff"
-    },
-    {
-      "id": "k4",
-      "label": "DRIFT",
-      "target": "dly.time"
-    },
-    {
-      "id": "k5",
-      "label": "REGEN",
-      "target": "dly.feedback"
-    },
-    {
-      "id": "k6",
-      "label": "VOID",
-      "target": "rv.size"
-    },
-    {
-      "id": "k7",
-      "label": "BLOOM",
-      "target": "rv.mix"
-    },
-    {
-      "id": "k8",
-      "label": "ALIEN",
-      "target": "rng.mix"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "DEEP SPA",
-      "target": "flt.resonance",
-      "off": 6.5,
-      "on": 9.5
-    },
-    {
-      "id": "s2",
-      "label": "BEACON",
-      "target": "rng.freq",
-      "off": 1.6,
-      "on": 6.8
-    }
-  ],
-  "bakedFrom": "a cosmic drone machine for ambient soundscapes"
+  {
+   "id": "ph",
+   "type": "phaser",
+   "params": {
+    "rate": 0.7,
+    "depth": 8.0,
+    "feedback": 6.5
+   }
+  },
+  {
+   "id": "flt",
+   "type": "filter",
+   "params": {
+    "cutoff": 4.0,
+    "resonance": 6.5
+   }
+  },
+  {
+   "id": "dly",
+   "type": "delay",
+   "params": {
+    "time": 8.5,
+    "feedback": 8.0,
+    "mix": 6.0
+   }
+  },
+  {
+   "id": "rv",
+   "type": "reverb",
+   "params": {
+    "size": 10,
+    "mix": 8.0
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "SUSTAIN",
+   "target": "sq.sustain"
+  },
+  {
+   "id": "k2",
+   "label": "ORBIT",
+   "target": "ph.rate"
+  },
+  {
+   "id": "k3",
+   "label": "HORIZON",
+   "target": "flt.cutoff"
+  },
+  {
+   "id": "k4",
+   "label": "DRIFT",
+   "target": "dly.time"
+  },
+  {
+   "id": "k5",
+   "label": "REGEN",
+   "target": "dly.feedback"
+  },
+  {
+   "id": "k6",
+   "label": "VOID",
+   "target": "rv.size"
+  },
+  {
+   "id": "k7",
+   "label": "BLOOM",
+   "target": "rv.mix"
+  },
+  {
+   "id": "k8",
+   "label": "ALIEN",
+   "target": "rng.mix"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "DEEP SPA",
+   "target": "flt.resonance",
+   "off": 6.5,
+   "on": 8.0
+  },
+  {
+   "id": "s2",
+   "label": "BEACON",
+   "target": "rng.freq",
+   "off": 1.6,
+   "on": 6.8
+  }
+ ],
+ "bakedFrom": "a cosmic drone machine for ambient soundscapes"
 }

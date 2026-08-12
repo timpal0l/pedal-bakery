@@ -1,133 +1,133 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Rustbucket",
-  "tagline": "the mill still runs, badly",
-  "enclosure": {
-    "width": 3.6,
-    "depth": 2.9,
-    "height": 0.8,
-    "color": "#6b5f52"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Rustbucket",
+ "tagline": "the mill still runs, badly",
+ "enclosure": {
+  "width": 3.6,
+  "depth": 2.9,
+  "height": 0.8,
+  "color": "#6b5f52"
+ },
+ "artwork": {
+  "style": "stripes",
+  "palette": [
+   "#8a5b2a",
+   "#3d3a35",
+   "#c9a227"
+  ],
+  "textColor": "#f0e6d2"
+ },
+ "chain": [
+  {
+   "id": "cmp",
+   "type": "comp",
+   "params": {
+    "sustain": 7.0,
+    "attack": 1.0
+   }
   },
-  "artwork": {
-    "style": "stripes",
-    "palette": [
-      "#8a5b2a",
-      "#3d3a35",
-      "#c9a227"
-    ],
-    "textColor": "#f0e6d2"
+  {
+   "id": "grt",
+   "type": "drive",
+   "params": {
+    "amount": 8.0,
+    "tone": 8.0,
+    "level": 5.0
+   }
   },
-  "chain": [
-    {
-      "id": "cmp",
-      "type": "comp",
-      "params": {
-        "sustain": 7.0,
-        "attack": 1.0
-      }
-    },
-    {
-      "id": "grt",
-      "type": "drive",
-      "params": {
-        "amount": 8.0,
-        "tone": 8.0,
-        "level": 5.0
-      }
-    },
-    {
-      "id": "rng",
-      "type": "ring",
-      "params": {
-        "freq": 3.0,
-        "mix": 4.0
-      }
-    },
-    {
-      "id": "stmp",
-      "type": "tremolo",
-      "params": {
-        "rate": 7.0,
-        "depth": 9.0
-      }
-    },
-    {
-      "id": "tin",
-      "type": "eq",
-      "params": {
-        "bass": 3.0,
-        "mid": 8.0,
-        "treble": 7.0,
-        "freq": 7.0
-      }
-    },
-    {
-      "id": "hall",
-      "type": "reverb",
-      "params": {
-        "size": 7.0,
-        "mix": 3.0
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "CLANK",
-      "target": "grt.amount"
-    },
-    {
-      "id": "k2",
-      "label": "PISTON",
-      "target": "stmp.rate"
-    },
-    {
-      "id": "k3",
-      "label": "STAMP",
-      "target": "stmp.depth"
-    },
-    {
-      "id": "k4",
-      "label": "GEARS",
-      "target": "rng.freq"
-    },
-    {
-      "id": "k5",
-      "label": "METAL",
-      "target": "rng.mix"
-    },
-    {
-      "id": "k6",
-      "label": "SNAP",
-      "target": "cmp.attack"
-    },
-    {
-      "id": "k7",
-      "label": "TIN",
-      "target": "tin.freq"
-    },
-    {
-      "id": "k8",
-      "label": "ROOM",
-      "target": "hall.mix"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "SEIZE",
-      "target": "grt.tone",
-      "off": 8.0,
-      "on": 10
-    },
-    {
-      "id": "s2",
-      "label": "SHED",
-      "target": "hall.size",
-      "off": 7.0,
-      "on": 10
-    }
-  ],
-  "bakedFrom": "a rusty machine factory rhythm pedal, industrial clank"
+  {
+   "id": "rng",
+   "type": "ring",
+   "params": {
+    "freq": 3.0,
+    "mix": 4.0
+   }
+  },
+  {
+   "id": "stmp",
+   "type": "tremolo",
+   "params": {
+    "rate": 7.0,
+    "depth": 9.0
+   }
+  },
+  {
+   "id": "tin",
+   "type": "eq",
+   "params": {
+    "bass": 3.0,
+    "mid": 7.5,
+    "treble": 7.0,
+    "freq": 7.0
+   }
+  },
+  {
+   "id": "hall",
+   "type": "reverb",
+   "params": {
+    "size": 7.0,
+    "mix": 3.0
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "CLANK",
+   "target": "grt.amount"
+  },
+  {
+   "id": "k2",
+   "label": "PISTON",
+   "target": "stmp.rate"
+  },
+  {
+   "id": "k3",
+   "label": "STAMP",
+   "target": "stmp.depth"
+  },
+  {
+   "id": "k4",
+   "label": "GEARS",
+   "target": "rng.freq"
+  },
+  {
+   "id": "k5",
+   "label": "METAL",
+   "target": "rng.mix"
+  },
+  {
+   "id": "k6",
+   "label": "SNAP",
+   "target": "cmp.attack"
+  },
+  {
+   "id": "k7",
+   "label": "TIN",
+   "target": "tin.freq"
+  },
+  {
+   "id": "k8",
+   "label": "ROOM",
+   "target": "hall.mix"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "SEIZE",
+   "target": "grt.tone",
+   "off": 8.0,
+   "on": 8.0
+  },
+  {
+   "id": "s2",
+   "label": "SHED",
+   "target": "hall.size",
+   "off": 7.0,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "a rusty machine factory rhythm pedal, industrial clank"
 }

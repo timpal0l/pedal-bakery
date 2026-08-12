@@ -1,90 +1,90 @@
 {
-  "kind": "pedal",
-  "shape": "round",
-  "name": "Sunday Sermon",
-  "tagline": "warm push, endless note",
-  "enclosure": {
-    "width": 2.6,
-    "depth": 2.6,
-    "height": 0.62,
-    "color": "#8c5a2b"
+ "kind": "pedal",
+ "shape": "round",
+ "name": "Sunday Sermon",
+ "tagline": "warm push, endless note",
+ "enclosure": {
+  "width": 2.6,
+  "depth": 2.6,
+  "height": 0.62,
+  "color": "#8c5a2b"
+ },
+ "artwork": {
+  "style": "rings",
+  "palette": [
+   "#c98a3c",
+   "#7a3f1d",
+   "#f0d9a8"
+  ],
+  "textColor": "#fff3dc"
+ },
+ "chain": [
+  {
+   "id": "sq",
+   "type": "comp",
+   "params": {
+    "sustain": 7.0,
+    "attack": 3.5
+   }
   },
-  "artwork": {
-    "style": "rings",
-    "palette": [
-      "#c98a3c",
-      "#7a3f1d",
-      "#f0d9a8"
-    ],
-    "textColor": "#fff3dc"
+  {
+   "id": "dr",
+   "type": "drive",
+   "params": {
+    "amount": 4.5,
+    "tone": 5.5,
+    "level": 6.0
+   }
   },
-  "chain": [
-    {
-      "id": "sq",
-      "type": "comp",
-      "params": {
-        "sustain": 7.5,
-        "attack": 3.5
-      }
-    },
-    {
-      "id": "dr",
-      "type": "drive",
-      "params": {
-        "amount": 4.5,
-        "tone": 5.5,
-        "level": 6.0
-      }
-    },
-    {
-      "id": "vox",
-      "type": "eq",
-      "params": {
-        "bass": 4.5,
-        "mid": 7.0,
-        "treble": 5.5,
-        "freq": 4.0
-      }
-    },
-    {
-      "id": "air",
-      "type": "reverb",
-      "params": {
-        "size": 3.5,
-        "mix": 2.0
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "SUSTAIN",
-      "target": "sq.sustain"
-    },
-    {
-      "id": "k2",
-      "label": "DRIVE",
-      "target": "dr.amount"
-    },
-    {
-      "id": "k3",
-      "label": "TONE",
-      "target": "dr.tone"
-    },
-    {
-      "id": "k4",
-      "label": "MIDS",
-      "target": "vox.mid"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "BLOOM",
-      "target": "air.mix",
-      "off": 0.5,
-      "on": 3.5
-    }
-  ],
-  "bakedFrom": "a blues junior companion, warm drive with singing sustain"
+  {
+   "id": "vox",
+   "type": "eq",
+   "params": {
+    "bass": 4.5,
+    "mid": 7.0,
+    "treble": 5.5,
+    "freq": 4.0
+   }
+  },
+  {
+   "id": "air",
+   "type": "reverb",
+   "params": {
+    "size": 3.5,
+    "mix": 2.0
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "SUSTAIN",
+   "target": "sq.sustain"
+  },
+  {
+   "id": "k2",
+   "label": "DRIVE",
+   "target": "dr.amount"
+  },
+  {
+   "id": "k3",
+   "label": "TONE",
+   "target": "dr.tone"
+  },
+  {
+   "id": "k4",
+   "label": "MIDS",
+   "target": "vox.mid"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "BLOOM",
+   "target": "air.mix",
+   "off": 0.5,
+   "on": 3.5
+  }
+ ],
+ "bakedFrom": "a blues junior companion, warm drive with singing sustain"
 }

@@ -1,124 +1,124 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Gutwrench Abbey",
-  "tagline": "palm-muted and unrepentant",
-  "enclosure": {
-    "width": 3.4,
-    "depth": 2.9,
-    "height": 0.75,
-    "color": "#171a1c"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Gutwrench Abbey",
+ "tagline": "palm-muted and unrepentant",
+ "enclosure": {
+  "width": 3.4,
+  "depth": 2.9,
+  "height": 0.75,
+  "color": "#171a1c"
+ },
+ "artwork": {
+  "style": "diagonal",
+  "palette": [
+   "#0d0f10",
+   "#7a0d10",
+   "#b9bcc0"
+  ],
+  "textColor": "#e6e8ea"
+ },
+ "chain": [
+  {
+   "id": "gate",
+   "type": "comp",
+   "params": {
+    "sustain": 2.5,
+    "attack": 9.5
+   }
   },
-  "artwork": {
-    "style": "diagonal",
-    "palette": [
-      "#0d0f10",
-      "#7a0d10",
-      "#b9bcc0"
-    ],
-    "textColor": "#e6e8ea"
+  {
+   "id": "tight",
+   "type": "eq",
+   "params": {
+    "bass": 7.5,
+    "mid": 1.5,
+    "treble": 7.0,
+    "freq": 6.5
+   }
   },
-  "chain": [
-    {
-      "id": "gate",
-      "type": "comp",
-      "params": {
-        "sustain": 2.5,
-        "attack": 9.5
-      }
-    },
-    {
-      "id": "tight",
-      "type": "eq",
-      "params": {
-        "bass": 7.5,
-        "mid": 1.5,
-        "treble": 7.0,
-        "freq": 6.5
-      }
-    },
-    {
-      "id": "chug",
-      "type": "drive",
-      "params": {
-        "amount": 9.5,
-        "tone": 7.5,
-        "level": 6.0
-      }
-    },
-    {
-      "id": "cab",
-      "type": "filter",
-      "params": {
-        "cutoff": 5.5,
-        "resonance": 2.0
-      }
-    },
-    {
-      "id": "out",
-      "type": "level",
-      "params": {
-        "gain": 6.0
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "GAIN",
-      "target": "chug.amount"
-    },
-    {
-      "id": "k2",
-      "label": "BITE",
-      "target": "chug.tone"
-    },
-    {
-      "id": "k3",
-      "label": "LOWS",
-      "target": "tight.bass"
-    },
-    {
-      "id": "k4",
-      "label": "SCOOP",
-      "target": "tight.mid"
-    },
-    {
-      "id": "k5",
-      "label": "AIR",
-      "target": "tight.treble"
-    },
-    {
-      "id": "k6",
-      "label": "CAB",
-      "target": "cab.cutoff"
-    },
-    {
-      "id": "k7",
-      "label": "ATTACK",
-      "target": "gate.attack"
-    },
-    {
-      "id": "k8",
-      "label": "OUTPUT",
-      "target": "out.gain"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "DJENT",
-      "target": "tight.freq",
-      "off": 6.5,
-      "on": 9.0
-    },
-    {
-      "id": "s2",
-      "label": "BOOST",
-      "target": "chug.level",
-      "off": 6.0,
-      "on": 8.5
-    }
-  ],
-  "bakedFrom": "a death metal chug machine, percussive and evil"
+  {
+   "id": "chug",
+   "type": "drive",
+   "params": {
+    "amount": 9.0,
+    "tone": 7.5,
+    "level": 6.0
+   }
+  },
+  {
+   "id": "cab",
+   "type": "filter",
+   "params": {
+    "cutoff": 5.5,
+    "resonance": 2.0
+   }
+  },
+  {
+   "id": "out",
+   "type": "level",
+   "params": {
+    "gain": 6.0
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "GAIN",
+   "target": "chug.amount"
+  },
+  {
+   "id": "k2",
+   "label": "BITE",
+   "target": "chug.tone"
+  },
+  {
+   "id": "k3",
+   "label": "LOWS",
+   "target": "tight.bass"
+  },
+  {
+   "id": "k4",
+   "label": "SCOOP",
+   "target": "tight.mid"
+  },
+  {
+   "id": "k5",
+   "label": "AIR",
+   "target": "tight.treble"
+  },
+  {
+   "id": "k6",
+   "label": "CAB",
+   "target": "cab.cutoff"
+  },
+  {
+   "id": "k7",
+   "label": "ATTACK",
+   "target": "gate.attack"
+  },
+  {
+   "id": "k8",
+   "label": "OUTPUT",
+   "target": "out.gain"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "DJENT",
+   "target": "tight.freq",
+   "off": 6.5,
+   "on": 8.0
+  },
+  {
+   "id": "s2",
+   "label": "BOOST",
+   "target": "chug.level",
+   "off": 6.0,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "a death metal chug machine, percussive and evil"
 }

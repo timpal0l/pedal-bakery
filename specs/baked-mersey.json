@@ -1,107 +1,107 @@
 {
-  "kind": "amp",
-  "shape": "box",
-  "name": "Mersey",
-  "tagline": "top boost jangle for the beat group set",
-  "enclosure": {
-    "width": 3.5,
-    "depth": 1.1,
-    "height": 2.1,
-    "color": "#B9A98C"
-  },
-  "artwork": {
-    "style": "diagonal",
-    "palette": [
-      "#B9A98C",
-      "#5C4632",
-      "#C9A227"
-    ],
-    "textColor": "#2A211A"
-  },
-  "chain": [
-    {
-      "id": "drv",
-      "type": "drive",
-      "params": {
-        "amount": 3.5,
-        "tone": 8.5,
-        "level": 6.0
-      }
-    },
-    {
-      "id": "eq",
-      "type": "eq",
-      "params": {
-        "bass": 4.0,
-        "mid": 4.5,
-        "treble": 8.0,
-        "freq": 7.5
-      }
-    },
-    {
-      "id": "vrb",
-      "type": "reverb",
-      "params": {
-        "size": 3.5,
-        "mix": 2.5
-      }
-    },
-    {
-      "id": "out",
-      "type": "level",
-      "params": {
-        "gain": 5.5
-      }
-    }
+ "kind": "amp",
+ "shape": "box",
+ "name": "Mersey",
+ "tagline": "top boost jangle for the beat group set",
+ "enclosure": {
+  "width": 3.5,
+  "depth": 1.1,
+  "height": 2.1,
+  "color": "#B9A98C"
+ },
+ "artwork": {
+  "style": "diagonal",
+  "palette": [
+   "#B9A98C",
+   "#5C4632",
+   "#C9A227"
   ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "DRIVE",
-      "target": "drv.amount"
-    },
-    {
-      "id": "k2",
-      "label": "CHIME",
-      "target": "eq.treble"
-    },
-    {
-      "id": "k3",
-      "label": "BASS",
-      "target": "eq.bass"
-    },
-    {
-      "id": "k4",
-      "label": "VERB",
-      "target": "vrb.mix"
-    },
-    {
-      "id": "k5",
-      "label": "VOL",
-      "target": "out.gain"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "TOP",
-      "target": "drv.tone",
-      "off": 6.5,
-      "on": 9.5
-    }
-  ],
-  "cabinet": {
-    "format": "combo",
-    "speakers": 2,
-    "grille": {
-      "style": "diagonal",
-      "color": "#5C4632",
-      "accent": "#C9A227"
-    },
-    "tolex": "levant",
-    "trim": "#C9A227",
-    "panel": "#2A211A",
-    "logo": "script"
+  "textColor": "#2A211A"
+ },
+ "chain": [
+  {
+   "id": "drv",
+   "type": "drive",
+   "params": {
+    "amount": 3.5,
+    "tone": 8.5,
+    "level": 6.0
+   }
   },
-  "bakedFrom": "a british invasion combo amp, chimey and jangly with bite when pushed"
+  {
+   "id": "eq",
+   "type": "eq",
+   "params": {
+    "bass": 4.0,
+    "mid": 4.5,
+    "treble": 7.5,
+    "freq": 7.5
+   }
+  },
+  {
+   "id": "vrb",
+   "type": "reverb",
+   "params": {
+    "size": 3.5,
+    "mix": 2.5
+   }
+  },
+  {
+   "id": "out",
+   "type": "level",
+   "params": {
+    "gain": 5.5
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "DRIVE",
+   "target": "drv.amount"
+  },
+  {
+   "id": "k2",
+   "label": "CHIME",
+   "target": "eq.treble"
+  },
+  {
+   "id": "k3",
+   "label": "BASS",
+   "target": "eq.bass"
+  },
+  {
+   "id": "k4",
+   "label": "VERB",
+   "target": "vrb.mix"
+  },
+  {
+   "id": "k5",
+   "label": "VOL",
+   "target": "out.gain"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "TOP",
+   "target": "drv.tone",
+   "off": 6.5,
+   "on": 8.0
+  }
+ ],
+ "cabinet": {
+  "format": "combo",
+  "speakers": 2,
+  "grille": {
+   "style": "diagonal",
+   "color": "#5C4632",
+   "accent": "#C9A227"
+  },
+  "tolex": "levant",
+  "trim": "#C9A227",
+  "panel": "#2A211A",
+  "logo": "script"
+ },
+ "bakedFrom": "a british invasion combo amp, chimey and jangly with bite when pushed"
 }

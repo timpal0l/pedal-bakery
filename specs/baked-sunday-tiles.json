@@ -1,101 +1,101 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Sunday Tiles",
-  "tagline": "an amp on the edge, in a big empty room",
-  "enclosure": {
-    "width": 2.4,
-    "depth": 2.5,
-    "height": 0.55,
-    "color": "#d9cfae"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Sunday Tiles",
+ "tagline": "an amp on the edge, in a big empty room",
+ "enclosure": {
+  "width": 2.4,
+  "depth": 2.5,
+  "height": 0.55,
+  "color": "#d9cfae"
+ },
+ "artwork": {
+  "style": "waves",
+  "palette": [
+   "#d9cfae",
+   "#5f8f8b",
+   "#2e4b52"
+  ],
+  "textColor": "#22343a"
+ },
+ "chain": [
+  {
+   "id": "cp",
+   "type": "comp",
+   "params": {
+    "sustain": 3.5,
+    "attack": 6.0
+   }
   },
-  "artwork": {
-    "style": "waves",
-    "palette": [
-      "#d9cfae",
-      "#5f8f8b",
-      "#2e4b52"
-    ],
-    "textColor": "#22343a"
+  {
+   "id": "dr",
+   "type": "drive",
+   "params": {
+    "amount": 3.2,
+    "tone": 6.5,
+    "level": 5.5,
+    "character": 1.2
+   }
   },
-  "chain": [
-    {
-      "id": "cp",
-      "type": "comp",
-      "params": {
-        "sustain": 3.5,
-        "attack": 6.0
-      }
-    },
-    {
-      "id": "dr",
-      "type": "drive",
-      "params": {
-        "amount": 3.2,
-        "tone": 6.5,
-        "level": 5.5,
-        "character": 1.2
-      }
-    },
-    {
-      "id": "eq",
-      "type": "eq",
-      "params": {
-        "bass": 4.5,
-        "mid": 6.0,
-        "treble": 6.5,
-        "freq": 5.0
-      }
-    },
-    {
-      "id": "rv",
-      "type": "reverb",
-      "params": {
-        "size": 6.5,
-        "mix": 3.5
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "CRUNCH",
-      "target": "dr.amount"
-    },
-    {
-      "id": "k2",
-      "label": "TONE",
-      "target": "dr.tone"
-    },
-    {
-      "id": "k3",
-      "label": "MID",
-      "target": "eq.mid"
-    },
-    {
-      "id": "k4",
-      "label": "SIZE",
-      "target": "rv.size"
-    },
-    {
-      "id": "k5",
-      "label": "VERB",
-      "target": "rv.mix"
-    },
-    {
-      "id": "k6",
-      "label": "LEVEL",
-      "target": "dr.level"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "BITE",
-      "target": "eq.treble",
-      "off": 6.5,
-      "on": 8.5
-    }
-  ],
-  "bakedFrom": "clean crunch with reverb"
+  {
+   "id": "eq",
+   "type": "eq",
+   "params": {
+    "bass": 4.5,
+    "mid": 6.0,
+    "treble": 6.5,
+    "freq": 5.0
+   }
+  },
+  {
+   "id": "rv",
+   "type": "reverb",
+   "params": {
+    "size": 6.5,
+    "mix": 3.5
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "CRUNCH",
+   "target": "dr.amount"
+  },
+  {
+   "id": "k2",
+   "label": "TONE",
+   "target": "dr.tone"
+  },
+  {
+   "id": "k3",
+   "label": "MID",
+   "target": "eq.mid"
+  },
+  {
+   "id": "k4",
+   "label": "SIZE",
+   "target": "rv.size"
+  },
+  {
+   "id": "k5",
+   "label": "VERB",
+   "target": "rv.mix"
+  },
+  {
+   "id": "k6",
+   "label": "LEVEL",
+   "target": "dr.level"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "BITE",
+   "target": "eq.treble",
+   "off": 6.5,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "clean crunch with reverb"
 }

@@ -1,132 +1,132 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Handshake Sonnet",
-  "tagline": "56k courtship protocol",
-  "enclosure": {
-    "width": 3.6,
-    "depth": 2.9,
-    "height": 0.8,
-    "color": "#1b2a4a"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Handshake Sonnet",
+ "tagline": "56k courtship protocol",
+ "enclosure": {
+  "width": 3.6,
+  "depth": 2.9,
+  "height": 0.8,
+  "color": "#1b2a4a"
+ },
+ "artwork": {
+  "style": "waves",
+  "palette": [
+   "#f25f9c",
+   "#12d1c8",
+   "#f7e07a"
+  ],
+  "textColor": "#fdf6ec"
+ },
+ "chain": [
+  {
+   "id": "sq",
+   "type": "comp",
+   "params": {
+    "sustain": 7.0,
+    "attack": 2.0
+   }
   },
-  "artwork": {
-    "style": "waves",
-    "palette": [
-      "#f25f9c",
-      "#12d1c8",
-      "#f7e07a"
-    ],
-    "textColor": "#fdf6ec"
+  {
+   "id": "rng",
+   "type": "ring",
+   "params": {
+    "freq": 6.8,
+    "mix": 7.5
+   }
   },
-  "chain": [
-    {
-      "id": "sq",
-      "type": "comp",
-      "params": {
-        "sustain": 7.5,
-        "attack": 2.0
-      }
-    },
-    {
-      "id": "rng",
-      "type": "ring",
-      "params": {
-        "freq": 6.8,
-        "mix": 7.5
-      }
-    },
-    {
-      "id": "grit",
-      "type": "drive",
-      "params": {
-        "amount": 5.5,
-        "tone": 8.0,
-        "level": 5.0
-      }
-    },
-    {
-      "id": "trm",
-      "type": "tremolo",
-      "params": {
-        "rate": 8.5,
-        "depth": 6.5
-      }
-    },
-    {
-      "id": "swirl",
-      "type": "phaser",
-      "params": {
-        "rate": 2.0,
-        "depth": 8.0,
-        "feedback": 6.5
-      }
-    },
-    {
-      "id": "hall",
-      "type": "reverb",
-      "params": {
-        "size": 8.0,
-        "mix": 4.5
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "c1",
-      "label": "CARRIER",
-      "target": "rng.freq"
-    },
-    {
-      "id": "c2",
-      "label": "NEGOT",
-      "target": "rng.mix"
-    },
-    {
-      "id": "c3",
-      "label": "CHATTER",
-      "target": "trm.rate"
-    },
-    {
-      "id": "c4",
-      "label": "SWOON",
-      "target": "swirl.rate"
-    },
-    {
-      "id": "c5",
-      "label": "PINE",
-      "target": "swirl.feedback"
-    },
-    {
-      "id": "c6",
-      "label": "SQUEAL",
-      "target": "grit.tone"
-    },
-    {
-      "id": "c7",
-      "label": "LONGING",
-      "target": "hall.mix"
-    },
-    {
-      "id": "c8",
-      "label": "SQUEEZE",
-      "target": "sq.sustain"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "DIAL TON",
-      "target": "trm.depth",
-      "off": 2.0,
-      "on": 9.5
-    },
-    {
-      "id": "s2",
-      "label": "BAUD X2",
-      "target": "grit.amount",
-      "off": 5.5,
-      "on": 9.0
-    }
-  ],
-  "bakedFrom": "a pedal that sounds like a dial-up modem falling in love"
+  {
+   "id": "grit",
+   "type": "drive",
+   "params": {
+    "amount": 5.5,
+    "tone": 8.0,
+    "level": 5.0
+   }
+  },
+  {
+   "id": "trm",
+   "type": "tremolo",
+   "params": {
+    "rate": 8.5,
+    "depth": 6.5
+   }
+  },
+  {
+   "id": "swirl",
+   "type": "phaser",
+   "params": {
+    "rate": 2.0,
+    "depth": 8.0,
+    "feedback": 6.5
+   }
+  },
+  {
+   "id": "hall",
+   "type": "reverb",
+   "params": {
+    "size": 8.0,
+    "mix": 4.5
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "c1",
+   "label": "CARRIER",
+   "target": "rng.freq"
+  },
+  {
+   "id": "c2",
+   "label": "NEGOT",
+   "target": "rng.mix"
+  },
+  {
+   "id": "c3",
+   "label": "CHATTER",
+   "target": "trm.rate"
+  },
+  {
+   "id": "c4",
+   "label": "SWOON",
+   "target": "swirl.rate"
+  },
+  {
+   "id": "c5",
+   "label": "PINE",
+   "target": "swirl.feedback"
+  },
+  {
+   "id": "c6",
+   "label": "SQUEAL",
+   "target": "grit.tone"
+  },
+  {
+   "id": "c7",
+   "label": "LONGING",
+   "target": "hall.mix"
+  },
+  {
+   "id": "c8",
+   "label": "SQUEEZE",
+   "target": "sq.sustain"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "DIAL TON",
+   "target": "trm.depth",
+   "off": 2.0,
+   "on": 8.0
+  },
+  {
+   "id": "s2",
+   "label": "BAUD X2",
+   "target": "grit.amount",
+   "off": 5.5,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "a pedal that sounds like a dial-up modem falling in love"
 }

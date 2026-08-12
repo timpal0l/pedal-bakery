@@ -1,112 +1,112 @@
 {
-  "name": "Sputnik Synth",
-  "tagline": "your guitar defects to the space race",
-  "enclosure": {
-    "width": 3.4,
-    "depth": 2.8,
-    "height": 0.65,
-    "color": "#e8dcc4"
+ "name": "Sputnik Synth",
+ "tagline": "your guitar defects to the space race",
+ "enclosure": {
+  "width": 3.4,
+  "depth": 2.8,
+  "height": 0.65,
+  "color": "#e8dcc4"
+ },
+ "artwork": {
+  "style": "burst",
+  "palette": [
+   "#f25c2a",
+   "#f2b035",
+   "#4a9b8e"
+  ],
+  "textColor": "#2b1d12"
+ },
+ "chain": [
+  {
+   "id": "sq",
+   "type": "comp",
+   "params": {
+    "sustain": 7.0,
+    "attack": 2.5
+   }
   },
-  "artwork": {
-    "style": "burst",
-    "palette": [
-      "#f25c2a",
-      "#f2b035",
-      "#4a9b8e"
-    ],
-    "textColor": "#2b1d12"
+  {
+   "id": "osc",
+   "type": "drive",
+   "params": {
+    "amount": 9.0,
+    "tone": 3.5,
+    "level": 6.0
+   }
   },
-  "chain": [
-    {
-      "id": "sq",
-      "type": "comp",
-      "params": {
-        "sustain": 8.5,
-        "attack": 2.5
-      }
-    },
-    {
-      "id": "osc",
-      "type": "drive",
-      "params": {
-        "amount": 9.0,
-        "tone": 3.5,
-        "level": 6.0
-      }
-    },
-    {
-      "id": "rm",
-      "type": "ring",
-      "params": {
-        "freq": 3.8,
-        "mix": 0
-      }
-    },
-    {
-      "id": "vcf",
-      "type": "filter",
-      "params": {
-        "cutoff": 4.2,
-        "resonance": 8.0
-      }
-    },
-    {
-      "id": "lfo",
-      "type": "chorus",
-      "params": {
-        "rate": 5.5,
-        "depth": 5.0,
-        "mix": 10
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "SUSTAIN",
-      "target": "sq.sustain"
-    },
-    {
-      "id": "k2",
-      "label": "FUZZ",
-      "target": "osc.amount"
-    },
-    {
-      "id": "k3",
-      "label": "CUTOFF",
-      "target": "vcf.cutoff"
-    },
-    {
-      "id": "k4",
-      "label": "PEAK",
-      "target": "vcf.resonance"
-    },
-    {
-      "id": "k5",
-      "label": "VIBRATO",
-      "target": "lfo.depth"
-    },
-    {
-      "id": "k6",
-      "label": "LEVEL",
-      "target": "osc.level"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "UFO",
-      "target": "rm.mix",
-      "off": 0,
-      "on": 6.0
-    },
-    {
-      "id": "s2",
-      "label": "WARBLE",
-      "target": "lfo.rate",
-      "off": 5.5,
-      "on": 8.5
-    }
-  ],
-  "bakedFrom": "60s synth guitar"
+  {
+   "id": "rm",
+   "type": "ring",
+   "params": {
+    "freq": 3.8,
+    "mix": 0
+   }
+  },
+  {
+   "id": "vcf",
+   "type": "filter",
+   "params": {
+    "cutoff": 4.2,
+    "resonance": 8.0
+   }
+  },
+  {
+   "id": "lfo",
+   "type": "chorus",
+   "params": {
+    "rate": 5.5,
+    "depth": 5.0,
+    "mix": 10
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "SUSTAIN",
+   "target": "sq.sustain"
+  },
+  {
+   "id": "k2",
+   "label": "FUZZ",
+   "target": "osc.amount"
+  },
+  {
+   "id": "k3",
+   "label": "CUTOFF",
+   "target": "vcf.cutoff"
+  },
+  {
+   "id": "k4",
+   "label": "PEAK",
+   "target": "vcf.resonance"
+  },
+  {
+   "id": "k5",
+   "label": "VIBRATO",
+   "target": "lfo.depth"
+  },
+  {
+   "id": "k6",
+   "label": "LEVEL",
+   "target": "osc.level"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "UFO",
+   "target": "rm.mix",
+   "off": 0,
+   "on": 6.0
+  },
+  {
+   "id": "s2",
+   "label": "WARBLE",
+   "target": "lfo.rate",
+   "off": 5.5,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "60s synth guitar"
 }

@@ -1,124 +1,124 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Thresher Deep",
-  "tagline": "forty fathoms and still pinging",
-  "enclosure": {
-    "width": 3.0,
-    "depth": 2.7,
-    "height": 0.7,
-    "color": "#0d2b33"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Thresher Deep",
+ "tagline": "forty fathoms and still pinging",
+ "enclosure": {
+  "width": 3.0,
+  "depth": 2.7,
+  "height": 0.7,
+  "color": "#0d2b33"
+ },
+ "artwork": {
+  "style": "rings",
+  "palette": [
+   "#0a1f26",
+   "#1c7f7a",
+   "#8ef0c8"
+  ],
+  "textColor": "#c7fff0"
+ },
+ "chain": [
+  {
+   "id": "png",
+   "type": "ring",
+   "params": {
+    "freq": 6.4,
+    "mix": 3.2
+   }
   },
-  "artwork": {
-    "style": "rings",
-    "palette": [
-      "#0a1f26",
-      "#1c7f7a",
-      "#8ef0c8"
-    ],
-    "textColor": "#c7fff0"
+  {
+   "id": "swp",
+   "type": "filter",
+   "params": {
+    "cutoff": 3.4,
+    "resonance": 8.2
+   }
   },
-  "chain": [
-    {
-      "id": "png",
-      "type": "ring",
-      "params": {
-        "freq": 6.4,
-        "mix": 3.2
-      }
-    },
-    {
-      "id": "swp",
-      "type": "filter",
-      "params": {
-        "cutoff": 3.4,
-        "resonance": 8.2
-      }
-    },
-    {
-      "id": "ech",
-      "type": "delay",
-      "params": {
-        "time": 6.8,
-        "feedback": 7.6,
-        "mix": 6.4
-      }
-    },
-    {
-      "id": "drift",
-      "type": "chorus",
-      "params": {
-        "rate": 1.4,
-        "depth": 3.6,
-        "mix": 4.0
-      }
-    },
-    {
-      "id": "hull",
-      "type": "reverb",
-      "params": {
-        "size": 9.2,
-        "mix": 6.8
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "PING",
-      "target": "png.freq"
-    },
-    {
-      "id": "k2",
-      "label": "SONAR",
-      "target": "png.mix"
-    },
-    {
-      "id": "k3",
-      "label": "DEPTH",
-      "target": "swp.cutoff"
-    },
-    {
-      "id": "k4",
-      "label": "Q",
-      "target": "swp.resonance"
-    },
-    {
-      "id": "k5",
-      "label": "RETURN",
-      "target": "ech.time"
-    },
-    {
-      "id": "k6",
-      "label": "REPEATS",
-      "target": "ech.feedback"
-    },
-    {
-      "id": "k7",
-      "label": "HULL",
-      "target": "hull.size"
-    },
-    {
-      "id": "k8",
-      "label": "WASH",
-      "target": "hull.mix"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "DRIFT",
-      "target": "drift.mix",
-      "off": 0,
-      "on": 5.5
-    },
-    {
-      "id": "s2",
-      "label": "ABYSS",
-      "target": "ech.mix",
-      "off": 4.0,
-      "on": 8.5
-    }
-  ],
-  "bakedFrom": "a submarine sonar pedal with pinging echoes"
+  {
+   "id": "ech",
+   "type": "delay",
+   "params": {
+    "time": 6.8,
+    "feedback": 7.6,
+    "mix": 6.4
+   }
+  },
+  {
+   "id": "drift",
+   "type": "chorus",
+   "params": {
+    "rate": 1.4,
+    "depth": 3.6,
+    "mix": 4.0
+   }
+  },
+  {
+   "id": "hull",
+   "type": "reverb",
+   "params": {
+    "size": 9.2,
+    "mix": 6.8
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "PING",
+   "target": "png.freq"
+  },
+  {
+   "id": "k2",
+   "label": "SONAR",
+   "target": "png.mix"
+  },
+  {
+   "id": "k3",
+   "label": "DEPTH",
+   "target": "swp.cutoff"
+  },
+  {
+   "id": "k4",
+   "label": "Q",
+   "target": "swp.resonance"
+  },
+  {
+   "id": "k5",
+   "label": "RETURN",
+   "target": "ech.time"
+  },
+  {
+   "id": "k6",
+   "label": "REPEATS",
+   "target": "ech.feedback"
+  },
+  {
+   "id": "k7",
+   "label": "HULL",
+   "target": "hull.size"
+  },
+  {
+   "id": "k8",
+   "label": "WASH",
+   "target": "hull.mix"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "DRIFT",
+   "target": "drift.mix",
+   "off": 0,
+   "on": 5.5
+  },
+  {
+   "id": "s2",
+   "label": "ABYSS",
+   "target": "ech.mix",
+   "off": 4.0,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "a submarine sonar pedal with pinging echoes"
 }

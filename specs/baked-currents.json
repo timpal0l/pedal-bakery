@@ -1,134 +1,134 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Currents",
-  "tagline": "everything melts a little sideways",
-  "enclosure": {
-    "width": 3.4,
-    "depth": 2.8,
-    "height": 0.75,
-    "color": "#e8823a"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Currents",
+ "tagline": "everything melts a little sideways",
+ "enclosure": {
+  "width": 3.4,
+  "depth": 2.8,
+  "height": 0.75,
+  "color": "#e8823a"
+ },
+ "artwork": {
+  "style": "rings",
+  "palette": [
+   "#f2a65a",
+   "#c8446b",
+   "#2e2a5e"
+  ],
+  "textColor": "#fff3e0"
+ },
+ "chain": [
+  {
+   "id": "cmp",
+   "type": "comp",
+   "params": {
+    "sustain": 6.0,
+    "attack": 3.0
+   }
   },
-  "artwork": {
-    "style": "rings",
-    "palette": [
-      "#f2a65a",
-      "#c8446b",
-      "#2e2a5e"
-    ],
-    "textColor": "#fff3e0"
+  {
+   "id": "drv",
+   "type": "drive",
+   "params": {
+    "amount": 3.0,
+    "tone": 4.0,
+    "level": 5.0
+   }
   },
-  "chain": [
-    {
-      "id": "cmp",
-      "type": "comp",
-      "params": {
-        "sustain": 6.0,
-        "attack": 3.0
-      }
-    },
-    {
-      "id": "drv",
-      "type": "drive",
-      "params": {
-        "amount": 3.0,
-        "tone": 4.0,
-        "level": 5.0
-      }
-    },
-    {
-      "id": "phs",
-      "type": "phaser",
-      "params": {
-        "rate": 2.0,
-        "depth": 8.0,
-        "feedback": 6.0
-      }
-    },
-    {
-      "id": "chr",
-      "type": "chorus",
-      "params": {
-        "rate": 2.0,
-        "depth": 7.0,
-        "mix": 7.0
-      }
-    },
-    {
-      "id": "dly",
-      "type": "delay",
-      "params": {
-        "time": 4.0,
-        "feedback": 6.0,
-        "mix": 5.0
-      }
-    },
-    {
-      "id": "rev",
-      "type": "reverb",
-      "params": {
-        "size": 8.0,
-        "mix": 6.0
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "SWIRL",
-      "target": "phs.depth"
-    },
-    {
-      "id": "k2",
-      "label": "DRIFT",
-      "target": "phs.rate"
-    },
-    {
-      "id": "k3",
-      "label": "WARBLE",
-      "target": "chr.depth"
-    },
-    {
-      "id": "k4",
-      "label": "ECHO",
-      "target": "dly.mix"
-    },
-    {
-      "id": "k5",
-      "label": "REPEATS",
-      "target": "dly.feedback"
-    },
-    {
-      "id": "k6",
-      "label": "HAZE",
-      "target": "rev.mix"
-    },
-    {
-      "id": "k7",
-      "label": "WARMTH",
-      "target": "drv.amount"
-    },
-    {
-      "id": "k8",
-      "label": "SQUISH",
-      "target": "cmp.sustain"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "LIQUID",
-      "target": "chr.mix",
-      "off": 7.0,
-      "on": 10
-    },
-    {
-      "id": "s2",
-      "label": "CAVERN",
-      "target": "rev.size",
-      "off": 8.0,
-      "on": 10
-    }
-  ],
-  "bakedFrom": "tame impala dreamy pedal"
+  {
+   "id": "phs",
+   "type": "phaser",
+   "params": {
+    "rate": 2.0,
+    "depth": 8.0,
+    "feedback": 6.0
+   }
+  },
+  {
+   "id": "chr",
+   "type": "chorus",
+   "params": {
+    "rate": 2.0,
+    "depth": 7.0,
+    "mix": 7.0
+   }
+  },
+  {
+   "id": "dly",
+   "type": "delay",
+   "params": {
+    "time": 4.0,
+    "feedback": 6.0,
+    "mix": 5.0
+   }
+  },
+  {
+   "id": "rev",
+   "type": "reverb",
+   "params": {
+    "size": 8.0,
+    "mix": 6.0
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "SWIRL",
+   "target": "phs.depth"
+  },
+  {
+   "id": "k2",
+   "label": "DRIFT",
+   "target": "phs.rate"
+  },
+  {
+   "id": "k3",
+   "label": "WARBLE",
+   "target": "chr.depth"
+  },
+  {
+   "id": "k4",
+   "label": "ECHO",
+   "target": "dly.mix"
+  },
+  {
+   "id": "k5",
+   "label": "REPEATS",
+   "target": "dly.feedback"
+  },
+  {
+   "id": "k6",
+   "label": "HAZE",
+   "target": "rev.mix"
+  },
+  {
+   "id": "k7",
+   "label": "WARMTH",
+   "target": "drv.amount"
+  },
+  {
+   "id": "k8",
+   "label": "SQUISH",
+   "target": "cmp.sustain"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "LIQUID",
+   "target": "chr.mix",
+   "off": 7.0,
+   "on": 8.0
+  },
+  {
+   "id": "s2",
+   "label": "CAVERN",
+   "target": "rev.size",
+   "off": 8.0,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "tame impala dreamy pedal"
 }

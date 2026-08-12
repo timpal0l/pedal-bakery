@@ -1,133 +1,133 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Vespers",
-  "tagline": "a hundred voices in the rafters",
-  "enclosure": {
-    "width": 3.6,
-    "depth": 2.9,
-    "height": 0.85,
-    "color": "#e8e2d4"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Vespers",
+ "tagline": "a hundred voices in the rafters",
+ "enclosure": {
+  "width": 3.6,
+  "depth": 2.9,
+  "height": 0.85,
+  "color": "#e8e2d4"
+ },
+ "artwork": {
+  "style": "rings",
+  "palette": [
+   "#f4efe2",
+   "#9fb8d8",
+   "#c9a86a"
+  ],
+  "textColor": "#3a3f52"
+ },
+ "chain": [
+  {
+   "id": "cmp",
+   "type": "comp",
+   "params": {
+    "sustain": 6.0,
+    "attack": 7.0
+   }
   },
-  "artwork": {
-    "style": "rings",
-    "palette": [
-      "#f4efe2",
-      "#9fb8d8",
-      "#c9a86a"
-    ],
-    "textColor": "#3a3f52"
+  {
+   "id": "chr",
+   "type": "chorus",
+   "params": {
+    "rate": 1.6,
+    "depth": 3.2,
+    "mix": 5.0
+   }
   },
-  "chain": [
-    {
-      "id": "cmp",
-      "type": "comp",
-      "params": {
-        "sustain": 6.0,
-        "attack": 7.0
-      }
-    },
-    {
-      "id": "chr",
-      "type": "chorus",
-      "params": {
-        "rate": 1.6,
-        "depth": 3.2,
-        "mix": 5.0
-      }
-    },
-    {
-      "id": "vrb",
-      "type": "reverb",
-      "params": {
-        "size": 9.4,
-        "mix": 7.5
-      }
-    },
-    {
-      "id": "dly",
-      "type": "delay",
-      "params": {
-        "time": 6.5,
-        "feedback": 6.8,
-        "mix": 3.4
-      }
-    },
-    {
-      "id": "air",
-      "type": "eq",
-      "params": {
-        "bass": 3.2,
-        "mid": 4.0,
-        "treble": 8.4,
-        "freq": 7.0
-      }
-    },
-    {
-      "id": "out",
-      "type": "level",
-      "params": {
-        "gain": 5.6
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "DECAY",
-      "target": "vrb.size"
-    },
-    {
-      "id": "k2",
-      "label": "BLOOM",
-      "target": "vrb.mix"
-    },
-    {
-      "id": "k3",
-      "label": "HALO",
-      "target": "chr.depth"
-    },
-    {
-      "id": "k4",
-      "label": "DRIFT",
-      "target": "chr.rate"
-    },
-    {
-      "id": "k5",
-      "label": "TRAILS",
-      "target": "dly.feedback"
-    },
-    {
-      "id": "k6",
-      "label": "AIR",
-      "target": "air.treble"
-    },
-    {
-      "id": "k7",
-      "label": "SWELL",
-      "target": "cmp.attack"
-    },
-    {
-      "id": "k8",
-      "label": "LEVEL",
-      "target": "out.gain"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "CHOIR",
-      "target": "dly.mix",
-      "off": 1.2,
-      "on": 4.6
-    },
-    {
-      "id": "s2",
-      "label": "CELEST",
-      "target": "chr.mix",
-      "off": 3.0,
-      "on": 8.0
-    }
-  ],
-  "bakedFrom": "a shimmer reverb that sounds like an angel choir behind you"
+  {
+   "id": "vrb",
+   "type": "reverb",
+   "params": {
+    "size": 9.4,
+    "mix": 7.5
+   }
+  },
+  {
+   "id": "dly",
+   "type": "delay",
+   "params": {
+    "time": 6.5,
+    "feedback": 6.8,
+    "mix": 3.4
+   }
+  },
+  {
+   "id": "air",
+   "type": "eq",
+   "params": {
+    "bass": 3.2,
+    "mid": 4.0,
+    "treble": 7.5,
+    "freq": 7.0
+   }
+  },
+  {
+   "id": "out",
+   "type": "level",
+   "params": {
+    "gain": 5.6
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "DECAY",
+   "target": "vrb.size"
+  },
+  {
+   "id": "k2",
+   "label": "BLOOM",
+   "target": "vrb.mix"
+  },
+  {
+   "id": "k3",
+   "label": "HALO",
+   "target": "chr.depth"
+  },
+  {
+   "id": "k4",
+   "label": "DRIFT",
+   "target": "chr.rate"
+  },
+  {
+   "id": "k5",
+   "label": "TRAILS",
+   "target": "dly.feedback"
+  },
+  {
+   "id": "k6",
+   "label": "AIR",
+   "target": "air.treble"
+  },
+  {
+   "id": "k7",
+   "label": "SWELL",
+   "target": "cmp.attack"
+  },
+  {
+   "id": "k8",
+   "label": "LEVEL",
+   "target": "out.gain"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "CHOIR",
+   "target": "dly.mix",
+   "off": 1.2,
+   "on": 4.6
+  },
+  {
+   "id": "s2",
+   "label": "CELEST",
+   "target": "chr.mix",
+   "off": 3.0,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "a shimmer reverb that sounds like an angel choir behind you"
 }

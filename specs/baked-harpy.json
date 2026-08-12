@@ -1,82 +1,82 @@
 {
-  "kind": "pedal",
-  "shape": "round",
-  "name": "Harpy",
-  "tagline": "one octave up, straight for the throat",
-  "enclosure": {
-    "width": 2.3,
-    "depth": 2.3,
-    "height": 0.65,
-    "color": "#5B1FA8"
+ "kind": "pedal",
+ "shape": "round",
+ "name": "Harpy",
+ "tagline": "one octave up, straight for the throat",
+ "enclosure": {
+  "width": 2.3,
+  "depth": 2.3,
+  "height": 0.65,
+  "color": "#5B1FA8"
+ },
+ "artwork": {
+  "style": "burst",
+  "palette": [
+   "#5B1FA8",
+   "#E93A8F",
+   "#F5D90A"
+  ],
+  "textColor": "#FFF4E6"
+ },
+ "chain": [
+  {
+   "id": "fz",
+   "type": "drive",
+   "params": {
+    "amount": 9.0,
+    "tone": 8.4,
+    "level": 6.0
+   }
   },
-  "artwork": {
-    "style": "burst",
-    "palette": [
-      "#5B1FA8",
-      "#E93A8F",
-      "#F5D90A"
-    ],
-    "textColor": "#FFF4E6"
+  {
+   "id": "oct",
+   "type": "ring",
+   "params": {
+    "freq": 8.6,
+    "mix": 4.6
+   }
   },
-  "chain": [
-    {
-      "id": "fz",
-      "type": "drive",
-      "params": {
-        "amount": 9.2,
-        "tone": 8.4,
-        "level": 6.0
-      }
-    },
-    {
-      "id": "oct",
-      "type": "ring",
-      "params": {
-        "freq": 8.6,
-        "mix": 4.6
-      }
-    },
-    {
-      "id": "scr",
-      "type": "eq",
-      "params": {
-        "bass": 2.8,
-        "mid": 7.6,
-        "treble": 8.8,
-        "freq": 8.4
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "FUZZ",
-      "target": "fz.amount"
-    },
-    {
-      "id": "k2",
-      "label": "OCTAVE",
-      "target": "oct.mix"
-    },
-    {
-      "id": "k3",
-      "label": "TONE",
-      "target": "fz.tone"
-    },
-    {
-      "id": "k4",
-      "label": "LEVEL",
-      "target": "fz.level"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "SHRIEK",
-      "target": "scr.mid",
-      "off": 6.0,
-      "on": 9.5
-    }
-  ],
-  "bakedFrom": "an octave-flavored fuzz that screams in the upper registers"
+  {
+   "id": "scr",
+   "type": "eq",
+   "params": {
+    "bass": 2.8,
+    "mid": 7.5,
+    "treble": 7.5,
+    "freq": 8.4
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "FUZZ",
+   "target": "fz.amount"
+  },
+  {
+   "id": "k2",
+   "label": "OCTAVE",
+   "target": "oct.mix"
+  },
+  {
+   "id": "k3",
+   "label": "TONE",
+   "target": "fz.tone"
+  },
+  {
+   "id": "k4",
+   "label": "LEVEL",
+   "target": "fz.level"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "SHRIEK",
+   "target": "scr.mid",
+   "off": 6.0,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "an octave-flavored fuzz that screams in the upper registers"
 }

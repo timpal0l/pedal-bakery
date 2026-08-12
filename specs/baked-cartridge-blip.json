@@ -1,114 +1,114 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Cartridge Blip",
-  "tagline": "insert coin, lose fidelity",
-  "enclosure": {
-    "width": 2.6,
-    "depth": 2.4,
-    "height": 0.6,
-    "color": "#4a4f5a"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Cartridge Blip",
+ "tagline": "insert coin, lose fidelity",
+ "enclosure": {
+  "width": 2.6,
+  "depth": 2.4,
+  "height": 0.6,
+  "color": "#4a4f5a"
+ },
+ "artwork": {
+  "style": "checker",
+  "palette": [
+   "#1b1f3b",
+   "#3ae374",
+   "#ff3b6b"
+  ],
+  "textColor": "#f2f7ff"
+ },
+ "chain": [
+  {
+   "id": "sq",
+   "type": "comp",
+   "params": {
+    "sustain": 7.0,
+    "attack": 9.2
+   }
   },
-  "artwork": {
-    "style": "checker",
-    "palette": [
-      "#1b1f3b",
-      "#3ae374",
-      "#ff3b6b"
-    ],
-    "textColor": "#f2f7ff"
+  {
+   "id": "rm",
+   "type": "ring",
+   "params": {
+    "freq": 6.8,
+    "mix": 5.5
+   }
   },
-  "chain": [
-    {
-      "id": "sq",
-      "type": "comp",
-      "params": {
-        "sustain": 8.5,
-        "attack": 9.2
-      }
-    },
-    {
-      "id": "rm",
-      "type": "ring",
-      "params": {
-        "freq": 6.8,
-        "mix": 5.5
-      }
-    },
-    {
-      "id": "crush",
-      "type": "drive",
-      "params": {
-        "amount": 8.8,
-        "tone": 8.4,
-        "level": 5.2
-      }
-    },
-    {
-      "id": "lp",
-      "type": "filter",
-      "params": {
-        "cutoff": 7.6,
-        "resonance": 6.5
-      }
-    },
-    {
-      "id": "echo",
-      "type": "delay",
-      "params": {
-        "time": 1.4,
-        "feedback": 4.2,
-        "mix": 3.0
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "PITCH",
-      "target": "rm.freq"
-    },
-    {
-      "id": "k2",
-      "label": "BITS",
-      "target": "rm.mix"
-    },
-    {
-      "id": "k3",
-      "label": "CRUSH",
-      "target": "crush.amount"
-    },
-    {
-      "id": "k4",
-      "label": "SQUEAL",
-      "target": "lp.resonance"
-    },
-    {
-      "id": "k5",
-      "label": "BLIP",
-      "target": "echo.mix"
-    },
-    {
-      "id": "k6",
-      "label": "OUT",
-      "target": "crush.level"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "8BIT",
-      "target": "lp.cutoff",
-      "off": 7.6,
-      "on": 3.4
-    },
-    {
-      "id": "s2",
-      "label": "COIN",
-      "target": "echo.time",
-      "off": 1.4,
-      "on": 0.4
-    }
-  ],
-  "bakedFrom": "an 8-bit video game console pedal, blippy and crushed"
+  {
+   "id": "crush",
+   "type": "drive",
+   "params": {
+    "amount": 8.8,
+    "tone": 8.4,
+    "level": 5.2
+   }
+  },
+  {
+   "id": "lp",
+   "type": "filter",
+   "params": {
+    "cutoff": 7.6,
+    "resonance": 6.5
+   }
+  },
+  {
+   "id": "echo",
+   "type": "delay",
+   "params": {
+    "time": 1.4,
+    "feedback": 4.2,
+    "mix": 3.0
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "PITCH",
+   "target": "rm.freq"
+  },
+  {
+   "id": "k2",
+   "label": "BITS",
+   "target": "rm.mix"
+  },
+  {
+   "id": "k3",
+   "label": "CRUSH",
+   "target": "crush.amount"
+  },
+  {
+   "id": "k4",
+   "label": "SQUEAL",
+   "target": "lp.resonance"
+  },
+  {
+   "id": "k5",
+   "label": "BLIP",
+   "target": "echo.mix"
+  },
+  {
+   "id": "k6",
+   "label": "OUT",
+   "target": "crush.level"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "8BIT",
+   "target": "lp.cutoff",
+   "off": 7.6,
+   "on": 3.4
+  },
+  {
+   "id": "s2",
+   "label": "COIN",
+   "target": "echo.time",
+   "off": 1.4,
+   "on": 0.4
+  }
+ ],
+ "bakedFrom": "an 8-bit video game console pedal, blippy and crushed"
 }

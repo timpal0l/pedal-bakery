@@ -1,133 +1,133 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Arco Nine",
-  "tagline": "bows on the shoulder of a string section",
-  "enclosure": {
-    "width": 3.4,
-    "depth": 2.9,
-    "height": 0.78,
-    "color": "#2b1d2e"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Arco Nine",
+ "tagline": "bows on the shoulder of a string section",
+ "enclosure": {
+  "width": 3.4,
+  "depth": 2.9,
+  "height": 0.78,
+  "color": "#2b1d2e"
+ },
+ "artwork": {
+  "style": "waves",
+  "palette": [
+   "#3d2a45",
+   "#8f6f4a",
+   "#d8c9a8"
+  ],
+  "textColor": "#f2e9d8"
+ },
+ "chain": [
+  {
+   "id": "sq",
+   "type": "comp",
+   "params": {
+    "sustain": 7.0,
+    "attack": 9.0
+   }
   },
-  "artwork": {
-    "style": "waves",
-    "palette": [
-      "#3d2a45",
-      "#8f6f4a",
-      "#d8c9a8"
-    ],
-    "textColor": "#f2e9d8"
+  {
+   "id": "lp",
+   "type": "filter",
+   "params": {
+    "cutoff": 3.4,
+    "resonance": 3.0
+   }
   },
-  "chain": [
-    {
-      "id": "sq",
-      "type": "comp",
-      "params": {
-        "sustain": 8.5,
-        "attack": 9.0
-      }
-    },
-    {
-      "id": "lp",
-      "type": "filter",
-      "params": {
-        "cutoff": 3.4,
-        "resonance": 3.0
-      }
-    },
-    {
-      "id": "bow",
-      "type": "tremolo",
-      "params": {
-        "rate": 1.2,
-        "depth": 2.0
-      }
-    },
-    {
-      "id": "ens",
-      "type": "chorus",
-      "params": {
-        "rate": 2.2,
-        "depth": 6.5,
-        "mix": 8.0
-      }
-    },
-    {
-      "id": "tone",
-      "type": "eq",
-      "params": {
-        "bass": 6.5,
-        "mid": 6.8,
-        "treble": 3.0,
-        "freq": 3.2
-      }
-    },
-    {
-      "id": "hall",
-      "type": "reverb",
-      "params": {
-        "size": 7.5,
-        "mix": 5.5
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "SWELL",
-      "target": "sq.attack"
-    },
-    {
-      "id": "k2",
-      "label": "BOW",
-      "target": "lp.cutoff"
-    },
-    {
-      "id": "k3",
-      "label": "SECTION",
-      "target": "ens.depth"
-    },
-    {
-      "id": "k4",
-      "label": "WIDTH",
-      "target": "ens.mix"
-    },
-    {
-      "id": "k5",
-      "label": "ROSIN",
-      "target": "tone.mid"
-    },
-    {
-      "id": "k6",
-      "label": "HALL",
-      "target": "hall.mix"
-    },
-    {
-      "id": "k7",
-      "label": "SIZE",
-      "target": "hall.size"
-    },
-    {
-      "id": "k8",
-      "label": "VIB",
-      "target": "bow.rate"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "DIVISI",
-      "target": "ens.rate",
-      "off": 2.2,
-      "on": 4.8
-    },
-    {
-      "id": "s2",
-      "label": "CELLI",
-      "target": "tone.bass",
-      "off": 6.5,
-      "on": 9.0
-    }
-  ],
-  "bakedFrom": "a pedal that makes guitar sound like a cello section"
+  {
+   "id": "bow",
+   "type": "tremolo",
+   "params": {
+    "rate": 1.2,
+    "depth": 2.0
+   }
+  },
+  {
+   "id": "ens",
+   "type": "chorus",
+   "params": {
+    "rate": 2.2,
+    "depth": 6.5,
+    "mix": 8.0
+   }
+  },
+  {
+   "id": "tone",
+   "type": "eq",
+   "params": {
+    "bass": 6.5,
+    "mid": 6.8,
+    "treble": 3.0,
+    "freq": 3.2
+   }
+  },
+  {
+   "id": "hall",
+   "type": "reverb",
+   "params": {
+    "size": 7.5,
+    "mix": 5.5
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "SWELL",
+   "target": "sq.attack"
+  },
+  {
+   "id": "k2",
+   "label": "BOW",
+   "target": "lp.cutoff"
+  },
+  {
+   "id": "k3",
+   "label": "SECTION",
+   "target": "ens.depth"
+  },
+  {
+   "id": "k4",
+   "label": "WIDTH",
+   "target": "ens.mix"
+  },
+  {
+   "id": "k5",
+   "label": "ROSIN",
+   "target": "tone.mid"
+  },
+  {
+   "id": "k6",
+   "label": "HALL",
+   "target": "hall.mix"
+  },
+  {
+   "id": "k7",
+   "label": "SIZE",
+   "target": "hall.size"
+  },
+  {
+   "id": "k8",
+   "label": "VIB",
+   "target": "bow.rate"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "DIVISI",
+   "target": "ens.rate",
+   "off": 2.2,
+   "on": 4.8
+  },
+  {
+   "id": "s2",
+   "label": "CELLI",
+   "target": "tone.bass",
+   "off": 6.5,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "a pedal that makes guitar sound like a cello section"
 }

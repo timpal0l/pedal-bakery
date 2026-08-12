@@ -1,96 +1,96 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Everbloom",
-  "tagline": "notes that refuse to end",
-  "enclosure": {
-    "width": 2.4,
-    "depth": 2.6,
-    "height": 0.6,
-    "color": "#cfd8c5"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Everbloom",
+ "tagline": "notes that refuse to end",
+ "enclosure": {
+  "width": 2.4,
+  "depth": 2.6,
+  "height": 0.6,
+  "color": "#cfd8c5"
+ },
+ "artwork": {
+  "style": "rings",
+  "palette": [
+   "#cfd8c5",
+   "#7a9a7e",
+   "#e8c86a"
+  ],
+  "textColor": "#2c3a2e"
+ },
+ "chain": [
+  {
+   "id": "cmp",
+   "type": "comp",
+   "params": {
+    "sustain": 7.0,
+    "attack": 2.5
+   }
   },
-  "artwork": {
-    "style": "rings",
-    "palette": [
-      "#cfd8c5",
-      "#7a9a7e",
-      "#e8c86a"
-    ],
-    "textColor": "#2c3a2e"
+  {
+   "id": "flt",
+   "type": "filter",
+   "params": {
+    "cutoff": 7.2,
+    "resonance": 3.4
+   }
   },
-  "chain": [
-    {
-      "id": "cmp",
-      "type": "comp",
-      "params": {
-        "sustain": 9.2,
-        "attack": 2.5
-      }
-    },
-    {
-      "id": "flt",
-      "type": "filter",
-      "params": {
-        "cutoff": 7.2,
-        "resonance": 3.4
-      }
-    },
-    {
-      "id": "vrb",
-      "type": "reverb",
-      "params": {
-        "size": 7.8,
-        "mix": 4.2
-      }
-    },
-    {
-      "id": "lvl",
-      "type": "level",
-      "params": {
-        "gain": 5.2
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "SUSTAIN",
-      "target": "cmp.sustain"
-    },
-    {
-      "id": "k2",
-      "label": "ATTACK",
-      "target": "cmp.attack"
-    },
-    {
-      "id": "k3",
-      "label": "BLOOM",
-      "target": "vrb.size"
-    },
-    {
-      "id": "k4",
-      "label": "AIR",
-      "target": "flt.cutoff"
-    },
-    {
-      "id": "k5",
-      "label": "SHEEN",
-      "target": "flt.resonance"
-    },
-    {
-      "id": "k6",
-      "label": "OUTPUT",
-      "target": "lvl.gain"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "HALO",
-      "target": "vrb.mix",
-      "off": 4.2,
-      "on": 7.5
-    }
-  ],
-  "bakedFrom": "an always-on sustainer that makes notes bloom forever"
+  {
+   "id": "vrb",
+   "type": "reverb",
+   "params": {
+    "size": 7.8,
+    "mix": 4.2
+   }
+  },
+  {
+   "id": "lvl",
+   "type": "level",
+   "params": {
+    "gain": 5.2
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "SUSTAIN",
+   "target": "cmp.sustain"
+  },
+  {
+   "id": "k2",
+   "label": "ATTACK",
+   "target": "cmp.attack"
+  },
+  {
+   "id": "k3",
+   "label": "BLOOM",
+   "target": "vrb.size"
+  },
+  {
+   "id": "k4",
+   "label": "AIR",
+   "target": "flt.cutoff"
+  },
+  {
+   "id": "k5",
+   "label": "SHEEN",
+   "target": "flt.resonance"
+  },
+  {
+   "id": "k6",
+   "label": "OUTPUT",
+   "target": "lvl.gain"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "HALO",
+   "target": "vrb.mix",
+   "off": 4.2,
+   "on": 7.5
+  }
+ ],
+ "bakedFrom": "an always-on sustainer that makes notes bloom forever"
 }

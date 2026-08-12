@@ -1,90 +1,90 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Bus Glue",
-  "tagline": "everything sits in the same room now",
-  "enclosure": {
-    "width": 2.6,
-    "depth": 2.4,
-    "height": 0.6,
-    "color": "#d8d3c4"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Bus Glue",
+ "tagline": "everything sits in the same room now",
+ "enclosure": {
+  "width": 2.6,
+  "depth": 2.4,
+  "height": 0.6,
+  "color": "#d8d3c4"
+ },
+ "artwork": {
+  "style": "stripes",
+  "palette": [
+   "#c9c3b2",
+   "#2f3a44",
+   "#b8863c"
+  ],
+  "textColor": "#1d2228"
+ },
+ "chain": [
+  {
+   "id": "cmp",
+   "type": "comp",
+   "params": {
+    "sustain": 6.5,
+    "attack": 3.2
+   }
   },
-  "artwork": {
-    "style": "stripes",
-    "palette": [
-      "#c9c3b2",
-      "#2f3a44",
-      "#b8863c"
-    ],
-    "textColor": "#1d2228"
+  {
+   "id": "tilt",
+   "type": "eq",
+   "params": {
+    "bass": 4.4,
+    "mid": 5.4,
+    "treble": 6.1,
+    "freq": 5.5
+   }
   },
-  "chain": [
-    {
-      "id": "cmp",
-      "type": "comp",
-      "params": {
-        "sustain": 6.5,
-        "attack": 3.2
-      }
-    },
-    {
-      "id": "tilt",
-      "type": "eq",
-      "params": {
-        "bass": 4.4,
-        "mid": 5.4,
-        "treble": 6.1,
-        "freq": 5.5
-      }
-    },
-    {
-      "id": "out",
-      "type": "level",
-      "params": {
-        "gain": 5.6
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "SUSTAIN",
-      "target": "cmp.sustain"
-    },
-    {
-      "id": "k2",
-      "label": "ATTACK",
-      "target": "cmp.attack"
-    },
-    {
-      "id": "k3",
-      "label": "LOW",
-      "target": "tilt.bass"
-    },
-    {
-      "id": "k4",
-      "label": "MID",
-      "target": "tilt.mid"
-    },
-    {
-      "id": "k5",
-      "label": "AIR",
-      "target": "tilt.treble"
-    },
-    {
-      "id": "k6",
-      "label": "MAKEUP",
-      "target": "out.gain"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "SLAM",
-      "target": "cmp.sustain",
-      "off": 6.5,
-      "on": 9.2
-    }
-  ],
-  "bakedFrom": "a studio compressor that glues everything together"
+  {
+   "id": "out",
+   "type": "level",
+   "params": {
+    "gain": 5.6
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "SUSTAIN",
+   "target": "cmp.sustain"
+  },
+  {
+   "id": "k2",
+   "label": "ATTACK",
+   "target": "cmp.attack"
+  },
+  {
+   "id": "k3",
+   "label": "LOW",
+   "target": "tilt.bass"
+  },
+  {
+   "id": "k4",
+   "label": "MID",
+   "target": "tilt.mid"
+  },
+  {
+   "id": "k5",
+   "label": "AIR",
+   "target": "tilt.treble"
+  },
+  {
+   "id": "k6",
+   "label": "MAKEUP",
+   "target": "out.gain"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "SLAM",
+   "target": "cmp.sustain",
+   "off": 6.5,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "a studio compressor that glues everything together"
 }

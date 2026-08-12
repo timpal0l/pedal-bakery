@@ -1,78 +1,78 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Bowing Arm",
-  "tagline": "no attack, all arrival",
-  "enclosure": {
-    "width": 2.1,
-    "depth": 2.5,
-    "height": 0.5,
-    "color": "#4a4f5a"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Bowing Arm",
+ "tagline": "no attack, all arrival",
+ "enclosure": {
+  "width": 2.1,
+  "depth": 2.5,
+  "height": 0.5,
+  "color": "#4a4f5a"
+ },
+ "artwork": {
+  "style": "waves",
+  "palette": [
+   "#2b1c3a",
+   "#6d4f9c",
+   "#d9c48a"
+  ],
+  "textColor": "#f4ecd8"
+ },
+ "chain": [
+  {
+   "id": "sw",
+   "type": "comp",
+   "params": {
+    "sustain": 7.0,
+    "attack": 0.5
+   }
   },
-  "artwork": {
-    "style": "waves",
-    "palette": [
-      "#2b1c3a",
-      "#6d4f9c",
-      "#d9c48a"
-    ],
-    "textColor": "#f4ecd8"
+  {
+   "id": "vol",
+   "type": "level",
+   "params": {
+    "gain": 4.2
+   }
   },
-  "chain": [
-    {
-      "id": "sw",
-      "type": "comp",
-      "params": {
-        "sustain": 8.5,
-        "attack": 0.5
-      }
-    },
-    {
-      "id": "vol",
-      "type": "level",
-      "params": {
-        "gain": 4.2
-      }
-    },
-    {
-      "id": "vrb",
-      "type": "reverb",
-      "params": {
-        "size": 6.5,
-        "mix": 3.5
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "SWELL",
-      "target": "sw.attack"
-    },
-    {
-      "id": "k2",
-      "label": "SUSTAIN",
-      "target": "sw.sustain"
-    },
-    {
-      "id": "k3",
-      "label": "VOLUME",
-      "target": "vol.gain"
-    },
-    {
-      "id": "k4",
-      "label": "BLOOM",
-      "target": "vrb.mix"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "HALL",
-      "target": "vrb.size",
-      "off": 6.5,
-      "on": 9.5
-    }
-  ],
-  "bakedFrom": "a volume swell pedal for violin-like fade-ins"
+  {
+   "id": "vrb",
+   "type": "reverb",
+   "params": {
+    "size": 6.5,
+    "mix": 3.5
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "SWELL",
+   "target": "sw.attack"
+  },
+  {
+   "id": "k2",
+   "label": "SUSTAIN",
+   "target": "sw.sustain"
+  },
+  {
+   "id": "k3",
+   "label": "VOLUME",
+   "target": "vol.gain"
+  },
+  {
+   "id": "k4",
+   "label": "BLOOM",
+   "target": "vrb.mix"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "HALL",
+   "target": "vrb.size",
+   "off": 6.5,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "a volume swell pedal for violin-like fade-ins"
 }

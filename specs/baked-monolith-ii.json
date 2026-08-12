@@ -1,120 +1,120 @@
 {
-  "kind": "amp",
-  "shape": "box",
-  "name": "Monolith II",
-  "tagline": "the walls were load-bearing",
-  "enclosure": {
-    "width": 4.0,
-    "depth": 2.4,
-    "height": 4.5,
-    "color": "#131316"
-  },
-  "artwork": {
-    "style": "rings",
-    "palette": [
-      "#0b0b0d",
-      "#3a0d0d",
-      "#6e1111"
-    ],
-    "textColor": "#d8d2c4"
-  },
-  "chain": [
-    {
-      "id": "cp",
-      "type": "comp",
-      "params": {
-        "sustain": 7.0,
-        "attack": 3.0
-      }
-    },
-    {
-      "id": "dr",
-      "type": "drive",
-      "params": {
-        "amount": 9.0,
-        "tone": 2.5,
-        "level": 6.5
-      }
-    },
-    {
-      "id": "eq",
-      "type": "eq",
-      "params": {
-        "bass": 9.5,
-        "mid": 4.0,
-        "treble": 3.5,
-        "freq": 1.5
-      }
-    },
-    {
-      "id": "rv",
-      "type": "reverb",
-      "params": {
-        "size": 4.0,
-        "mix": 2.0
-      }
-    },
-    {
-      "id": "lv",
-      "type": "level",
-      "params": {
-        "gain": 7.5
-      }
-    }
+ "kind": "amp",
+ "shape": "box",
+ "name": "Monolith II",
+ "tagline": "the walls were load-bearing",
+ "enclosure": {
+  "width": 4.0,
+  "depth": 2.4,
+  "height": 4.5,
+  "color": "#131316"
+ },
+ "artwork": {
+  "style": "rings",
+  "palette": [
+   "#0b0b0d",
+   "#3a0d0d",
+   "#6e1111"
   ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "SLUDGE",
-      "target": "dr.amount"
-    },
-    {
-      "id": "k2",
-      "label": "BASS",
-      "target": "eq.bass"
-    },
-    {
-      "id": "k3",
-      "label": "MIDS",
-      "target": "eq.mid"
-    },
-    {
-      "id": "k4",
-      "label": "TREBLE",
-      "target": "eq.treble"
-    },
-    {
-      "id": "k5",
-      "label": "SUSTAIN",
-      "target": "cp.sustain"
-    },
-    {
-      "id": "k6",
-      "label": "VOLUME",
-      "target": "lv.gain"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "QUAKE",
-      "target": "eq.freq",
-      "off": 3.0,
-      "on": 1.0
-    }
-  ],
-  "cabinet": {
-    "format": "stack",
-    "speakers": 4,
-    "grille": {
-      "style": "metal",
-      "color": "#1c1d20",
-      "accent": "#6e1111"
-    },
-    "tolex": "levant",
-    "trim": "#2a2b2e",
-    "panel": "#0b0b0d",
-    "logo": "block"
+  "textColor": "#d8d2c4"
+ },
+ "chain": [
+  {
+   "id": "cp",
+   "type": "comp",
+   "params": {
+    "sustain": 7.0,
+    "attack": 3.0
+   }
   },
-  "bakedFrom": "a doom stack amp with a huge low end that rattles the walls"
+  {
+   "id": "dr",
+   "type": "drive",
+   "params": {
+    "amount": 9.0,
+    "tone": 2.5,
+    "level": 6.5
+   }
+  },
+  {
+   "id": "eq",
+   "type": "eq",
+   "params": {
+    "bass": 7.5,
+    "mid": 4.0,
+    "treble": 3.5,
+    "freq": 1.5
+   }
+  },
+  {
+   "id": "rv",
+   "type": "reverb",
+   "params": {
+    "size": 4.0,
+    "mix": 2.0
+   }
+  },
+  {
+   "id": "lv",
+   "type": "level",
+   "params": {
+    "gain": 6.5
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "SLUDGE",
+   "target": "dr.amount"
+  },
+  {
+   "id": "k2",
+   "label": "BASS",
+   "target": "eq.bass"
+  },
+  {
+   "id": "k3",
+   "label": "MIDS",
+   "target": "eq.mid"
+  },
+  {
+   "id": "k4",
+   "label": "TREBLE",
+   "target": "eq.treble"
+  },
+  {
+   "id": "k5",
+   "label": "SUSTAIN",
+   "target": "cp.sustain"
+  },
+  {
+   "id": "k6",
+   "label": "VOLUME",
+   "target": "lv.gain"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "QUAKE",
+   "target": "eq.freq",
+   "off": 3.0,
+   "on": 1.0
+  }
+ ],
+ "cabinet": {
+  "format": "stack",
+  "speakers": 4,
+  "grille": {
+   "style": "metal",
+   "color": "#1c1d20",
+   "accent": "#6e1111"
+  },
+  "tolex": "levant",
+  "trim": "#2a2b2e",
+  "panel": "#0b0b0d",
+  "logo": "block"
+ },
+ "bakedFrom": "a doom stack amp with a huge low end that rattles the walls"
 }

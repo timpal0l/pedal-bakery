@@ -1,120 +1,120 @@
 {
-  "kind": "amp",
-  "shape": "box",
-  "name": "Marmalade Stack",
-  "tagline": "loud orange, louder attitude",
-  "enclosure": {
-    "width": 3.6,
-    "depth": 2.2,
-    "height": 4.2,
-    "color": "#f26a12"
-  },
-  "artwork": {
-    "style": "stripes",
-    "palette": [
-      "#f26a12",
-      "#ffb347",
-      "#1a1a1a"
-    ],
-    "textColor": "#fff3e0"
-  },
-  "chain": [
-    {
-      "id": "cmp",
-      "type": "comp",
-      "params": {
-        "sustain": 4.0,
-        "attack": 3.0
-      }
-    },
-    {
-      "id": "dr",
-      "type": "drive",
-      "params": {
-        "amount": 7.5,
-        "tone": 6.5,
-        "level": 6.0
-      }
-    },
-    {
-      "id": "eq",
-      "type": "eq",
-      "params": {
-        "bass": 6.5,
-        "mid": 7.0,
-        "treble": 6.0,
-        "freq": 4.5
-      }
-    },
-    {
-      "id": "vrb",
-      "type": "reverb",
-      "params": {
-        "size": 3.5,
-        "mix": 2.0
-      }
-    },
-    {
-      "id": "out",
-      "type": "level",
-      "params": {
-        "gain": 6.5
-      }
-    }
+ "kind": "amp",
+ "shape": "box",
+ "name": "Marmalade Stack",
+ "tagline": "loud orange, louder attitude",
+ "enclosure": {
+  "width": 3.6,
+  "depth": 2.2,
+  "height": 4.2,
+  "color": "#f26a12"
+ },
+ "artwork": {
+  "style": "stripes",
+  "palette": [
+   "#f26a12",
+   "#ffb347",
+   "#1a1a1a"
   ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "GAIN",
-      "target": "dr.amount"
-    },
-    {
-      "id": "k2",
-      "label": "BASS",
-      "target": "eq.bass"
-    },
-    {
-      "id": "k3",
-      "label": "MID",
-      "target": "eq.mid"
-    },
-    {
-      "id": "k4",
-      "label": "TREBLE",
-      "target": "eq.treble"
-    },
-    {
-      "id": "k5",
-      "label": "REVERB",
-      "target": "vrb.mix"
-    },
-    {
-      "id": "k6",
-      "label": "MASTER",
-      "target": "out.gain"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "BRIGHT",
-      "target": "dr.tone",
-      "off": 6.5,
-      "on": 9.0
-    }
-  ],
-  "cabinet": {
-    "format": "stack",
-    "speakers": 4,
-    "grille": {
-      "style": "metal",
-      "color": "#1a1a1a",
-      "accent": "#d9d9d9"
-    },
-    "tolex": "smooth",
-    "trim": "#2b2b2b",
-    "panel": "#141414",
-    "logo": "block"
+  "textColor": "#fff3e0"
+ },
+ "chain": [
+  {
+   "id": "cmp",
+   "type": "comp",
+   "params": {
+    "sustain": 4.0,
+    "attack": 3.0
+   }
   },
-  "bakedFrom": "make me an orange amp"
+  {
+   "id": "dr",
+   "type": "drive",
+   "params": {
+    "amount": 7.5,
+    "tone": 6.5,
+    "level": 6.0
+   }
+  },
+  {
+   "id": "eq",
+   "type": "eq",
+   "params": {
+    "bass": 6.5,
+    "mid": 7.0,
+    "treble": 6.0,
+    "freq": 4.5
+   }
+  },
+  {
+   "id": "vrb",
+   "type": "reverb",
+   "params": {
+    "size": 3.5,
+    "mix": 2.0
+   }
+  },
+  {
+   "id": "out",
+   "type": "level",
+   "params": {
+    "gain": 6.5
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "GAIN",
+   "target": "dr.amount"
+  },
+  {
+   "id": "k2",
+   "label": "BASS",
+   "target": "eq.bass"
+  },
+  {
+   "id": "k3",
+   "label": "MID",
+   "target": "eq.mid"
+  },
+  {
+   "id": "k4",
+   "label": "TREBLE",
+   "target": "eq.treble"
+  },
+  {
+   "id": "k5",
+   "label": "REVERB",
+   "target": "vrb.mix"
+  },
+  {
+   "id": "k6",
+   "label": "MASTER",
+   "target": "out.gain"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "BRIGHT",
+   "target": "dr.tone",
+   "off": 6.5,
+   "on": 8.0
+  }
+ ],
+ "cabinet": {
+  "format": "stack",
+  "speakers": 4,
+  "grille": {
+   "style": "metal",
+   "color": "#1a1a1a",
+   "accent": "#d9d9d9"
+  },
+  "tolex": "smooth",
+  "trim": "#2b2b2b",
+  "panel": "#141414",
+  "logo": "block"
+ },
+ "bakedFrom": "make me an orange amp"
 }

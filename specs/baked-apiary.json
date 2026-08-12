@@ -1,74 +1,74 @@
 {
-  "kind": "pedal",
-  "shape": "round",
-  "name": "Apiary",
-  "tagline": "do not swat the box",
-  "enclosure": {
-    "width": 1.85,
-    "depth": 1.85,
-    "height": 0.55,
-    "color": "#f2b705"
+ "kind": "pedal",
+ "shape": "round",
+ "name": "Apiary",
+ "tagline": "do not swat the box",
+ "enclosure": {
+  "width": 1.85,
+  "depth": 1.85,
+  "height": 0.55,
+  "color": "#f2b705"
+ },
+ "artwork": {
+  "style": "stripes",
+  "palette": [
+   "#f2b705",
+   "#1a1208",
+   "#e8dcc0"
+  ],
+  "textColor": "#1a1208"
+ },
+ "chain": [
+  {
+   "id": "fz",
+   "type": "drive",
+   "params": {
+    "amount": 9.0,
+    "tone": 8.2,
+    "level": 6.0
+   }
   },
-  "artwork": {
-    "style": "stripes",
-    "palette": [
-      "#f2b705",
-      "#1a1208",
-      "#e8dcc0"
-    ],
-    "textColor": "#1a1208"
+  {
+   "id": "wob",
+   "type": "tremolo",
+   "params": {
+    "rate": 8.6,
+    "depth": 6.2
+   }
   },
-  "chain": [
-    {
-      "id": "fz",
-      "type": "drive",
-      "params": {
-        "amount": 9.4,
-        "tone": 8.2,
-        "level": 6.0
-      }
-    },
-    {
-      "id": "wob",
-      "type": "tremolo",
-      "params": {
-        "rate": 8.6,
-        "depth": 6.2
-      }
-    },
-    {
-      "id": "bst",
-      "type": "level",
-      "params": {
-        "gain": 5.0
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "SWARM",
-      "target": "fz.amount"
-    },
-    {
-      "id": "k2",
-      "label": "BUZZ",
-      "target": "fz.tone"
-    },
-    {
-      "id": "k3",
-      "label": "WINGS",
-      "target": "wob.rate"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "STINGER",
-      "target": "bst.gain",
-      "off": 5.0,
-      "on": 9.2
-    }
-  ],
-  "bakedFrom": "a swarm of angry bees with a stinger boost switch"
+  {
+   "id": "bst",
+   "type": "level",
+   "params": {
+    "gain": 5.0
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "SWARM",
+   "target": "fz.amount"
+  },
+  {
+   "id": "k2",
+   "label": "BUZZ",
+   "target": "fz.tone"
+  },
+  {
+   "id": "k3",
+   "label": "WINGS",
+   "target": "wob.rate"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "STINGER",
+   "target": "bst.gain",
+   "off": 5.0,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "a swarm of angry bees with a stinger boost switch"
 }

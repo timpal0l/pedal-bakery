@@ -189,8 +189,19 @@ def validate(raw: dict) -> dict:
         if mid in seen:
             mid = f"{mid}{i}"
         seen.add(mid)
-        params = {p: clamp(v, 0, 10, 5) for p, v in (m.get("params") or {}).items()
-                  if p in MODULES[mtype]}
+        # Loudness-critical parameters are capped so nothing arrives blaring.
+        # The player can always turn them up; a pedal that starts painful is
+        # a hazard, not a feature.
+        LOUD_CAPS = {"level.gain": 6.5, "drive.level": 6.5, "comp.sustain": 7.0,
+                     "delay.feedback": 8.0, "reverb.mix": 8.0, "eq.bass": 7.5,
+                     "eq.mid": 7.5, "eq.treble": 7.5, "drive.amount": 9.0}
+        params = {}
+        for pname, v in (m.get("params") or {}).items():
+            if pname not in MODULES[mtype]:
+                continue
+            val = clamp(v, 0, 10, 5)
+            cap = LOUD_CAPS.get(f"{mtype}.{pname}")
+            params[pname] = min(val, cap) if cap is not None else val
         spec["chain"].append({"id": mid, "type": mtype, "params": params})
     if not spec["chain"]:
         raise ValueError("Claude produced no usable effect modules")
@@ -232,7 +243,7 @@ def validate(raw: dict) -> dict:
             "label": str(s.get("label") or sid).upper()[:8],
             "target": s["target"],
             "off": clamp(s.get("off"), 0, 10, 0),
-            "on": clamp(s.get("on"), 0, 10, 10),
+            "on": min(8.0, clamp(s.get("on"), 0, 10, 8)),
         })
 
     # physical coherence: many knobs need a big box; minis get one toggle max

@@ -1,123 +1,123 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Pale Tenant",
-  "tagline": "it breathes in the room next door",
-  "enclosure": {
-    "width": 3.6,
-    "depth": 2.9,
-    "height": 0.8,
-    "color": "#1b2430"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Pale Tenant",
+ "tagline": "it breathes in the room next door",
+ "enclosure": {
+  "width": 3.6,
+  "depth": 2.9,
+  "height": 0.8,
+  "color": "#1b2430"
+ },
+ "artwork": {
+  "style": "waves",
+  "palette": [
+   "#0e141c",
+   "#6f8ba6",
+   "#cfd9e2"
+  ],
+  "textColor": "#e8eef4"
+ },
+ "chain": [
+  {
+   "id": "sq",
+   "type": "comp",
+   "params": {
+    "sustain": 7.0,
+    "attack": 9.4
+   }
   },
-  "artwork": {
-    "style": "waves",
-    "palette": [
-      "#0e141c",
-      "#6f8ba6",
-      "#cfd9e2"
-    ],
-    "textColor": "#e8eef4"
+  {
+   "id": "vl",
+   "type": "filter",
+   "params": {
+    "cutoff": 3.4,
+    "resonance": 6.1
+   }
   },
-  "chain": [
-    {
-      "id": "sq",
-      "type": "comp",
-      "params": {
-        "sustain": 8.2,
-        "attack": 9.4
-      }
-    },
-    {
-      "id": "vl",
-      "type": "filter",
-      "params": {
-        "cutoff": 3.4,
-        "resonance": 6.1
-      }
-    },
-    {
-      "id": "brth",
-      "type": "tremolo",
-      "params": {
-        "rate": 0.9,
-        "depth": 5.5
-      }
-    },
-    {
-      "id": "ech",
-      "type": "delay",
-      "params": {
-        "time": 6.8,
-        "feedback": 6.4,
-        "mix": 4.2
-      }
-    },
-    {
-      "id": "hall",
-      "type": "reverb",
-      "params": {
-        "size": 9.6,
-        "mix": 8.3
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "SWELL",
-      "target": "sq.attack"
-    },
-    {
-      "id": "k2",
-      "label": "HAUNT",
-      "target": "hall.size"
-    },
-    {
-      "id": "k3",
-      "label": "VEIL",
-      "target": "hall.mix"
-    },
-    {
-      "id": "k4",
-      "label": "BREATH",
-      "target": "brth.rate"
-    },
-    {
-      "id": "k5",
-      "label": "SIGH",
-      "target": "brth.depth"
-    },
-    {
-      "id": "k6",
-      "label": "ECHO",
-      "target": "ech.feedback"
-    },
-    {
-      "id": "k7",
-      "label": "DECAY",
-      "target": "ech.time"
-    },
-    {
-      "id": "k8",
-      "label": "MURK",
-      "target": "vl.cutoff"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "SEANCE",
-      "target": "vl.resonance",
-      "off": 6.1,
-      "on": 9.3
-    },
-    {
-      "id": "s2",
-      "label": "SHROUD",
-      "target": "ech.mix",
-      "off": 4.2,
-      "on": 7.6
-    }
-  ],
-  "bakedFrom": "a haunted reverb that swells and breathes like a ghost"
+  {
+   "id": "brth",
+   "type": "tremolo",
+   "params": {
+    "rate": 0.9,
+    "depth": 5.5
+   }
+  },
+  {
+   "id": "ech",
+   "type": "delay",
+   "params": {
+    "time": 6.8,
+    "feedback": 6.4,
+    "mix": 4.2
+   }
+  },
+  {
+   "id": "hall",
+   "type": "reverb",
+   "params": {
+    "size": 9.6,
+    "mix": 8.0
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "SWELL",
+   "target": "sq.attack"
+  },
+  {
+   "id": "k2",
+   "label": "HAUNT",
+   "target": "hall.size"
+  },
+  {
+   "id": "k3",
+   "label": "VEIL",
+   "target": "hall.mix"
+  },
+  {
+   "id": "k4",
+   "label": "BREATH",
+   "target": "brth.rate"
+  },
+  {
+   "id": "k5",
+   "label": "SIGH",
+   "target": "brth.depth"
+  },
+  {
+   "id": "k6",
+   "label": "ECHO",
+   "target": "ech.feedback"
+  },
+  {
+   "id": "k7",
+   "label": "DECAY",
+   "target": "ech.time"
+  },
+  {
+   "id": "k8",
+   "label": "MURK",
+   "target": "vl.cutoff"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "SEANCE",
+   "target": "vl.resonance",
+   "off": 6.1,
+   "on": 8.0
+  },
+  {
+   "id": "s2",
+   "label": "SHROUD",
+   "target": "ech.mix",
+   "off": 4.2,
+   "on": 7.6
+  }
+ ],
+ "bakedFrom": "a haunted reverb that swells and breathes like a ghost"
 }

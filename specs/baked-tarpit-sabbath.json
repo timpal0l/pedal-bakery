@@ -1,126 +1,126 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Tarpit Sabbath",
-  "tagline": "downtuned, doomed, drowning in tar",
-  "enclosure": {
-    "width": 3.6,
-    "depth": 2.9,
-    "height": 0.78,
-    "color": "#2b1a0f"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Tarpit Sabbath",
+ "tagline": "downtuned, doomed, drowning in tar",
+ "enclosure": {
+  "width": 3.6,
+  "depth": 2.9,
+  "height": 0.78,
+  "color": "#2b1a0f"
+ },
+ "artwork": {
+  "style": "burst",
+  "palette": [
+   "#e08a1e",
+   "#8c2f10",
+   "#1a0d06"
+  ],
+  "textColor": "#f6d9a0"
+ },
+ "chain": [
+  {
+   "id": "sq",
+   "type": "comp",
+   "params": {
+    "sustain": 7.0,
+    "attack": 3.0
+   }
   },
-  "artwork": {
-    "style": "burst",
-    "palette": [
-      "#e08a1e",
-      "#8c2f10",
-      "#1a0d06"
-    ],
-    "textColor": "#f6d9a0"
+  {
+   "id": "fz",
+   "type": "drive",
+   "params": {
+    "amount": 9.0,
+    "tone": 3.4,
+    "level": 6.5
+   }
   },
-  "chain": [
-    {
-      "id": "sq",
-      "type": "comp",
-      "params": {
-        "sustain": 7.0,
-        "attack": 3.0
-      }
-    },
-    {
-      "id": "fz",
-      "type": "drive",
-      "params": {
-        "amount": 9.6,
-        "tone": 3.4,
-        "level": 6.5
-      }
-    },
-    {
-      "id": "tn",
-      "type": "eq",
-      "params": {
-        "bass": 8.6,
-        "mid": 6.8,
-        "treble": 3.6,
-        "freq": 2.2
-      }
-    },
-    {
-      "id": "wob",
-      "type": "phaser",
-      "params": {
-        "rate": 1.6,
-        "depth": 6.0,
-        "feedback": 5.0
-      }
-    },
-    {
-      "id": "cav",
-      "type": "reverb",
-      "params": {
-        "size": 8.0,
-        "mix": 3.2
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "FUZZ",
-      "target": "fz.amount"
-    },
-    {
-      "id": "k2",
-      "label": "TONE",
-      "target": "fz.tone"
-    },
-    {
-      "id": "k3",
-      "label": "LEVEL",
-      "target": "fz.level"
-    },
-    {
-      "id": "k4",
-      "label": "LOWEND",
-      "target": "tn.bass"
-    },
-    {
-      "id": "k5",
-      "label": "MIDS",
-      "target": "tn.mid"
-    },
-    {
-      "id": "k6",
-      "label": "SUSTAIN",
-      "target": "sq.sustain"
-    },
-    {
-      "id": "k7",
-      "label": "SWIRL",
-      "target": "wob.depth"
-    },
-    {
-      "id": "k8",
-      "label": "CAVERN",
-      "target": "cav.mix"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "TARPIT",
-      "target": "tn.freq",
-      "off": 2.2,
-      "on": 6.5
-    },
-    {
-      "id": "s2",
-      "label": "RITUAL",
-      "target": "cav.size",
-      "off": 8.0,
-      "on": 10
-    }
-  ],
-  "bakedFrom": "the ultimate stoner rock fuzz rig in one pedal"
+  {
+   "id": "tn",
+   "type": "eq",
+   "params": {
+    "bass": 7.5,
+    "mid": 6.8,
+    "treble": 3.6,
+    "freq": 2.2
+   }
+  },
+  {
+   "id": "wob",
+   "type": "phaser",
+   "params": {
+    "rate": 1.6,
+    "depth": 6.0,
+    "feedback": 5.0
+   }
+  },
+  {
+   "id": "cav",
+   "type": "reverb",
+   "params": {
+    "size": 8.0,
+    "mix": 3.2
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "FUZZ",
+   "target": "fz.amount"
+  },
+  {
+   "id": "k2",
+   "label": "TONE",
+   "target": "fz.tone"
+  },
+  {
+   "id": "k3",
+   "label": "LEVEL",
+   "target": "fz.level"
+  },
+  {
+   "id": "k4",
+   "label": "LOWEND",
+   "target": "tn.bass"
+  },
+  {
+   "id": "k5",
+   "label": "MIDS",
+   "target": "tn.mid"
+  },
+  {
+   "id": "k6",
+   "label": "SUSTAIN",
+   "target": "sq.sustain"
+  },
+  {
+   "id": "k7",
+   "label": "SWIRL",
+   "target": "wob.depth"
+  },
+  {
+   "id": "k8",
+   "label": "CAVERN",
+   "target": "cav.mix"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "TARPIT",
+   "target": "tn.freq",
+   "off": 2.2,
+   "on": 6.5
+  },
+  {
+   "id": "s2",
+   "label": "RITUAL",
+   "target": "cav.size",
+   "off": 8.0,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "the ultimate stoner rock fuzz rig in one pedal"
 }

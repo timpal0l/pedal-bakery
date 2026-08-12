@@ -14,10 +14,15 @@ import { CHORDS, CHORD_GAINS, CHORD_LEVEL, E2 } from './config.js';
 import { MODULES, createCabinet, createStrings } from './modules.js';
 import { RIFFS, PROGRESSIONS } from './riffs.js';
 import { DRUM_PATTERNS, kitFor, renderDrums, drumBars } from './drums.js';
+import { BASS_LINES, BASS_TONES } from './bass.js';
 
 export function createAudio() {
   let ctx = null;     // created on the first user gesture, then permanent
   let master = null;
+  let userVolume = null;
+  // remembered between sessions, and deliberately quiet on a first visit
+  let savedVolume = Math.min(1, Math.max(0,
+    Number(localStorage.getItem('masterVolume') ?? 0.5)));
   let speakers = null; // last node before the destination — what you hear
   const transport = { origin: 0, bpm: 100 }; // the shared clock for synced inputs
 
@@ -36,40 +41,46 @@ export function createAudio() {
   const ampCabs = new Map();  // amp post id -> speaker cabinet
   const ampTaps = new Map();  // amp id -> scope tap, for the wave halo
 
-  function vol(v) { return Math.pow((v ?? 5) / 10, 1.5) * 2; }
+  // 10 on a volume knob used to mean 2x. Nothing in here needs that much.
+  function vol(v) { return Math.pow((v ?? 5) / 10, 1.5) * 1.15; }
 
   // Browsers only allow sound after a user gesture, so call this from a click.
   function start() {
     if (ctx) { ctx.resume(); return; }
     ctx = new (window.AudioContext || window.webkitAudioContext)();
     master = ctx.createGain();
-    master.gain.value = 0.62;
+    master.gain.value = 0.26; // quiet nominal level: dynamics survive
     // Safety net: a fast limiter then a soft knee, so however many pedals get
     // stacked the output never hard-clips against the sound card.
     const limiter = ctx.createDynamicsCompressor();
-    limiter.threshold.value = -3;
-    limiter.knee.value = 0;
+    limiter.threshold.value = -8;    // catches peaks, not everything
+    limiter.knee.value = 2;
     limiter.ratio.value = 20;
-    limiter.attack.value = 0.002;
-    limiter.release.value = 0.12;
+    limiter.attack.value = 0.001;    // fast enough to catch transients
+    limiter.release.value = 0.1;
     const softClip = ctx.createWaveShaper();
     {
       const n = 2048, curve = new Float32Array(n);
       // unity below the knee, rounding off above it. Normalising a tanh by
       // tanh(k) would give this stage 1.6x gain — the same mistake the valve
       // stage had, and it was quietly adding 4dB to everything.
-      const knee = 0.7;
+      // HARD CEILING. Whatever arrives, nothing louder than CEILING can leave
+      // this program. The knee keeps normal playing untouched; above it the
+      // curve saturates and can never exceed the ceiling, by construction.
+      const knee = 0.32, CEILING = 0.5;
       for (let i = 0; i < n; i++) {
         const x = (i / (n - 1)) * 2 - 1;
         const a = Math.abs(x);
         curve[i] = a <= knee
           ? x
-          : Math.sign(x) * (knee + (1 - knee) * Math.tanh((a - knee) / (1 - knee)));
+          : Math.sign(x) * (knee + (CEILING - knee) * Math.tanh((a - knee) / (CEILING - knee)));
       }
       softClip.curve = curve;
       softClip.oversample = '2x';
     }
-    master.connect(limiter).connect(softClip).connect(ctx.destination);
+    userVolume = ctx.createGain();
+    userVolume.gain.value = savedVolume;
+    master.connect(limiter).connect(softClip).connect(userVolume).connect(ctx.destination);
     speakers = softClip;
     transport.origin = ctx.currentTime;
     console.log('[audio] started');
@@ -85,24 +96,36 @@ export function createAudio() {
     applyMode(id, state);
   }
 
+  // An amp has two ways in. SPEAKER goes through the cone, which is what a
+  // guitar wants and is most of the tone. DIRECT skips it, because a guitar
+  // speaker is a bandpass from 85 Hz to 5 kHz and a drum kit put through one
+  // loses its whole top octave — every hat, shaker and cymbal — and then has
+  // nowhere to sit but on top of the guitar. Both meet at the amp's output,
+  // so the volume knob and the wave halo still see everything.
   function createAmp(id, state) {
     if (!ctx || ampGains.has(id)) return;
-    const g = ctx.createGain();
-    g.gain.value = vol(state?.volume);
-    // every amp has a speaker in it — the biggest single step toward
-    // sounding like a real rig instead of a synth patch
+    const level = vol(state?.volume);
+    const speaker = ctx.createGain();
+    const direct = ctx.createGain();
+    const sum = ctx.createGain();
+    speaker.gain.value = level;
+    direct.gain.value = level;
     const cab = createCabinet(ctx);
-    g.connect(cab.in);
-    cab.out.connect(master);
-    ampGains.set(id, g);
+    speaker.connect(cab.in);
+    cab.out.connect(sum);
+    direct.connect(sum);
+    sum.connect(master);
+    ampGains.set(id, { speaker, direct, sum });
     ampCabs.set(id, cab);
-    openTap(id, cab.out);
+    openTap(id, sum);
   }
 
   function disposeAmp(id) {
-    const g = ampGains.get(id);
-    if (!g) return;
-    try { g.disconnect(); } catch { /* ok */ }
+    const amp = ampGains.get(id);
+    if (!amp) return;
+    for (const n of [amp.speaker, amp.direct, amp.sum]) {
+      try { n.disconnect(); } catch { /* ok */ }
+    }
     ampCabs.get(id)?.dispose();
     ampCabs.delete(id);
     ampGains.delete(id);
@@ -158,8 +181,14 @@ export function createAudio() {
   // The volume knob on a tone post (input trim) or an amp (output level).
   function setPostVolume(id, v) {
     if (!ctx) return;
-    const target = sources.get(id)?.bus.gain ?? ampGains.get(id)?.gain;
-    target?.setTargetAtTime(vol(v), ctx.currentTime, 0.05);
+    const t = ctx.currentTime, level = vol(v);
+    const src = sources.get(id);
+    if (src) { src.bus.gain.setTargetAtTime(level, t, 0.05); return; }
+    const amp = ampGains.get(id);
+    if (!amp) return;
+    // one knob, both ways in — the speaker and the direct feed move together
+    amp.speaker.gain.setTargetAtTime(level, t, 0.05);
+    amp.direct.gain.setTargetAtTime(level, t, 0.05);
   }
 
   function disposeSource(id) {
@@ -191,7 +220,16 @@ export function createAudio() {
 
   // A drummer is not a guitarist: the kit must not go through a single-coil
   // pickup, a wooden body or sympathetic strings. It arrives already mixed
-  // and already in a room, so all it wants on the way out is a little glue.
+  // and already in a room, so all it wants on the way out is a little glue —
+  // and an EQ that hands the guitar its own ground back.
+  //
+  // The carve is the other half of the guitar's voicing, band for band:
+  //   under 32 Hz   nobody — rumble that only eats headroom
+  //   40-200 Hz     the kit's (kick and snare body); the guitar is filtered out
+  //   420 Hz        dipped: this is where the guitar's fundamentals live
+  //   1 kHz         lifted: the guitar cabinet digs a hole here, so fill it
+  //   5 kHz         lifted: stick and snare crack, above the cabinet's rolloff
+  //   9 kHz up      the kit's alone — a guitar speaker makes nothing up there
   function startDrums(s, state) {
     const pattern = DRUM_PATTERNS[state.drumPattern] || DRUM_PATTERNS.rock;
     const src = ctx.createBufferSource();
@@ -199,20 +237,79 @@ export function createAudio() {
     src.loop = true;
     const g = ctx.createGain();
     g.gain.value = 0.85;
+    const eq = [
+      ['highpass', 32, 0.7, 0],
+      ['peaking', 110, 1.0, -2.0],   // the bass's fundamental; the kick keeps 50-90
+      ['peaking', 420, 0.9, -3.0],   // out of the guitar's way
+      ['peaking', 1000, 0.8, 1.5],   // into the hole the cabinet leaves
+      ['peaking', 5000, 0.9, 2.5],   // crack, where the cabinet has given up
+      ['highshelf', 9000, 0.7, 2.5], // air, which is the kit's alone
+    ].map(([type, hz, q, dB]) => {
+      const f = ctx.createBiquadFilter();
+      f.type = type; f.frequency.value = hz; f.Q.value = q; f.gain.value = dB;
+      return f;
+    });
     const glue = ctx.createDynamicsCompressor();
     glue.threshold.value = -18; glue.ratio.value = 3;
     glue.attack.value = 0.008; glue.release.value = 0.14;
-    src.connect(g).connect(glue).connect(s.bus);
+    let node = src.connect(g);
+    for (const f of eq) node = node.connect(f);
+    node.connect(glue).connect(s.bus);
     src.start(state.sync ? nextBeatTime() : undefined);
-    s.loop = { src, g, kind: 'drums', voicing: [glue] };
+    s.loop = { src, g, kind: 'drums', voicing: [...eq, glue] };
   }
 
   // All tone modes are seamless Karplus-Strong loops: 'chord' is a strummed
   // chord (in the chosen style), 'arp' a picked pattern — both in any key —
   // and 'interval' is a dyad of the root plus any interval in cents, which
   // is what opens the door to microtones (neutral thirds, quarter tones…).
+  // A bass is the third seat in the band and the hardest one to fit: it wants
+  // the same octave as the kick and the same low mids as the guitar. The
+  // voicing is what keeps all three apart — see startDrums() and the guitar's
+  // voicing below; the three carves are designed as one and edited as one.
+  //
+  //   under 35 Hz   nobody
+  //   60 Hz         dipped: the kick's thump, and there's only room for one
+  //   95 Hz         lifted: the bass's own fundamentals
+  //   400 Hz        dipped: the guitar's low mids
+  //   800 Hz        lifted: string definition, so it reads on small speakers
+  //   over 3.5 kHz  gone: a bass has no business in the guitar's presence
+  function startBass(s, state) {
+    const root = (state.root || 0) + (state.detune || 0) / 100;
+    const prog = PROGRESSIONS[state.progression]?.steps || null;
+    const src = ctx.createBufferSource();
+    src.buffer = makeBassBuffer(ctx, root, state.bassLine, state.bassTone,
+      beatSeconds(state), state.bassFollow === false ? null : prog);
+    src.loop = true;
+    const g = ctx.createGain();
+    g.gain.value = 0.9;
+    const eq = [
+      ['highpass', 35, 0.7, 0],
+      ['peaking', 60, 1.0, -2.5],
+      ['peaking', 95, 1.2, 2.0],
+      ['peaking', 400, 0.9, -2.5],
+      ['peaking', 800, 1.0, 2.5],
+      ['lowpass', 2200, 0.7, 0], // above here is the guitar's, and only its
+    ].map(([type, hz, q, dB]) => {
+      const f = ctx.createBiquadFilter();
+      f.type = type; f.frequency.value = hz; f.Q.value = q; f.gain.value = dB;
+      return f;
+    });
+    // a bass is always compressed; without it the loud notes are the only
+    // ones anybody hears
+    const squeeze = ctx.createDynamicsCompressor();
+    squeeze.threshold.value = -20; squeeze.ratio.value = 4;
+    squeeze.attack.value = 0.012; squeeze.release.value = 0.16;
+    let node = src.connect(g);
+    for (const f of eq) node = node.connect(f);
+    node.connect(squeeze).connect(s.bus);
+    src.start(state.sync ? nextBeatTime() : undefined);
+    s.loop = { src, g, kind: 'bass', voicing: [...eq, squeeze] };
+  }
+
   function startLoop(s, kind, state) {
     if (kind === 'drums') { startDrums(s, state); return; }
+    if (kind === 'bass') { startBass(s, state); return; }
     // detune is cents — a fractional semitone that rides the whole pitch
     // pipeline, so any input can sit e.g. a quarter tone off standard
     const root = (state.root || 0) + (state.detune || 0) / 100;
@@ -235,14 +332,24 @@ export function createAudio() {
     src.loop = true;
     const g = ctx.createGain();
     g.gain.value = kind === 'arp' ? 0.8 : 0.9;
-    // single-coil voicing: tight lows, scooped mids, glassy presence, plus a
-    // wooden body resonance and the gentle squash a real pickup+string gives
+    // Single-coil voicing: tight lows, scooped mids, glassy presence, plus a
+    // wooden body resonance and the gentle squash a real pickup+string gives.
+    // It is also half of the guitar-vs-drums carve — see startDrums() for the
+    // other half. The two must be edited together or they'll start colliding.
     const hp = ctx.createBiquadFilter();
-    hp.type = 'highpass'; hp.frequency.value = 85; hp.Q.value = 0.6;
+    // 110, not 85: below this is the kick's, and a guitar loses nothing but mud
+    hp.type = 'highpass'; hp.frequency.value = 110; hp.Q.value = 0.6;
     const wood = ctx.createBiquadFilter();
-    wood.type = 'peaking'; wood.frequency.value = 196; wood.Q.value = 1.6; wood.gain.value = 2.5;
+    // body at 165 rather than 196, which is where a snare's fundamental lives
+    // narrow on purpose: a broad low-mid lift is the guitar spreading into the
+    // kick's and the floor tom's ground for no tonal gain
+    wood.type = 'peaking'; wood.frequency.value = 165; wood.Q.value = 2.2; wood.gain.value = 2.0;
+    const pocket = ctx.createBiquadFilter();
+    // and a small hollow left deliberately for the snare and the rack tom —
+    // the cabinet lifts 200-230 by 3-4 dB, which is exactly the wrong place
+    pocket.type = 'peaking'; pocket.frequency.value = 230; pocket.Q.value = 1.2; pocket.gain.value = -2.0;
     const scoop = ctx.createBiquadFilter();
-    scoop.type = 'peaking'; scoop.frequency.value = 650; scoop.Q.value = 0.8; scoop.gain.value = -3.5;
+    scoop.type = 'peaking'; scoop.frequency.value = 650; scoop.Q.value = 0.8; scoop.gain.value = -2.5;
     const spark = ctx.createBiquadFilter();
     spark.type = 'peaking'; spark.frequency.value = 3300; spark.Q.value = 1.0; spark.gain.value = 3.0;
     const air = ctx.createBiquadFilter();
@@ -252,13 +359,13 @@ export function createAudio() {
     squash.attack.value = 0.006; squash.release.value = 0.18;
     // the other strings ring in sympathy with whatever is being played
     const strings = createStrings(ctx);
-    src.connect(g).connect(hp).connect(wood).connect(scoop).connect(spark)
-       .connect(air).connect(squash).connect(strings.in);
+    src.connect(g).connect(hp).connect(wood).connect(pocket).connect(scoop)
+       .connect(spark).connect(air).connect(squash).connect(strings.in);
     strings.out.connect(s.bus);
     // synced inputs enter exactly on the shared clock's next beat — loops of
     // integer beat lengths then stay locked (or politely polymetric) forever
     src.start(state.sync ? nextBeatTime() : undefined);
-    s.loop = { src, g, kind, strings, voicing: [hp, wood, scoop, spark, air, squash] };
+    s.loop = { src, g, kind, strings, voicing: [hp, wood, pocket, scoop, spark, air, squash] };
   }
 
   // Rebuild whichever loop is playing after chord/key/style changes.
@@ -310,7 +417,7 @@ export function createAudio() {
       state.mode = 'off';
       return 'UNPLUGGED';
     }
-    const kind = ['arp', 'interval', 'riff', 'drums'].includes(mode) ? mode : 'chord';
+    const kind = ['arp', 'interval', 'riff', 'drums', 'bass'].includes(mode) ? mode : 'chord';
     if (!s.loop || s.loop.kind !== kind) {
       stopLoop(s);
       startLoop(s, kind, state);
@@ -319,6 +426,11 @@ export function createAudio() {
     if (kind === 'drums') {
       const p = DRUM_PATTERNS[state.drumPattern] || DRUM_PATTERNS.rock;
       return `DRUMS — ${p.label.toUpperCase()}`;
+    }
+    if (kind === 'bass') {
+      const l = BASS_LINES[state.bassLine] || BASS_LINES.pump;
+      const t = BASS_TONES[state.bassTone] || BASS_TONES.finger;
+      return `BASS — ${l.label.toUpperCase()} · ${t.label.toUpperCase()}`;
     }
     if (kind === 'interval') return `DYAD — ROOT + ${state.interval ?? 350}¢`;
     return `${(state.chord || 'major').toUpperCase()}${kind === 'arp' ? ' ARPEGGIO' : ''}`;
@@ -352,19 +464,24 @@ export function createAudio() {
     // Real pedals have finite headroom. Without this, one generated chain
     // that stacks a compressor and an EQ can hand the next pedal +20dB.
     const guard = ctx.createDynamicsCompressor();
-    guard.threshold.value = -6;
+    guard.threshold.value = -12;
     guard.knee.value = 6;
-    guard.ratio.value = 8;
+    guard.ratio.value = 12;
     guard.attack.value = 0.004;
     guard.release.value = 0.15;
     out.connect(guard);
-    let tail = guard, cab = null;
+    let tail = guard, cab = null, directIn = null;
     if (spec.kind === 'amp') { // a baked amp is a head AND a speaker
       cab = createCabinet(ctx);
       guard.connect(cab.in);
-      tail = cab.out;
+      // same two ways in as the endpoint amp: through the cone, or past it
+      // for a full-range source that a guitar speaker would only ruin
+      directIn = ctx.createGain();
+      tail = ctx.createGain();
+      cab.out.connect(tail);
+      directIn.connect(tail);
     }
-    rigs.set(id, { pedalIn, wet, bypass, out, guard, tail, cab, modules });
+    rigs.set(id, { pedalIn, wet, bypass, out, guard, tail, cab, directIn, modules });
     if (spec.kind === 'amp') openTap(id, tail);
     applyRig(id, spec, state);
   }
@@ -389,8 +506,9 @@ export function createAudio() {
     if (!rig) return;
     for (const m of Object.values(rig.modules)) m.dispose();
     rig.cab?.dispose();
-    for (const n of [rig.pedalIn, rig.wet, rig.bypass, rig.out, rig.guard]) {
-      try { n.disconnect(); } catch { /* ok */ }
+    for (const n of [rig.pedalIn, rig.wet, rig.bypass, rig.out, rig.guard,
+      rig.directIn, rig.tail]) {
+      try { n?.disconnect(); } catch { /* ok */ }
     }
     closeTap(id);
     rigs.delete(id);
@@ -410,8 +528,14 @@ export function createAudio() {
       try { rig.out.disconnect(); } catch { /* ok */ }
       try { rig.guard.disconnect(); } catch { /* ok */ }
       try { rig.cab?.out.disconnect(); } catch { /* ok */ }
+      try { rig.directIn?.disconnect(); } catch { /* ok */ }
+      try { if (rig.tail !== rig.guard) rig.tail.disconnect(); } catch { /* ok */ }
       rig.out.connect(rig.guard);
-      if (rig.cab) rig.guard.connect(rig.cab.in); // re-arm the speaker path
+      if (rig.cab) {                              // re-arm both ways in
+        rig.guard.connect(rig.cab.in);
+        rig.cab.out.connect(rig.tail);
+        rig.directIn.connect(rig.tail);
+      }
       armTap(id);                                 // …and the scope behind it
     }
     // internal source wiring survives disconnect() of the bus outputs only —
@@ -428,12 +552,18 @@ export function createAudio() {
         node = rig.guard ?? rig.out;
       }
       if (!ok) continue;
+      // A full-range source takes the direct way in — see createAmp(). Pedals
+      // still apply; it's only the guitar speaker that gets skipped, because
+      // its 85 Hz highpass would take the bass's bottom two octaves and its
+      // 5 kHz rolloff would take the kit's top one.
+      const fullRange = s.loop?.kind === 'drums' || s.loop?.kind === 'bass';
       const ampRig = rigs.get(chain.amp); // a baked amp: route through its tone stack
       if (ampRig) {
-        node.connect(ampRig.pedalIn);
+        node.connect(fullRange && ampRig.directIn ? ampRig.directIn : ampRig.pedalIn);
         (ampRig.tail ?? ampRig.out).connect(master);
       } else {
-        node.connect(ampGains.get(chain.amp) ?? master);
+        const amp = ampGains.get(chain.amp);
+        node.connect(amp ? (fullRange ? amp.direct : amp.speaker) : master);
       }
     }
     console.log('[audio] chains:', chains.length
@@ -491,6 +621,17 @@ export function createAudio() {
   }
 
   return {
+    setMasterVolume: (v) => {
+      savedVolume = Math.min(1, Math.max(0, v));
+      localStorage.setItem('masterVolume', String(savedVolume));
+      if (userVolume) userVolume.gain.setTargetAtTime(savedVolume, ctx.currentTime, 0.02);
+    },
+    masterVolume: () => savedVolume,
+    panic: () => { // instant silence, for when something goes wrong
+      savedVolume = 0;
+      localStorage.setItem('masterVolume', '0');
+      if (userVolume) userVolume.gain.setTargetAtTime(0, ctx.currentTime, 0.01);
+    },
     start, createSource, disposeSource, createAmp, disposeAmp,
     setSourceMode, refreshTone, setPostVolume,
     registerRiff: (id, riff) => EXTRA_RIFFS.set(id, riff), setTransportBpm,
@@ -624,7 +765,13 @@ export const ARP_PATTERNS = {
 // A real string is two coupled strings' worth of complexity: the pick makes a
 // transient click, the string decays inharmonically, and no two plucks are
 // identical. This renders one pluck with all three.
-function pluckInto(out, sr, len, f, startSec, ringSec, damp, gain) {
+// brightBase/clickAmt/loopTone let a bass override the guitar's assumptions.
+// A wound bass string is darker at the pluck, far less clicky, and — the one
+// that matters most — loses its top end on every trip round the string, which
+// is why a bass reads as a fundamental with a bit of growl rather than as a
+// big guitar. loopTone is that loss: 1 keeps the guitar's behaviour exactly.
+function pluckInto(out, sr, len, f, startSec, ringSec, damp, gain,
+                   brightBase, clickAmt, loopTone) {
   // Humanise: no two plucks of a real guitar share timing, tuning or force,
   // and perfectly quantised repeats are the main tell of a synthetic player.
   const jitter = (Math.random() - 0.5) * 0.012;       // +/-6ms of feel
@@ -644,8 +791,9 @@ function pluckInto(out, sr, len, f, startSec, ringSec, damp, gain) {
   // low strings on a guitar are wound and comparatively dull with a metallic
   // zing, the top strings are plain steel and bright.
   const wound = Math.min(1, Math.max(0, (330 - f) / 250)); // 1 = low E, 0 above E4
-  const bright = Math.max(0.3, Math.min(0.88,
-    0.35 + velocity * 0.35 + (1 - wound) * 0.2));
+  const bright = brightBase !== undefined
+    ? Math.max(0.08, Math.min(0.9, brightBase + velocity * 0.18))
+    : Math.max(0.3, Math.min(0.88, 0.35 + velocity * 0.35 + (1 - wound) * 0.2));
   let prev = 0;
   for (let j = 0; j < N; j++) {
     const white = Math.random() * 2 - 1;
@@ -654,21 +802,28 @@ function pluckInto(out, sr, len, f, startSec, ringSec, damp, gain) {
   }
   const comb = Math.max(1, Math.round(N * 0.16)); // pickup-position comb -> quack
   for (let j = 0; j < N; j++) ring[j] = seed[j] - 0.9 * seed[(j - comb + N) % N];
-  // wound strings ring with a fine metallic zing over the fundamental
+  // Wound strings ring with a fine metallic zing over the fundamental. It is
+  // alternating-sign noise, i.e. energy right at Nyquist, so it has to scale
+  // with how bright the string is — at full strength on a bass it is the only
+  // thing you'd hear.
+  const zing = (brightBase !== undefined ? bright * 0.22 : 0.16);
   if (wound > 0.05) {
     for (let j = 0; j < N; j++) {
-      ring[j] += wound * 0.16 * (Math.random() * 2 - 1) * (j % 2 ? 1 : -1);
+      ring[j] += wound * zing * (Math.random() * 2 - 1) * (j % 2 ? 1 : -1);
     }
   }
   // pick attack: a short bright click before the string settles, which is
   // most of what the ear uses to identify a plucked instrument
   const clickLen = Math.min(Math.floor(sr * 0.004), len);
+  const click = (clickAmt ?? 0.5) * velocity;
   for (let j = 0; j < clickLen; j++) {
     const p = (start + j) % len;
-    out[p] += velocity * 0.5 * (Math.random() * 2 - 1) * (1 - j / clickLen) ** 2;
+    out[p] += click * (Math.random() * 2 - 1) * (1 - j / clickLen) ** 2;
   }
   let idx = 0;
   let apX = 0, apY = 0; // allpass state
+  let loopLp = 0;       // extra in-loop damping, for strings that lose highs
+  const tone = loopTone ?? 1;
   const dur = Math.min(len, Math.floor(sr * ringSec));
   for (let j = 0; j < dur; j++) {
     const p = (start + j) % len; // tail wraps -> seamless loop
@@ -676,7 +831,9 @@ function pluckInto(out, sr, len, f, startSec, ringSec, damp, gain) {
     const avg = 0.5 * (ring[idx] + ring[next]);
     apY = C * avg + apX - C * apY;
     apX = avg;
-    ring[idx] = damp * apY;
+    let v = damp * apY;
+    if (tone < 1) { loopLp += tone * (v - loopLp); v = loopLp; }
+    ring[idx] = v;
     out[p] += velocity * ring[idx];
     idx = next;
   }
@@ -749,6 +906,62 @@ function makeDrumBuffer(ctx, pattern, kitKey, spb) {
   // well below a metal one — exactly as it should be
   normalize(out, CHORD_LEVEL * 1.5);
   return buf;
+}
+
+// A bass line is written against the CHORD, not the key, so walking it
+// through a progression is just a matter of transposing each bar to the step
+// it lands on. Everything is an octave under the guitar (E1, not E2).
+function makeBassBuffer(ctx, rootSemi, lineKey, toneKey, spb, prog) {
+  const line = BASS_LINES[lineKey] || BASS_LINES.pump;
+  const tone = BASS_TONES[toneKey] || BASS_TONES.finger;
+  const sr = ctx.sampleRate;
+  const steps = prog && prog.length
+    ? prog.map((st) => ({ shift: st.d, quality: st.q, beats: (st.b || 1) * 4 }))
+    : [{ shift: 0, quality: 'major', beats: line.beats }];
+  const totalBeats = steps.reduce((a, st) => a + st.beats, 0);
+  const len = Math.floor(sr * totalBeats * spb);
+  const buf = ctx.createBuffer(1, len, sr);
+  const out = buf.getChannelData(0);
+
+  let cursor = 0;
+  steps.forEach((step, si) => {
+    const reps = Math.max(1, Math.round(step.beats / line.beats));
+    // a pedal line ignores the changes and sits on the key's root; every
+    // other line moves with them
+    const shift = line.pedal ? 0 : step.shift;
+    const minor = /min|dim|m6|m7/.test(step.quality || '');
+    for (let r = 0; r < reps; r++) {
+      const base = cursor + r * line.beats;
+      const lastRep = si === steps.length - 1 ? r === reps - 1 : false;
+      for (const n of line.notes) {
+        if (n.t >= step.beats - r * line.beats) continue; // don't spill past the change
+        let s = n.s;
+        // the walking line borrows its third from the chord, and its last
+        // note leans a semitone into wherever the next chord starts
+        if (line.walk) {
+          if (s === 4 && minor) s = 3;
+          if (n.t === line.beats - 1 && !lastRep) {
+            const next = steps[(si + 1) % steps.length];
+            s = (line.pedal ? 0 : next.shift) - shift - 1;
+          }
+        }
+        const t = swingBeat(n.t, line.swing) + base;
+        const f = (E2 / 2) * Math.pow(2, (rootSemi + shift + s) / 12);
+        pluckInto(out, sr, len, f, t * spb, line.ring ?? tone.ring, tone.damp,
+          0.85 * n.g, tone.bright, tone.click, tone.tone);
+      }
+    }
+    cursor += step.beats;
+  });
+  normalize(out, CHORD_LEVEL * 1.5);
+  return buf;
+}
+
+// offbeat eighths land late when a line swings (0.5 straight, 2/3 triplet)
+function swingBeat(t, swing) {
+  if (!swing || swing === 0.5) return t;
+  const beat = Math.floor(t), frac = t - beat;
+  return Math.abs(frac - 0.5) < 1e-6 ? beat + swing : t;
 }
 
 // A riff is note data, not a chord: each entry has its own beat position,

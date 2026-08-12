@@ -1,131 +1,131 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Event Horizon",
-  "tagline": "the note falls in, something else climbs out",
-  "enclosure": {
-    "width": 3.6,
-    "depth": 2.9,
-    "height": 0.82,
-    "color": "#0a0710"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Event Horizon",
+ "tagline": "the note falls in, something else climbs out",
+ "enclosure": {
+  "width": 3.6,
+  "depth": 2.9,
+  "height": 0.82,
+  "color": "#0a0710"
+ },
+ "artwork": {
+  "style": "rings",
+  "palette": [
+   "#05030a",
+   "#3b1f6e",
+   "#e8b23a"
+  ],
+  "textColor": "#f2e8ff"
+ },
+ "chain": [
+  {
+   "id": "grab",
+   "type": "comp",
+   "params": {
+    "sustain": 7.0,
+    "attack": 0.6
+   }
   },
-  "artwork": {
-    "style": "rings",
-    "palette": [
-      "#05030a",
-      "#3b1f6e",
-      "#e8b23a"
-    ],
-    "textColor": "#f2e8ff"
+  {
+   "id": "warp",
+   "type": "filter",
+   "params": {
+    "cutoff": 1.4,
+    "resonance": 7.8
+   }
   },
-  "chain": [
-    {
-      "id": "grab",
-      "type": "comp",
-      "params": {
-        "sustain": 9.2,
-        "attack": 0.6
-      }
-    },
-    {
-      "id": "warp",
-      "type": "filter",
-      "params": {
-        "cutoff": 1.4,
-        "resonance": 7.8
-      }
-    },
-    {
-      "id": "spit",
-      "type": "delay",
-      "params": {
-        "time": 7.6,
-        "feedback": 8.4,
-        "mix": 7.2
-      }
-    },
-    {
-      "id": "halo",
-      "type": "phaser",
-      "params": {
-        "rate": 1.2,
-        "depth": 8.6,
-        "feedback": 7.4
-      }
-    },
-    {
-      "id": "void",
-      "type": "reverb",
-      "params": {
-        "size": 9.6,
-        "mix": 7.8
-      }
-    },
-    {
-      "id": "out",
-      "type": "level",
-      "params": {
-        "gain": 6.2
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "SWALLOW",
-      "target": "grab.sustain"
-    },
-    {
-      "id": "k2",
-      "label": "HORIZON",
-      "target": "warp.cutoff"
-    },
-    {
-      "id": "k3",
-      "label": "SPIT",
-      "target": "spit.time"
-    },
-    {
-      "id": "k4",
-      "label": "REGURG",
-      "target": "spit.feedback"
-    },
-    {
-      "id": "k5",
-      "label": "WARP",
-      "target": "halo.depth"
-    },
-    {
-      "id": "k6",
-      "label": "MASS",
-      "target": "void.size"
-    },
-    {
-      "id": "k7",
-      "label": "VOID",
-      "target": "void.mix"
-    },
-    {
-      "id": "k8",
-      "label": "ESCAPE",
-      "target": "out.gain"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "COLLAPSE",
-      "target": "warp.resonance",
-      "off": 7.8,
-      "on": 9.8
-    },
-    {
-      "id": "s2",
-      "label": "SINGULAR",
-      "target": "spit.mix",
-      "off": 7.2,
-      "on": 10
-    }
-  ],
-  "bakedFrom": "a black hole pedal that swallows the note then spits it back"
+  {
+   "id": "spit",
+   "type": "delay",
+   "params": {
+    "time": 7.6,
+    "feedback": 8.0,
+    "mix": 7.2
+   }
+  },
+  {
+   "id": "halo",
+   "type": "phaser",
+   "params": {
+    "rate": 1.2,
+    "depth": 8.6,
+    "feedback": 7.4
+   }
+  },
+  {
+   "id": "void",
+   "type": "reverb",
+   "params": {
+    "size": 9.6,
+    "mix": 7.8
+   }
+  },
+  {
+   "id": "out",
+   "type": "level",
+   "params": {
+    "gain": 6.2
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "SWALLOW",
+   "target": "grab.sustain"
+  },
+  {
+   "id": "k2",
+   "label": "HORIZON",
+   "target": "warp.cutoff"
+  },
+  {
+   "id": "k3",
+   "label": "SPIT",
+   "target": "spit.time"
+  },
+  {
+   "id": "k4",
+   "label": "REGURG",
+   "target": "spit.feedback"
+  },
+  {
+   "id": "k5",
+   "label": "WARP",
+   "target": "halo.depth"
+  },
+  {
+   "id": "k6",
+   "label": "MASS",
+   "target": "void.size"
+  },
+  {
+   "id": "k7",
+   "label": "VOID",
+   "target": "void.mix"
+  },
+  {
+   "id": "k8",
+   "label": "ESCAPE",
+   "target": "out.gain"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "COLLAPSE",
+   "target": "warp.resonance",
+   "off": 7.8,
+   "on": 8.0
+  },
+  {
+   "id": "s2",
+   "label": "SINGULAR",
+   "target": "spit.mix",
+   "off": 7.2,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "a black hole pedal that swallows the note then spits it back"
 }

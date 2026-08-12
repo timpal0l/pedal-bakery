@@ -1,64 +1,64 @@
 {
-  "kind": "pedal",
-  "shape": "round",
-  "name": "Shrike",
-  "tagline": "germanium scalpel for singing leads",
-  "enclosure": {
-    "width": 1.8,
-    "depth": 1.8,
-    "height": 0.5,
-    "color": "#b08d3e"
+ "kind": "pedal",
+ "shape": "round",
+ "name": "Shrike",
+ "tagline": "germanium scalpel for singing leads",
+ "enclosure": {
+  "width": 1.8,
+  "depth": 1.8,
+  "height": 0.5,
+  "color": "#b08d3e"
+ },
+ "artwork": {
+  "style": "rings",
+  "palette": [
+   "#b08d3e",
+   "#e8d9a8",
+   "#3a2c14"
+  ],
+  "textColor": "#2b2010"
+ },
+ "chain": [
+  {
+   "id": "cut",
+   "type": "eq",
+   "params": {
+    "bass": 1.5,
+    "mid": 6.0,
+    "treble": 7.5,
+    "freq": 7.0
+   }
   },
-  "artwork": {
-    "style": "rings",
-    "palette": [
-      "#b08d3e",
-      "#e8d9a8",
-      "#3a2c14"
-    ],
-    "textColor": "#2b2010"
+  {
+   "id": "gm",
+   "type": "drive",
+   "params": {
+    "amount": 3.0,
+    "tone": 8.5,
+    "level": 6.5
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "BOOST",
+   "target": "gm.level"
   },
-  "chain": [
-    {
-      "id": "cut",
-      "type": "eq",
-      "params": {
-        "bass": 1.5,
-        "mid": 6.0,
-        "treble": 9.0,
-        "freq": 7.0
-      }
-    },
-    {
-      "id": "gm",
-      "type": "drive",
-      "params": {
-        "amount": 3.0,
-        "tone": 8.5,
-        "level": 8.5
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "BOOST",
-      "target": "gm.level"
-    },
-    {
-      "id": "k2",
-      "label": "BITE",
-      "target": "cut.treble"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "FAT",
-      "target": "cut.bass",
-      "off": 1.5,
-      "on": 5.0
-    }
-  ],
-  "bakedFrom": "a treble booster for pushing amps into singing leads"
+  {
+   "id": "k2",
+   "label": "BITE",
+   "target": "cut.treble"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "FAT",
+   "target": "cut.bass",
+   "off": 1.5,
+   "on": 5.0
+  }
+ ],
+ "bakedFrom": "a treble booster for pushing amps into singing leads"
 }

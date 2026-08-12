@@ -1,67 +1,67 @@
 {
-  "kind": "pedal",
-  "shape": "round",
-  "name": "Palm Desert",
-  "tagline": "sun-baked sludge, amps to the horizon",
-  "enclosure": {
-    "width": 2.7,
-    "depth": 2.7,
-    "height": 0.6,
-    "color": "#7a4a17"
+ "kind": "pedal",
+ "shape": "round",
+ "name": "Palm Desert",
+ "tagline": "sun-baked sludge, amps to the horizon",
+ "enclosure": {
+  "width": 2.7,
+  "depth": 2.7,
+  "height": 0.6,
+  "color": "#7a4a17"
+ },
+ "artwork": {
+  "style": "burst",
+  "palette": [
+   "#e8963c",
+   "#a34e0f",
+   "#3d2408"
+  ],
+  "textColor": "#f5e3c0"
+ },
+ "chain": [
+  {
+   "id": "fz",
+   "type": "drive",
+   "params": {
+    "amount": 9.0,
+    "tone": 2.8,
+    "level": 6.5
+   }
   },
-  "artwork": {
-    "style": "burst",
-    "palette": [
-      "#e8963c",
-      "#a34e0f",
-      "#3d2408"
-    ],
-    "textColor": "#f5e3c0"
+  {
+   "id": "lp",
+   "type": "filter",
+   "params": {
+    "cutoff": 4.0,
+    "resonance": 2.5
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "FUZZ",
+   "target": "fz.amount"
   },
-  "chain": [
-    {
-      "id": "fz",
-      "type": "drive",
-      "params": {
-        "amount": 9.5,
-        "tone": 2.8,
-        "level": 6.5
-      }
-    },
-    {
-      "id": "lp",
-      "type": "filter",
-      "params": {
-        "cutoff": 4.0,
-        "resonance": 2.5
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "FUZZ",
-      "target": "fz.amount"
-    },
-    {
-      "id": "k2",
-      "label": "SLUDGE",
-      "target": "lp.cutoff"
-    },
-    {
-      "id": "k3",
-      "label": "LOUD",
-      "target": "fz.level"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "DOOM",
-      "target": "fz.tone",
-      "off": 2.8,
-      "on": 0.8
-    }
-  ],
-  "bakedFrom": "stoner fuzz"
+  {
+   "id": "k2",
+   "label": "SLUDGE",
+   "target": "lp.cutoff"
+  },
+  {
+   "id": "k3",
+   "label": "LOUD",
+   "target": "fz.level"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "DOOM",
+   "target": "fz.tone",
+   "off": 2.8,
+   "on": 0.8
+  }
+ ],
+ "bakedFrom": "stoner fuzz"
 }

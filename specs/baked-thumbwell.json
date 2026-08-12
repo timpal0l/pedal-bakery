@@ -1,90 +1,90 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Thumbwell",
-  "tagline": "low end you can lean on",
-  "enclosure": {
-    "width": 2.4,
-    "depth": 2.5,
-    "height": 0.55,
-    "color": "#2b2f3a"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Thumbwell",
+ "tagline": "low end you can lean on",
+ "enclosure": {
+  "width": 2.4,
+  "depth": 2.5,
+  "height": 0.55,
+  "color": "#2b2f3a"
+ },
+ "artwork": {
+  "style": "waves",
+  "palette": [
+   "#1b2029",
+   "#3c6e9a",
+   "#d9b25c"
+  ],
+  "textColor": "#f2ede2"
+ },
+ "chain": [
+  {
+   "id": "lo",
+   "type": "eq",
+   "params": {
+    "bass": 7.5,
+    "mid": 4.0,
+    "treble": 5.5,
+    "freq": 3.2
+   }
   },
-  "artwork": {
-    "style": "waves",
-    "palette": [
-      "#1b2029",
-      "#3c6e9a",
-      "#d9b25c"
-    ],
-    "textColor": "#f2ede2"
+  {
+   "id": "sq",
+   "type": "comp",
+   "params": {
+    "sustain": 5.5,
+    "attack": 6.5
+   }
   },
-  "chain": [
-    {
-      "id": "lo",
-      "type": "eq",
-      "params": {
-        "bass": 8.0,
-        "mid": 4.0,
-        "treble": 5.5,
-        "freq": 3.2
-      }
-    },
-    {
-      "id": "sq",
-      "type": "comp",
-      "params": {
-        "sustain": 5.5,
-        "attack": 6.5
-      }
-    },
-    {
-      "id": "out",
-      "type": "level",
-      "params": {
-        "gain": 5.5
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "THUMP",
-      "target": "lo.bass"
-    },
-    {
-      "id": "k2",
-      "label": "MUD",
-      "target": "lo.mid"
-    },
-    {
-      "id": "k3",
-      "label": "FOCUS",
-      "target": "lo.freq"
-    },
-    {
-      "id": "k4",
-      "label": "AIR",
-      "target": "lo.treble"
-    },
-    {
-      "id": "k5",
-      "label": "SQUEEZE",
-      "target": "sq.sustain"
-    },
-    {
-      "id": "k6",
-      "label": "OUT",
-      "target": "out.gain"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "TIGHT",
-      "target": "sq.attack",
-      "off": 6.5,
-      "on": 9.0
-    }
-  ],
-  "bakedFrom": "a bass-boosting eq that adds thump without mud"
+  {
+   "id": "out",
+   "type": "level",
+   "params": {
+    "gain": 5.5
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "THUMP",
+   "target": "lo.bass"
+  },
+  {
+   "id": "k2",
+   "label": "MUD",
+   "target": "lo.mid"
+  },
+  {
+   "id": "k3",
+   "label": "FOCUS",
+   "target": "lo.freq"
+  },
+  {
+   "id": "k4",
+   "label": "AIR",
+   "target": "lo.treble"
+  },
+  {
+   "id": "k5",
+   "label": "SQUEEZE",
+   "target": "sq.sustain"
+  },
+  {
+   "id": "k6",
+   "label": "OUT",
+   "target": "out.gain"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "TIGHT",
+   "target": "sq.attack",
+   "off": 6.5,
+   "on": 8.0
+  }
+ ],
+ "bakedFrom": "a bass-boosting eq that adds thump without mud"
 }

@@ -1,82 +1,82 @@
 {
-  "kind": "pedal",
-  "shape": "box",
-  "name": "Vermin",
-  "tagline": "gnaws through the mix and leaves teeth marks",
-  "enclosure": {
-    "width": 2.2,
-    "depth": 2.7,
-    "height": 0.6,
-    "color": "#151515"
+ "kind": "pedal",
+ "shape": "box",
+ "name": "Vermin",
+ "tagline": "gnaws through the mix and leaves teeth marks",
+ "enclosure": {
+  "width": 2.2,
+  "depth": 2.7,
+  "height": 0.6,
+  "color": "#151515"
+ },
+ "artwork": {
+  "style": "diagonal",
+  "palette": [
+   "#0d0d0d",
+   "#2b2b2b",
+   "#9fb32a"
+  ],
+  "textColor": "#e8e6df"
+ },
+ "chain": [
+  {
+   "id": "dr",
+   "type": "drive",
+   "params": {
+    "amount": 8.5,
+    "tone": 7.0,
+    "level": 6.0
+   }
   },
-  "artwork": {
-    "style": "diagonal",
-    "palette": [
-      "#0d0d0d",
-      "#2b2b2b",
-      "#9fb32a"
-    ],
-    "textColor": "#e8e6df"
+  {
+   "id": "eq",
+   "type": "eq",
+   "params": {
+    "bass": 3.5,
+    "mid": 7.5,
+    "treble": 6.5,
+    "freq": 5.0
+   }
   },
-  "chain": [
-    {
-      "id": "dr",
-      "type": "drive",
-      "params": {
-        "amount": 8.5,
-        "tone": 7.0,
-        "level": 6.0
-      }
-    },
-    {
-      "id": "eq",
-      "type": "eq",
-      "params": {
-        "bass": 3.5,
-        "mid": 8.5,
-        "treble": 6.5,
-        "freq": 5.0
-      }
-    },
-    {
-      "id": "fl",
-      "type": "filter",
-      "params": {
-        "cutoff": 6.5,
-        "resonance": 2.0
-      }
-    }
-  ],
-  "controls": [
-    {
-      "id": "k1",
-      "label": "DIST",
-      "target": "dr.amount"
-    },
-    {
-      "id": "k2",
-      "label": "SNARL",
-      "target": "eq.mid"
-    },
-    {
-      "id": "k3",
-      "label": "FILTER",
-      "target": "fl.cutoff"
-    },
-    {
-      "id": "k4",
-      "label": "LEVEL",
-      "target": "dr.level"
-    }
-  ],
-  "switches": [
-    {
-      "id": "s1",
-      "label": "FANG",
-      "target": "eq.freq",
-      "off": 5.0,
-      "on": 7.5
-    }
-  ],
-  "bakedFrom": "a sharp rodent distortion with a filthy midrange snarl"
+  {
+   "id": "fl",
+   "type": "filter",
+   "params": {
+    "cutoff": 6.5,
+    "resonance": 2.0
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "k1",
+   "label": "DIST",
+   "target": "dr.amount"
+  },
+  {
+   "id": "k2",
+   "label": "SNARL",
+   "target": "eq.mid"
+  },
+  {
+   "id": "k3",
+   "label": "FILTER",
+   "target": "fl.cutoff"
+  },
+  {
+   "id": "k4",
+   "label": "LEVEL",
+   "target": "dr.level"
+  }
+ ],
+ "switches": [
+  {
+   "id": "s1",
+   "label": "FANG",
+   "target": "eq.freq",
+   "off": 5.0,
+   "on": 7.5
+  }
+ ],
+ "bakedFrom": "a sharp rodent distortion with a filthy midrange snarl"
 }
