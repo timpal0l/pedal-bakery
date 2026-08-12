@@ -282,7 +282,11 @@ export function createAudio() {
       beatSeconds(state), state.bassFollow === false ? null : prog);
     src.loop = true;
     const g = ctx.createGain();
-    g.gain.value = 0.9;
+    // 0.5, not 0.9: every loop is peak-normalised to the same level, but a
+    // bass note SUSTAINS where a strum or a drum hit decays, so at equal
+    // peaks it carries ~6 dB more energy and was burying the band. Measured
+    // K-weighted against the other stems, not guessed.
+    g.gain.value = 0.5;
     const eq = [
       ['highpass', 35, 0.7, 0],
       ['peaking', 60, 1.0, -2.5],
