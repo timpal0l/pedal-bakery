@@ -954,7 +954,14 @@ class Handler(SimpleHTTPRequestHandler):
                     continue
                 if not isinstance(msg, dict):
                     continue  # "5" and [1] are valid JSON but not messages
-                self.handle_ws_message(room, client, msg)
+                try:
+                    self.handle_ws_message(room, client, msg)
+                except Exception as exc:
+                    # A bug in one handler used to take the player's socket
+                    # down with it — and since the app heartbeats every 20s,
+                    # a handler that throws on heartbeats disconnects the
+                    # whole room on a loop. Log it and keep the player.
+                    print(f"[room {room.code}] message handler failed ({msg.get('t')!r}): {exc}")
         except (ConnectionError, OSError):
             pass
         finally:
@@ -988,7 +995,7 @@ class Handler(SimpleHTTPRequestHandler):
                            exclude=client)
         elif t == "shelf":  # someone baked — everyone refreshes the shelf
             room.broadcast({"t": "shelf"}, exclude=client)
-        elif kind == "rename":
+        elif t == "rename":
             room.name = str(msg.get("name", ""))[:40].strip()
             room.dirty = True
             room.broadcast({"t": "renamed", "name": room.name})

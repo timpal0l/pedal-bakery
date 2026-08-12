@@ -30,11 +30,24 @@ export function createAudio() {
   function beatSeconds(state) {
     return 60 / (state.sync ? transport.bpm : (state.bpm || 100));
   }
-  // next beat boundary of the shared clock, a hair in the future
-  function nextBeatTime() {
-    const spb = 60 / transport.bpm;
-    const now = ctx.currentTime + 0.06;
-    return transport.origin + Math.ceil((now - transport.origin) / spb) * spb;
+  // Start a loop WHERE THE BAND ALREADY IS, rather than at the next beat.
+  //
+  // Waiting for a beat boundary looks right and is subtly wrong: the loop then
+  // begins at ITS bar one whenever it happened to be built, so an eight-bar
+  // kit rebuilt mid-phrase plays its bar one under everyone else's bar three.
+  // Worse, a whole-board rebuild (a reconnect, a preset) takes hundreds of
+  // milliseconds — long enough to straddle a beat — so the sources scatter
+  // across different beats and the band lands out of phase with itself.
+  //
+  // Seeking into the buffer instead makes both impossible: the offset is read
+  // from the shared clock, so a loop is in phase the instant it starts, no
+  // matter when that is or how slow the rebuild was.
+  function startInPhase(src, spb, synced) {
+    if (!synced || !src.buffer) { src.start(); return; }
+    const loopBeats = src.buffer.duration / spb;
+    const beatsIn = (ctx.currentTime - transport.origin) / spb;
+    const phase = ((beatsIn % loopBeats) + loopBeats) % loopBeats; // never negative
+    src.start(ctx.currentTime + 0.02, phase * spb);
   }
   const rigs = new Map();     // pedal instanceId -> rig
   const sources = new Map();  // source post id -> { bus, loop, guitar }
@@ -306,7 +319,7 @@ export function createAudio() {
     let node = src.connect(g);
     for (const f of eq) node = node.connect(f);
     node.connect(glue).connect(s.bus);
-    src.start(state.sync ? nextBeatTime() : undefined);
+    startInPhase(src, beatSeconds(state), state.sync);
     s.loop = { src, g, kind: 'drums', voicing: [...eq, glue] };
   }
 
@@ -358,7 +371,7 @@ export function createAudio() {
     let node = src.connect(g);
     for (const f of eq) node = node.connect(f);
     node.connect(squeeze).connect(s.bus);
-    src.start(state.sync ? nextBeatTime() : undefined);
+    startInPhase(src, beatSeconds(state), state.sync);
     s.loop = { src, g, kind: 'bass', voicing: [...eq, squeeze] };
   }
 
@@ -417,9 +430,9 @@ export function createAudio() {
     src.connect(g).connect(hp).connect(wood).connect(pocket).connect(scoop)
        .connect(spark).connect(air).connect(squash).connect(strings.in);
     strings.out.connect(s.bus);
-    // synced inputs enter exactly on the shared clock's next beat — loops of
-    // integer beat lengths then stay locked (or politely polymetric) forever
-    src.start(state.sync ? nextBeatTime() : undefined);
+    // synced inputs enter exactly where the shared clock already is, so a loop
+    // is in phase from its first sample however long it took to build
+    startInPhase(src, spb, state.sync);
     s.loop = { src, g, kind, strings, voicing: [hp, wood, pocket, scoop, spark, air, squash] };
   }
 
