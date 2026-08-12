@@ -404,10 +404,15 @@ export function createAudio() {
     if (!ctx) return;
     for (const s of sources.values()) { try { s.bus.disconnect(); } catch { /* ok */ } }
     for (const [id, rig] of rigs) {
+      // Rebuild each rig's internal tail from scratch. Disconnecting `out`
+      // alone severs out -> guard, which is created once at build time and
+      // was never restored — every pedal in a chain went silent.
       try { rig.out.disconnect(); } catch { /* ok */ }
+      try { rig.guard.disconnect(); } catch { /* ok */ }
       try { rig.cab?.out.disconnect(); } catch { /* ok */ }
-      if (rig.cab) rig.out.connect(rig.cab.in); // re-arm the speaker path
-      armTap(id);                               // …and the scope behind it
+      rig.out.connect(rig.guard);
+      if (rig.cab) rig.guard.connect(rig.cab.in); // re-arm the speaker path
+      armTap(id);                                 // …and the scope behind it
     }
     // internal source wiring survives disconnect() of the bus outputs only —
     // reconnect generators to their bus is not needed (they feed INTO bus)
