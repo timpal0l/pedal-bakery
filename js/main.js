@@ -18,6 +18,7 @@ import { DRUM_KITS, DRUM_PATTERNS, drumsFor } from './drums.js';
 import { BASS_LINES, BASS_TONES, bassFor } from './bass.js';
 import { createNet, playerIdentity, savedBakeries, rememberBakery, forgetBakery } from './net.js';
 import { fetchPresets, savePreset, presetOps, boardToPreset } from './presets.js';
+import { laneFor, boardSignature, noteName, DRUM_VOICES } from './timeline.js';
 
 const canvas = document.getElementById('view');
 const hud = document.getElementById('hud');
@@ -1518,6 +1519,12 @@ bakeInput.addEventListener('keydown', (e) => {
 });
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') { cancelPatch(); hideSourceMenu(); }
+  // space is the transport everywhere else, so it is here too — except while
+  // typing, where a space is a space
+  if (e.key === ' ' && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
+    e.preventDefault();
+    togglePause();
+  }
   if ((e.key === 'Delete' || e.key === 'Backspace') && selected
       && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
     e.preventDefault();
@@ -2151,12 +2158,233 @@ async function saveBoardAsPreset(name) {
   shelfTools.appendChild(b);
 }
 
+/* --------------------------------------------------------- what's playing --
+   A score strip: one lane per player, one whole loop each, every note where
+   it lands, and the shared clock sweeping across all of them. Read-only —
+   it draws board state and never touches it, so it needs no op and cannot
+   desync. The note maths lives in js/timeline.js next to a warning to keep
+   it in step with audio.js. */
+
+const timelineEl = document.getElementById('timeline');
+const timelineLanes = document.getElementById('timeline-lanes');
+const timelineKeyEl = document.getElementById('timeline-key');
+const SVG = 'http://www.w3.org/2000/svg';
+const LANE_W = 1000, LANE_H = 22; // viewBox units; the SVG stretches to fit
+const PART_COLOR = {
+  riff: '#7eb0ff', chord: '#7eb0ff', arp: '#7eb0ff',
+  bass: '#e8b830', drums: '#e07a6a',
+};
+
+let timelineSig = null;
+let timelineHeads = []; // { head, beats, sync } — updated every frame, cheaply
+
+// "open" is about the score: the player itself — transport and fader — is
+// always on screen, because a transport you have to reveal is not a transport
+function timelineOpen() { return document.body.classList.contains('timeline-open'); }
+function setTimeline(on) {
+  document.body.classList.toggle('timeline-open', on);
+  localStorage.setItem('timelineScore', on ? '1' : '0');
+  if (on) { timelineSig = null; drawTimeline(); }
+}
+
+function svgEl(name, attrs) {
+  const el = document.createElementNS(SVG, name);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+// every lane is drawn against the same window so the bar lines — and the
+// playhead — line up across players; a shorter loop simply repeats into it
+function windowBeats(lanes) {
+  const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+  let span = lanes.reduce((a, l) => (a * l.beats) / gcd(a, l.beats), lanes[0].beats);
+  const longest = Math.max(...lanes.map((l) => l.beats));
+  return span > 64 ? longest : span; // a polymetric board shouldn't draw 200 bars
+}
+
+function laneSvg(lane, span) {
+  const svg = svgEl('svg', { viewBox: `0 0 ${LANE_W} ${LANE_H}`,
+    preserveAspectRatio: 'none', width: '100%', height: `${LANE_H}px` });
+  svg.appendChild(svgEl('rect', { x: 0, y: 0, width: LANE_W, height: LANE_H,
+    fill: 'rgba(255,255,255,0.04)' }));
+  // one line per beat, brighter every bar — the eye needs the bar, not the beat
+  for (let b = 1; b < span; b++) {
+    const x = (b / span) * LANE_W;
+    svg.appendChild(svgEl('rect', { x, y: 0, width: 1, height: LANE_H,
+      fill: b % 4 === 0 ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.07)' }));
+  }
+  // and the loop point, where this player starts over
+  for (let t = lane.beats; t < span; t += lane.beats) {
+    svg.appendChild(svgEl('rect', { x: (t / span) * LANE_W, y: 0, width: 1, height: LANE_H,
+      fill: 'rgba(126,176,255,0.35)' }));
+  }
+  // drums stack by voice, everything else by pitch; either way the lane is
+  // 22 units tall and the part uses as much of it as its range needs
+  const voices = lane.pitched ? null
+    : DRUM_VOICES.filter((v) => lane.notes.some((n) => n.voice === v));
+  const rows = lane.pitched ? Math.max(1, lane.hi - lane.lo) : Math.max(1, voices.length - 1);
+  const rowOf = (n) => (lane.pitched ? n.midi - lane.lo : voices.indexOf(n.voice));
+  const color = PART_COLOR[lane.kind] || '#7eb0ff';
+  const w = Math.max(3, LANE_W / (span * 4.5)); // about a sixteenth wide
+  for (let rep = 0; rep * lane.beats < span; rep++) {
+    for (const n of lane.notes) {
+      const y = 3 + (1 - rowOf(n) / rows) * (LANE_H - 9);
+      // the first time through is the part; the repeats are dimmed, so the
+      // loop length reads at a glance instead of having to be counted
+      const g = Math.min(1, n.g ?? 1);
+      svg.appendChild(svgEl('rect', {
+        x: ((n.t + rep * lane.beats) / span) * LANE_W, y, width: w, height: 5, rx: 1.5,
+        fill: color, opacity: rep ? 0.22 + 0.2 * g : 0.55 + 0.45 * g,
+      }));
+    }
+  }
+  const head = svgEl('rect', { x: 0, y: 0, width: 2, height: LANE_H,
+    fill: '#ffffff', opacity: lane.sync ? 0.55 : 0 });
+  svg.appendChild(head);
+  return { svg, head };
+}
+
+function drawTimeline() {
+  const sources = [...posts.values()].filter((p) => p.type === 'source')
+    .sort((a, b) => (a.id < b.id ? -1 : 1));
+  const sig = boardSignature(sources, audio.transportBpm());
+  if (sig === timelineSig) return;
+  timelineSig = sig;
+  timelineLanes.innerHTML = '';
+  timelineHeads = [];
+  const lanes = sources.map((p) => laneFor(p, (id) => bakedRiffs.get(id) || RIFFS[id]))
+    .filter(Boolean);
+  // the key the room is in is whoever the rhythm section follows, not just
+  // whichever post happens to sort first
+  const leader = bandLeader(null)[0] || sources[0];
+  timelineKeyEl.textContent = lanes.length
+    ? `${KEYS.find(([, s]) => s === (leader?.state.root || 0))?.[0] || '?'} · ${audio.transportBpm()} BPM`
+      + ` · ${windowBeats(lanes) / 4} bars`
+    : '';
+  if (!lanes.length) {
+    const empty = document.createElement('div');
+    empty.className = 'tl-empty';
+    empty.textContent = 'nothing playing — add a tone, drums or bass and pick a part';
+    timelineLanes.appendChild(empty);
+    return;
+  }
+  const span = windowBeats(lanes);
+  // a bar ruler over the lanes, on the same proportional grid they use
+  {
+    const row = document.createElement('div');
+    row.className = 'tl-lane';
+    const name = document.createElement('div');
+    name.className = 'tl-name';
+    const plot = document.createElement('div');
+    plot.className = 'tl-plot';
+    const bars = document.createElement('div');
+    bars.className = 'tl-bars';
+    const n = Math.max(1, Math.round(span / 4));
+    bars.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+    for (let b = 1; b <= n; b++) {
+      const cell = document.createElement('span');
+      cell.textContent = b;
+      bars.appendChild(cell);
+    }
+    plot.appendChild(bars);
+    row.append(name, plot);
+    timelineLanes.appendChild(row);
+  }
+  for (const lane of lanes) {
+    const row = document.createElement('div');
+    row.className = 'tl-lane';
+    const name = document.createElement('div');
+    name.className = 'tl-name';
+    const b = document.createElement('b');
+    b.textContent = lane.title;
+    const s = document.createElement('span');
+    // the range is the useful half of "what's playing" — it says which
+    // register this player is occupying, which is the thing that collides
+    s.textContent = lane.pitched
+      ? `${lane.sub} · ${noteName(lane.lo)}–${noteName(lane.hi)}`
+      : `${lane.sub} · ${lane.beats / 4} bars`;
+    name.append(b, s);
+    const plot = document.createElement('div');
+    plot.className = 'tl-plot';
+    const { svg, head } = laneSvg(lane, span);
+    plot.appendChild(svg);
+    row.append(name, plot);
+    timelineLanes.appendChild(row);
+    timelineHeads.push({ head, beats: span, sync: lane.sync });
+  }
+}
+
+function moveTimelineHeads() {
+  if (!timelineHeads.length) return;
+  // a paused clock freezes ctx.currentTime, so the playhead stops where the
+  // music did — show it dimmed rather than hiding where you are
+  const running = audio.started();
+  const beat = audio.transportBeat();
+  for (const h of timelineHeads) {
+    if (!h.sync || !running) { h.head.setAttribute('opacity', 0); continue; }
+    h.head.setAttribute('opacity', audio.paused() ? 0.28 : 0.55);
+    const phase = ((beat % h.beats) + h.beats) % h.beats;
+    h.head.setAttribute('x', (phase / h.beats) * LANE_W);
+  }
+}
+
+document.getElementById('timeline-x').addEventListener('click', () => setTimeline(!timelineOpen()));
+
+/* drag the player's top edge to make room for more players. The height is a
+   CSS variable because the bakery bar and the HUD are positioned off it. */
+{
+  const PLAYER_ZOOM = 1.2; // #timeline is in the zoomed UI, the pointer is not
+  const MIN = 120, MAX = 640;
+  const stored = Number(localStorage.getItem('playerHeight'));
+  const setHeight = (h) => {
+    const clamped = Math.max(MIN, Math.min(MAX, Math.round(h)));
+    document.body.style.setProperty('--player-h', `${clamped}px`);
+    localStorage.setItem('playerHeight', String(clamped));
+    return clamped;
+  };
+  if (stored) setHeight(stored);
+  const grip = document.getElementById('timeline-grip');
+  grip.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    try { grip.setPointerCapture(e.pointerId); } catch { /* synthetic pointer */ }
+    const startY = e.clientY;
+    const startH = document.getElementById('timeline').getBoundingClientRect().height / PLAYER_ZOOM;
+    document.body.classList.add('resizing');
+    // on window, not the grip: a 7px strip is easy to drag off, and the drag
+    // must keep following the pointer wherever it goes
+    const move = (ev) => setHeight(startH + (startY - ev.clientY) / PLAYER_ZOOM);
+    const up = () => {
+      document.body.classList.remove('resizing');
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+  });
+}
+{
+  const b = document.createElement('button');
+  b.className = 'chip';
+  b.textContent = '♪ PLAYING';
+  b.addEventListener('click', () => setTimeline(!timelineOpen()));
+  shelfTools.appendChild(b);
+}
+// the score is worth seeing before you know you wanted it, so it starts open
+setTimeline(localStorage.getItem('timelineScore') !== '0');
+// the board changes far more slowly than the frame rate, so the redraw check
+// is on a timer (the header reads the key and tempo even when folded) and
+// only the playhead runs per frame
+setInterval(drawTimeline, 250);
+
 /* ------------------------------------------------- sound you can look at --
    Once a frame, every amp's live waveform is handed to its own wave halo.
    Purely local: it reads what THIS client hears, so it needs no op and no
    round trip — everyone's screen animates from their own audio graph. */
 
 view.scene.onBeforeRenderObservable.add(() => {
+  if (timelineOpen()) moveTimelineHeads(); // the playhead runs whether or not there's sound
   if (!audio.started()) return;
   for (const post of posts.values()) {
     if (post.type === 'amp') post.view.pushWave?.(audio.ampScope(post.id));
@@ -2185,6 +2413,25 @@ view.scene.onBeforeRenderObservable.add(() => {
     show(0);
     showHud('MUTED');
   });
+}
+
+/* pause — stops the room for this player, and keeps everything in phase.
+   Local: it plays nothing and changes nothing, so it needs no op. */
+let togglePause; // assigned just below; the space bar and __pedal call it
+{
+  const btn = document.getElementById('pause');
+  const paint = (on) => {
+    document.body.classList.toggle('paused', on);
+    btn.textContent = on ? '▶' : '❚❚';
+    btn.title = on ? 'play (space)' : 'pause everything (space)';
+  };
+  togglePause = (want) => {
+    const on = audio.setPaused(want === undefined ? !audio.paused() : want);
+    paint(on);
+    showHud(on ? 'PAUSED — space, or the button, starts it again'
+      : audio.started() ? 'PLAYING' : 'click the board to wake the sound up');
+  };
+  btn.addEventListener('click', () => togglePause());
 }
 
 /* ----------------------------------------------------------------- boot -- */
@@ -2253,6 +2500,8 @@ window.__pedal = {
   },
   tone: (id, field, value) => { menuTarget = id; chooseToneOption(field, value); },
   openMenu: (id) => openPanel(id),
+  pause: (on) => { togglePause(on); return audio.paused(); },
+  paused: () => audio.paused(),
   presets: () => presetDocs.map((d) => ({ id: d.id, name: d.name })),
   openPresets,
   loadPreset: async (id) => {
