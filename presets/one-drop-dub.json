@@ -1,0 +1,390 @@
+{
+ "name": "One Drop Dub",
+ "tagline": "skank guitar through a dub delay, one-drop kit, walking bass",
+ "bpm": 100,
+ "posts": [
+  {
+   "ref": "s1",
+   "ptype": "source",
+   "st": {
+    "mode": "riff",
+    "chord": "major",
+    "root": 8,
+    "strumStyle": "reggae",
+    "arpPattern": "up",
+    "riff": "skank-chop",
+    "progression": "reggae",
+    "riffFollow": true,
+    "interval": 350,
+    "detune": 0,
+    "volume": 5,
+    "drumKit": "auto",
+    "drumPattern": "rock",
+    "drumFollow": true,
+    "bassLine": "pump",
+    "bassTone": "finger",
+    "bassFollow": true,
+    "bpm": 100,
+    "sync": true,
+    "channel": 0
+   },
+   "pos": {
+    "x": 6.5,
+    "z": -4
+   }
+  },
+  {
+   "ref": "a1",
+   "ptype": "amp",
+   "st": {
+    "volume": 5
+   },
+   "pos": {
+    "x": -7,
+    "z": -4.5
+   }
+  },
+  {
+   "ref": "s2",
+   "ptype": "source",
+   "st": {
+    "mode": "drums",
+    "chord": "major",
+    "root": 0,
+    "strumStyle": "ring",
+    "arpPattern": "up",
+    "riff": "rock",
+    "progression": "none",
+    "riffFollow": true,
+    "interval": 350,
+    "detune": 0,
+    "volume": 5,
+    "drumKit": "auto",
+    "drumPattern": "reggae",
+    "drumFollow": true,
+    "bassLine": "pump",
+    "bassTone": "finger",
+    "bassFollow": true,
+    "bpm": 100,
+    "sync": true,
+    "channel": 1
+   },
+   "pos": {
+    "x": 6,
+    "z": 1
+   }
+  },
+  {
+   "ref": "a2",
+   "ptype": "amp",
+   "st": {
+    "volume": 5
+   },
+   "pos": {
+    "x": -7,
+    "z": 0.5
+   }
+  },
+  {
+   "ref": "s3",
+   "ptype": "source",
+   "st": {
+    "mode": "bass",
+    "chord": "major",
+    "root": 0,
+    "strumStyle": "ring",
+    "arpPattern": "up",
+    "riff": "rock",
+    "progression": "reggae",
+    "riffFollow": true,
+    "interval": 350,
+    "detune": 0,
+    "volume": 8.1,
+    "drumKit": "auto",
+    "drumPattern": "rock",
+    "drumFollow": true,
+    "bassLine": "reggae",
+    "bassTone": "muted",
+    "bassFollow": true,
+    "bpm": 100,
+    "sync": true,
+    "channel": 1
+   },
+   "pos": {
+    "x": 6.5,
+    "z": -8.5
+   }
+  },
+  {
+   "ref": "a3",
+   "ptype": "amp",
+   "st": {
+    "volume": 5
+   },
+   "pos": {
+    "x": -7,
+    "z": -9
+   }
+  }
+ ],
+ "pedals": [
+  {
+   "ref": "p1",
+   "spec": {
+    "kind": "pedal",
+    "shape": "box",
+    "name": "King Echo",
+    "tagline": "space is the place, riddim is the law",
+    "enclosure": {
+     "width": 3.4,
+     "depth": 3,
+     "height": 0.75,
+     "color": "#1b6b3a"
+    },
+    "artwork": {
+     "style": "stripes",
+     "palette": [
+      "#e8b830",
+      "#c8342a",
+      "#1b6b3a"
+     ],
+     "textColor": "#f5e9c8"
+    },
+    "chain": [
+     {
+      "id": "eq1",
+      "type": "eq",
+      "params": {
+       "bass": 8,
+       "mid": 3.5,
+       "treble": 5.5,
+       "freq": 4
+      }
+     },
+     {
+      "id": "flt",
+      "type": "filter",
+      "params": {
+       "cutoff": 6,
+       "resonance": 4.5
+      }
+     },
+     {
+      "id": "dly",
+      "type": "delay",
+      "params": {
+       "time": 4.5,
+       "feedback": 7.5,
+       "mix": 6.5
+      }
+     },
+     {
+      "id": "rvb",
+      "type": "reverb",
+      "params": {
+       "size": 7,
+       "mix": 4.5
+      }
+     }
+    ],
+    "controls": [
+     {
+      "id": "k1",
+      "label": "TIME",
+      "target": "dly.time"
+     },
+     {
+      "id": "k2",
+      "label": "REGEN",
+      "target": "dly.feedback"
+     },
+     {
+      "id": "k3",
+      "label": "ECHO",
+      "target": "dly.mix"
+     },
+     {
+      "id": "k4",
+      "label": "CUTOFF",
+      "target": "flt.cutoff"
+     },
+     {
+      "id": "k5",
+      "label": "SPRING",
+      "target": "rvb.mix"
+     },
+     {
+      "id": "k6",
+      "label": "BASS",
+      "target": "eq1.bass"
+     }
+    ],
+    "switches": [
+     {
+      "id": "s1",
+      "label": "FLOOD",
+      "target": "dly.feedback",
+      "off": 7.5,
+      "on": 9.6
+     },
+     {
+      "id": "s2",
+      "label": "SUB",
+      "target": "eq1.mid",
+      "off": 3.5,
+      "on": 1
+     }
+    ],
+    "bakedFrom": "reggea dub pedal"
+   },
+   "st": {
+    "values": {
+     "k1": 3.3191015624999998,
+     "k2": 4.242890624999999,
+     "k3": 0,
+     "k4": 5.6216015625,
+     "k5": 5.970937499999999,
+     "k6": 6.6904296875
+    },
+    "switches": {
+     "s1": true,
+     "s2": false
+    },
+    "on": true
+   },
+   "pos": {
+    "x": 0.5,
+    "z": -4
+   }
+  },
+  {
+   "ref": "p2",
+   "spec": {
+    "kind": "pedal",
+    "shape": "box",
+    "name": "Trenchtown",
+    "tagline": "roots-deep riddim bass",
+    "enclosure": {
+     "width": 2.3,
+     "depth": 2.6,
+     "height": 0.6,
+     "color": "#1b4d2e"
+    },
+    "artwork": {
+     "style": "stripes",
+     "palette": [
+      "#1b4d2e",
+      "#232946",
+      "#c0392b"
+     ],
+     "textColor": "#f5e8c7"
+    },
+    "chain": [
+     {
+      "id": "cmp",
+      "type": "comp",
+      "params": {
+       "sustain": 7,
+       "attack": 6
+      }
+     },
+     {
+      "id": "eq1",
+      "type": "eq",
+      "params": {
+       "bass": 8.5,
+       "mid": 3,
+       "treble": 1,
+       "freq": 2
+      }
+     },
+     {
+      "id": "flt",
+      "type": "filter",
+      "params": {
+       "cutoff": 3,
+       "resonance": 1.5
+      }
+     },
+     {
+      "id": "lvl",
+      "type": "level",
+      "params": {
+       "gain": 6
+      }
+     }
+    ],
+    "controls": [
+     {
+      "id": "k1",
+      "label": "SQUEEZE",
+      "target": "cmp.sustain"
+     },
+     {
+      "id": "k2",
+      "label": "WEIGHT",
+      "target": "eq1.bass"
+     },
+     {
+      "id": "k3",
+      "label": "DEEP",
+      "target": "flt.cutoff"
+     },
+     {
+      "id": "k4",
+      "label": "LEVEL",
+      "target": "lvl.gain"
+     }
+    ],
+    "switches": [
+     {
+      "id": "s1",
+      "label": "SCOOP",
+      "target": "eq1.mid",
+      "off": 3,
+      "on": 0.5
+     }
+    ],
+    "bakedFrom": "reggea base"
+   },
+   "st": {
+    "values": {
+     "k1": 7,
+     "k2": 8.5,
+     "k3": 3,
+     "k4": 6
+    },
+    "switches": {
+     "s1": false
+    },
+    "on": true
+   },
+   "pos": {
+    "x": 0,
+    "z": -8.5
+   }
+  }
+ ],
+ "cables": [
+  [
+   "p1",
+   "a1"
+  ],
+  [
+   "s2",
+   "a2"
+  ],
+  [
+   "s3",
+   "p2"
+  ],
+  [
+   "p2",
+   "a3"
+  ],
+  [
+   "s1",
+   "p1"
+  ]
+ ]
+}

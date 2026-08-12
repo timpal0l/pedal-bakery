@@ -321,13 +321,22 @@ const STRUM_DRUMS = {
   garage: 'rock', grunge: 'grunge', funk: 'funk',
 };
 
+// riff keys whose groove isn't named after them — most riffs share a name
+// with the pattern they want, these don't
+const RIFF_DRUMS = { skank: 'reggae' };
+
 // What should the drummer play behind a source in this state? Riffs win over
 // strums because a riff is the more specific statement of a genre.
-export function drumsFor(state) {
+// `riff` is the riff's own record when the caller has it: a BAKED riff has an
+// id nobody here can recognise ("skank-chop"), so without its genre the whole
+// riff bakery would land on a rock beat no matter what it wrote.
+export function drumsFor(state, riff) {
   if (!state) return null;
   if (state.mode === 'riff') {
     const key = state.riff || 'rock';
-    return DRUM_PATTERNS[key] ? key : 'rock';
+    const genre = riff?.genre;
+    return RIFF_DRUMS[key] || (DRUM_PATTERNS[key] ? key : null)
+      || RIFF_DRUMS[genre] || (DRUM_PATTERNS[genre] ? genre : 'rock');
   }
   if (state.mode === 'chord') return STRUM_DRUMS[state.strumStyle] || 'rock';
   if (state.mode === 'arp') return 'ballad';

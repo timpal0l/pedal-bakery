@@ -17,6 +17,7 @@ import { RIFFS, PROGRESSIONS } from './riffs.js';
 import { DRUM_KITS, DRUM_PATTERNS, drumsFor } from './drums.js';
 import { BASS_LINES, BASS_TONES, bassFor } from './bass.js';
 import { createNet, playerIdentity, savedBakeries, rememberBakery, forgetBakery } from './net.js';
+import { fetchPresets, savePreset, presetOps, boardToPreset } from './presets.js';
 
 const canvas = document.getElementById('view');
 const hud = document.getElementById('hud');
@@ -354,9 +355,14 @@ function bandLeader(selfId) {
     .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 }
 
+// The rhythm section reads the riff itself, not just its id: a baked riff has
+// an id no lookup table can know ("skank-chop"), and only its own record says
+// what genre it is.
+function riffRecord(id) { return bakedRiffs.get(id) || RIFFS[id] || null; }
+
 function bandGroove(drummerId) {
   for (const post of bandLeader(drummerId)) {
-    const groove = drumsFor(post.state);
+    const groove = drumsFor(post.state, riffRecord(post.state.riff));
     if (groove) return groove;
   }
   return null;
@@ -364,7 +370,7 @@ function bandGroove(drummerId) {
 
 function bandBassLine(bassistId) {
   for (const post of bandLeader(bassistId)) {
-    const line = bassFor(post.state);
+    const line = bassFor(post.state, riffRecord(post.state.riff));
     if (line) return line;
   }
   return null;
@@ -1117,6 +1123,7 @@ function renderPedalPanel(inst) {
 
 function renderSourceMenu() {
   panelRefs.clear();
+  sourceMenu.dataset.panel = 'node'; // a late preset fetch must not draw over this
   const inst = instances.get(menuTarget);
   if (inst) { renderPedalPanel(inst); return; }
   const post = posts.get(menuTarget);
@@ -1588,7 +1595,8 @@ function enterRoom(msg) {
   syncDrums();
   // Only the creator seeds the starter board — a joiner finding an empty
   // room leaves it empty (deliberately cleared, or a seeding race).
-  if (seedOnWelcome && !posts.size && !instances.size) {
+  const fresh = seedOnWelcome && !posts.size && !instances.size;
+  if (fresh) {
     spawnSource();
     spawnAmp();
   }
@@ -1598,7 +1606,14 @@ function enterRoom(msg) {
   revealRecorder();
   updateBadge();
   lastSent = null; // announce our position to the room we just (re)entered
-  showHud(`BAKERY ${msg.code} — invite with the code (top right)`);
+  // a brand-new bakery is one clean chord and an amp; offer the presets so a
+  // first-timer can hear a whole band before they've built anything
+  if (fresh) {
+    openPresets();
+    showHud('new bakery — load a preset to hear a band, or build your own', true);
+  } else {
+    showHud(`BAKERY ${msg.code} — invite with the code (top right)`);
+  }
 }
 
 /* presence: stream where our camera looks + where our cursor is */
@@ -1989,6 +2004,153 @@ recShare.addEventListener('click', async () => {
   } catch { /* the sheet was dismissed, or the browser said no */ }
 });
 
+/* ---------------------------------------------------------- the presets --
+   A preset is a whole board somebody kept: pedals, players, cabling, tempo.
+   It exists so a new bakery has a one-click way to sound like a band instead
+   of like one clean chord. Loading replaces the board for the WHOLE room,
+   and does it as ordinary remove/spawn/connect ops — no new op type, so the
+   server replays it and a late joiner rebuilds it like any other edit. */
+
+let presetDocs = [];
+const presetName = document.createElement('input'); // lives across re-renders
+
+async function loadPresetList() {
+  try {
+    presetDocs = await fetchPresets();
+  } catch (err) {
+    presetDocs = [];
+    console.warn('[presets] could not load', err);
+  }
+  return presetDocs;
+}
+
+function openPresets() {
+  menuTarget = null; // no node owns this panel, so nothing can re-render over it
+  sourceMenu.style.display = 'flex';
+  renderPresetPanel();
+  loadPresetList().then(() => {
+    if (sourceMenu.dataset.panel === 'presets') renderPresetPanel();
+  });
+}
+
+function boardSummary() {
+  const modes = [...posts.values()].filter((p) => p.type === 'source')
+    .map((p) => p.state.mode);
+  return [...new Set(modes)].join(' + ') || 'empty board';
+}
+
+function renderPresetPanel() {
+  panelRefs.clear();
+  sourceMenu.dataset.panel = 'presets';
+  sourceMenu.innerHTML = '';
+  panelHead('Presets', 'whole boards, ready to play');
+  if (!presetDocs.length) {
+    const empty = document.createElement('div');
+    empty.className = 'panel-sub';
+    empty.style.padding = '0 12px 8px';
+    empty.textContent = 'nothing saved yet — build a board and keep it below';
+    sourceMenu.appendChild(empty);
+  }
+  for (const doc of presetDocs) {
+    const item = document.createElement('button');
+    item.className = 'riff-item';
+    const name = document.createElement('div');
+    name.className = 'ri-name';
+    name.textContent = doc.name;
+    const meta = document.createElement('div');
+    meta.className = 'ri-meta';
+    const players = (doc.posts || []).filter((p) => p.ptype === 'source').length;
+    meta.textContent = [doc.tagline, `${players} players`,
+      `${(doc.pedals || []).length} pedals`, `${doc.bpm} BPM`].filter(Boolean).join(' · ');
+    item.append(name, meta);
+    item.addEventListener('click', () => loadPresetDoc(doc));
+    sourceMenu.appendChild(item);
+  }
+  const warn = document.createElement('div');
+  warn.className = 'panel-sub';
+  warn.style.padding = '8px 12px 2px';
+  warn.textContent = 'loading one replaces the board for everyone in the bakery';
+  sourceMenu.appendChild(warn);
+
+  const section = document.createElement('div');
+  section.className = 'menu-section';
+  section.textContent = 'KEEP THIS BOARD';
+  sourceMenu.appendChild(section);
+  presetName.className = 'preset-name';
+  presetName.type = 'text';
+  presetName.placeholder = 'name this board…';
+  presetName.spellcheck = false;
+  presetName.onkeydown = (e) => {
+    e.stopPropagation(); // the board's keyboard shortcuts are not for typing in
+    if (e.key === 'Enter') saveBoardAsPreset(presetName.value);
+  };
+  sourceMenu.appendChild(presetName);
+  const save = document.createElement('button');
+  save.className = 'panel-btn';
+  save.textContent = `SAVE — ${boardSummary()}`;
+  save.addEventListener('click', () => saveBoardAsPreset(presetName.value));
+  sourceMenu.appendChild(save);
+  const status = document.createElement('div');
+  status.className = 'panel-sub';
+  status.id = 'preset-status';
+  status.style.padding = '6px 12px 0';
+  sourceMenu.appendChild(status);
+}
+
+function presetStatus(text) {
+  const el = document.getElementById('preset-status');
+  if (el) el.textContent = text;
+}
+
+function loadPresetDoc(doc) {
+  // out with whatever was there: a preset IS the room now, not an addition
+  for (const id of [...instances.keys(), ...posts.keys()]) {
+    applyRemove(id);
+    net.sendOp({ type: 'remove', id });
+  }
+  for (const op of presetOps(doc, nextId)) {
+    applyOp(op);
+    net.sendOp(op);
+  }
+  hidePanel();
+  showHud(`${doc.name.toUpperCase()} — ${doc.tagline || 'loaded'}`);
+}
+
+async function saveBoardAsPreset(name) {
+  if (!name.trim()) { presetStatus('give it a name first'); return; }
+  if (!posts.size && !instances.size) { presetStatus('nothing on the board to keep'); return; }
+  const nodes = [
+    ...[...posts.values()].map((p) => ({
+      id: p.id, kind: p.type, st: p.state, pos: p.view.position() })),
+    ...[...instances.values()].map((i) => ({
+      id: i.id, kind: 'pedal', spec: i.spec, st: i.state, pos: i.view.position() })),
+  ];
+  presetStatus('saving…');
+  try {
+    const doc = boardToPreset({
+      name: name.trim(), tagline: boardSummary(), bpm: audio.transportBpm(),
+      nodes, cables: board.connections().map((c) => [c.from, c.to]),
+    });
+    const saved = await savePreset(doc);
+    presetDocs = presetDocs.filter((d) => d.id !== saved.id).concat(saved);
+    presetName.value = '';
+    renderPresetPanel();
+    presetStatus(`kept as ${saved.name}`);
+    showHud(`${saved.name.toUpperCase()} saved to the presets`);
+  } catch (err) {
+    presetStatus(`could not save: ${err.message}`);
+    console.error('[presets]', err);
+  }
+}
+
+{
+  const b = document.createElement('button');
+  b.className = 'chip';
+  b.textContent = '★ PRESETS';
+  b.addEventListener('click', openPresets);
+  shelfTools.appendChild(b);
+}
+
 /* ------------------------------------------------- sound you can look at --
    Once a frame, every amp's live waveform is handed to its own wave halo.
    Purely local: it reads what THIS client hears, so it needs no op and no
@@ -2028,6 +2190,7 @@ view.scene.onBeforeRenderObservable.add(() => {
 /* ----------------------------------------------------------------- boot -- */
 
 loadShelf();
+loadPresetList();
 
 if (params.get('solo')) {
   // headless/offline path: straight to a playable board, no lobby, no room.
@@ -2090,6 +2253,16 @@ window.__pedal = {
   },
   tone: (id, field, value) => { menuTarget = id; chooseToneOption(field, value); },
   openMenu: (id) => openPanel(id),
+  presets: () => presetDocs.map((d) => ({ id: d.id, name: d.name })),
+  openPresets,
+  loadPreset: async (id) => {
+    if (!presetDocs.length) await loadPresetList();
+    const doc = presetDocs.find((d) => d.id === id || d.name === id);
+    if (!doc) throw new Error(`no such preset: ${id}`);
+    loadPresetDoc(doc);
+    return doc.name;
+  },
+  keepPreset: (name) => saveBoardAsPreset(name),
   riffShelf: (open) => (open === undefined ? riffShelfOpen() : setRiffShelf(open)),
   volume: (id, v) => {
     applyVolume({ id, value: v });

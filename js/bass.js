@@ -161,10 +161,14 @@ const STRUM_BASS = {
 };
 
 // What should the bass player play behind a source in this state? Same shape
-// as drumsFor() in drums.js, and deliberately so.
-export function bassFor(state) {
+// as drumsFor() in drums.js, and deliberately so — including the fallback to
+// a baked riff's own genre, since its id is meaningless to this table.
+export function bassFor(state, riff) {
   if (!state) return null;
-  if (state.mode === 'riff') return RIFF_BASS[state.riff] || 'pump';
+  if (state.mode === 'riff') {
+    return RIFF_BASS[state.riff] || RIFF_BASS[riff?.genre]
+      || (BASS_LINES[riff?.genre] ? riff.genre : 'pump');
+  }
   if (state.mode === 'chord') return STRUM_BASS[state.strumStyle] || 'pump';
   if (state.mode === 'arp') return 'ballad';
   if (state.mode === 'guitar') return 'roots'; // stay out of the way

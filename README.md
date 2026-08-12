@@ -67,6 +67,7 @@ every complete post→pedals→amp path plays simultaneously.
 | + TONE IN / + AMP chips | add more sources and amps — several tones at once, parallel chains |
 | + DRUMS chip | a synthesised kit that plays along; cable it to an amp like anything else |
 | + BASS chip | a bass that takes the band's line, key and changes; cable it to an amp too |
+| ★ PRESETS chip | whole saved boards — load one to hear a band, or keep the one you built |
 | type a sound + BAKE | a new pedal is designed, saved to the shelf, and dropped |
 | drag a pedal / amp / source | move it (snaps to the grid); pedals dropped off the grid are removed |
 | Delete / Backspace | remove the selected (outlined) pedal |
@@ -116,7 +117,9 @@ js/artwork.js         procedural face-plate painting (canvas)
 js/scene.js           Babylon world: grid, amp, source post, pedals, cables
 js/main.js            the wiring: interactions, shelf, bakery — start here
 bakery/server.py      static files + /specs + /bake (claude -p + cache)
+js/presets.js         whole boards as portable data (refs in, fresh ids out)
 specs/*.json          the shelf; baked pedals are saved here automatically
+presets/*.json        saved boards: pedals, players, cabling and tempo
 ```
 
 Separation rules that keep it modular: `board.js` knows no 3D and no audio;

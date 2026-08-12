@@ -1,0 +1,107 @@
+{
+  "kind": "pedal",
+  "shape": "box",
+  "name": "King Echo",
+  "tagline": "space is the place, riddim is the law",
+  "enclosure": {
+    "width": 3.4,
+    "depth": 3.0,
+    "height": 0.75,
+    "color": "#1b6b3a"
+  },
+  "artwork": {
+    "style": "stripes",
+    "palette": [
+      "#e8b830",
+      "#c8342a",
+      "#1b6b3a"
+    ],
+    "textColor": "#f5e9c8"
+  },
+  "chain": [
+    {
+      "id": "eq1",
+      "type": "eq",
+      "params": {
+        "bass": 8.0,
+        "mid": 3.5,
+        "treble": 5.5,
+        "freq": 4.0
+      }
+    },
+    {
+      "id": "flt",
+      "type": "filter",
+      "params": {
+        "cutoff": 6.0,
+        "resonance": 4.5
+      }
+    },
+    {
+      "id": "dly",
+      "type": "delay",
+      "params": {
+        "time": 4.5,
+        "feedback": 7.5,
+        "mix": 6.5
+      }
+    },
+    {
+      "id": "rvb",
+      "type": "reverb",
+      "params": {
+        "size": 7.0,
+        "mix": 4.5
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "k1",
+      "label": "TIME",
+      "target": "dly.time"
+    },
+    {
+      "id": "k2",
+      "label": "REGEN",
+      "target": "dly.feedback"
+    },
+    {
+      "id": "k3",
+      "label": "ECHO",
+      "target": "dly.mix"
+    },
+    {
+      "id": "k4",
+      "label": "CUTOFF",
+      "target": "flt.cutoff"
+    },
+    {
+      "id": "k5",
+      "label": "SPRING",
+      "target": "rvb.mix"
+    },
+    {
+      "id": "k6",
+      "label": "BASS",
+      "target": "eq1.bass"
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "label": "FLOOD",
+      "target": "dly.feedback",
+      "off": 7.5,
+      "on": 9.6
+    },
+    {
+      "id": "s2",
+      "label": "SUB",
+      "target": "eq1.mid",
+      "off": 3.5,
+      "on": 1.0
+    }
+  ],
+  "bakedFrom": "reggea dub pedal"
+}

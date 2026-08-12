@@ -372,6 +372,78 @@ def save_spec(spec):
 
 
 
+# --- presets: whole boards, saved so a new player can hear something good --
+#
+# A preset is a room with its player-scoped ids replaced by local refs
+# ("s1", "p2", "a1"), which is what makes it portable: loading one mints
+# fresh ids for the loader and replays it as ordinary spawn/connect ops.
+# Pedal specs are re-validated on the way in — a preset is the one board
+# shape that arrives from outside a bake.
+
+PRESETS_DIR = ROOT / "presets"
+REF_RE = re.compile(r"^[spa]\d{1,3}$")
+
+
+def load_presets():
+    out = []
+    if not PRESETS_DIR.exists():
+        return out
+    for f in sorted(PRESETS_DIR.glob("*.json")):
+        try:
+            doc = json.loads(f.read_text())
+            doc["id"] = f.stem
+            out.append(doc)
+        except Exception as exc:
+            print(f"[presets] skipping {f.name}: {exc}")
+    return out
+
+
+def validate_preset(raw: dict) -> dict:
+    """A preset comes from a real board, so this only has to keep a malformed
+    or hostile one from ever reaching another player's scene."""
+    posts, pedals, refs = [], [], set()
+
+    def take_ref(node):
+        ref = str(node.get("ref", ""))
+        if not REF_RE.match(ref) or ref in refs:
+            raise ValueError(f"bad or duplicate ref: {ref!r}")
+        refs.add(ref)
+        return ref
+
+    def take_pos(node):
+        pos = node.get("pos") or {}
+        return {"x": clamp(pos.get("x"), -30, 30, 0), "z": clamp(pos.get("z"), -30, 30, 0)}
+
+    for p in raw.get("posts") or []:
+        ptype = p.get("ptype") if p.get("ptype") in ("source", "amp") else "amp"
+        st = p.get("st") if isinstance(p.get("st"), dict) else {}
+        posts.append({"ref": take_ref(p), "ptype": ptype, "st": st, "pos": take_pos(p)})
+    for p in raw.get("pedals") or []:
+        st = p.get("st") if isinstance(p.get("st"), dict) else {}
+        pedals.append({"ref": take_ref(p), "spec": validate(p.get("spec") or {}),
+                       "st": st, "pos": take_pos(p)})
+    if not posts and not pedals:
+        raise ValueError("an empty board is not a preset")
+    cables = [[str(a), str(b)] for a, b in (raw.get("cables") or [])
+              if str(a) in refs and str(b) in refs]
+    return {
+        "name": str(raw.get("name") or "Untitled Board")[:40].strip(),
+        "tagline": str(raw.get("tagline") or "")[:60].strip(),
+        "bpm": int(clamp(raw.get("bpm"), 40, 240, 100)),
+        "posts": posts, "pedals": pedals, "cables": cables,
+    }
+
+
+def save_preset(doc: dict) -> str:
+    base = re.sub(r"[^a-z0-9]+", "-", doc["name"].lower()).strip("-") or "preset"
+    path, n = PRESETS_DIR / f"{base}.json", 2
+    while path.exists():
+        path, n = PRESETS_DIR / f"{base}-{n}.json", n + 1
+    PRESETS_DIR.mkdir(exist_ok=True)
+    path.write_text(json.dumps(doc, indent=1))
+    return path.stem
+
+
 # --- riff bakery: the LLM writes note data, never audio --------------------
 
 RIFFS_DIR = ROOT / "riffs"
@@ -751,6 +823,8 @@ class Handler(SimpleHTTPRequestHandler):
                 pedals = len(room.state["pedals"])
             return self._json(200, {"code": room.code, "name": room.name,
                                     "players": players, "pedals": pedals})
+        if route == "/presets":
+            return self._json(200, load_presets())
         if route == "/riffs":
             out = []
             if RIFFS_DIR.exists():
@@ -932,6 +1006,18 @@ class Handler(SimpleHTTPRequestHandler):
             except Exception as exc:
                 self._json(500, {"error": str(exc)[:300]})
             return
+        if self.path == "/preset":
+            try:
+                length = int(self.headers.get("Content-Length", 0))
+                body = json.loads(self.rfile.read(length)) if length else {}
+                doc = validate_preset(body)
+                doc["id"] = save_preset(doc)
+                print(f"[presets] saved {doc['name']!r} as {doc['id']}.json "
+                      f"({len(doc['pedals'])} pedals, {len(doc['posts'])} posts)")
+                return self._json(200, {"preset": doc})
+            except Exception as exc:
+                print(f"[presets] save FAILED: {exc}")
+                return self._json(400, {"error": str(exc)[:300]})
         if self.path == "/riff":
             try:
                 length = int(self.headers.get("Content-Length", 0))
